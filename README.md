@@ -58,17 +58,30 @@ Robust user management powered by Supabase:
 ## 🏗️ Project Architecture
 
 ```mermaid
-graph TD
-    User([👤 User])
-    
-    User -->|Discovers & Collaborates| Frontend[💻 Frontend: React & Vite]
-    
-    Frontend -->|Smooth Transitions| Animations[🎨 Framer Motion]
-    Frontend -->|Client-side Routing| Router[🧭 React Router DOM]
-    Frontend -->|Live Data Sync| Backend[⚙️ Backend: Supabase]
-    
-    Backend <-->|Auth & Security| Auth[🔒 Supabase Auth]
-    Backend <-->|Cloud Storage| DB[🗄️ PostgreSQL Database]
+graph LR
+    User((👤 User)) -->|Interacts| Client
+
+    subgraph "💻 Client (React & Vite)"
+        Client[🖥️ User Interface]
+        Router[🧭 React Router]
+        Anim[✨ Framer Motion]
+        
+        Client --> Router
+        Client --> Anim
+    end
+
+    Client <-->|API / WebSockets| Supabase
+
+    subgraph "⚙️ Backend / BaaS (Supabase)"
+        Supabase{☁️ API Gateway}
+        Auth[🔒 Authentication]
+        DB[(🗄️ PostgreSQL)]
+        Storage[📁 Cloud Storage]
+        
+        Supabase --> Auth
+        Supabase --> DB
+        Supabase --> Storage
+    end
 ```
 
 ## 📦 Getting Started
