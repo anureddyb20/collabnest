@@ -18,7 +18,33 @@
 
 Our mission is to turn the complex process of finding the right team into an intuitive, seamless experience that inspires innovation and successful execution.
 
-## 🚀 Technologies Used
+---
+
+## 🚀 Key Features
+
+### 1. 🔍 Project Discovery & Matching
+Find the perfect team or the perfect project based on skills and interests:
+- **Smart Search:** Filter projects by tech stack and requirements.
+- **Skill Matching:** Connect with individuals who complement your abilities.
+
+### 2. 🤝 Seamless Collaboration
+Integrated tools designed to make teamwork effortless:
+- **Real-Time Messaging:** Communicate instantly with team members.
+- **Task Management:** Keep track of goals and progress in one place.
+
+### 3. 🎨 Modern & Intuitive UI
+Built with a focus on user experience and aesthetics:
+- **Dynamic Animations:** Smooth transitions powered by Framer Motion.
+- **Responsive Design:** Looks great on desktop and mobile devices.
+
+### 4. 🔒 Secure Authentication & Data
+Robust user management powered by Supabase:
+- **Fast Login:** Quick and secure access to your profile and projects.
+- **Real-time Database:** Instant updates across the platform.
+
+---
+
+## 💻 Technologies Used
 
 - **Frontend:** React 19, Vite
 - **Styling & Animation:** Framer Motion, Lucide React
