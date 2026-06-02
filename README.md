@@ -1,4 +1,4 @@
-# Collabnest (CoCreateX)
+# Collabnest
 
 A modern, dynamic React application built with Vite, Framer Motion, and Supabase.
 
