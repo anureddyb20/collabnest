@@ -44,12 +44,14 @@ Robust user management powered by Supabase:
 
 ---
 
-## 💻 Technologies Used
+## 🛠️ Tech Stack
 
-- **Frontend:** React 19, Vite
-- **Styling & Animation:** Framer Motion, Lucide React
-- **Routing:** React Router DOM
-- **Backend/BaaS:** Supabase
+| Layer | Technology |
+| :--- | :--- |
+| 🌐 **Frontend** | React 19, Vite |
+| 🎨 **Styling & Animation** | Framer Motion, Lucide React |
+| 🧭 **Routing** | React Router DOM |
+| ⚙️ **Backend/BaaS** | Supabase |
 
 ## 📦 Getting Started
 
