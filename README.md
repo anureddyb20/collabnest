@@ -84,53 +84,52 @@ graph LR
     end
 ```
 
-## 📦 Getting Started
+---
 
-### Prerequisites
+## 🛠️ Installation & Setup
 
-- Node.js (v18 or higher recommended)
-- npm or yarn
+### 🔗 Prerequisites
 
-### Installation
+- Node.js (v18+)
+- npm
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/anureddyb20/collabnest.git
-   ```
+### 1. Clone the Repository
 
-2. Navigate into the project directory:
-   ```bash
-   cd collabnest
-   ```
+```bash
+git clone https://github.com/anureddyb20/collabnest.git
+cd collabnest
+```
 
-3. Install the dependencies:
-   ```bash
-   npm install
-   ```
+### 2. Install Dependencies
 
-### Running the Development Server
+```bash
+npm install
+```
 
-Start the Vite development server by running:
+### 3. Setup Environment Variables
+
+Create a `.env` file in the root directory and add your Supabase credentials:
+
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 4. Run Development Server
 
 ```bash
 npm run dev
 ```
 
-This will launch the application locally. Open the provided localhost link in your browser to view the app.
+The application will be available at:
 
-### Building for Production
+- **Frontend:** `http://localhost:5173`
 
-To create a production-ready build:
+---
 
-```bash
-npm run build
-```
+## 🔧 Scripts
 
-This will generate a `dist` folder containing the optimized and minified assets.
-
-## 🛠️ Scripts
-
-- `npm run dev`: Starts the local development server.
-- `npm run build`: Bundles the app for production.
-- `npm run preview`: Previews the production build locally.
-- `npm run lint`: Runs ESLint to check for code quality issues.
+- `npm run dev` : Starts the local development server.
+- `npm run build` : Bundles the app for production.
+- `npm run preview` : Previews the production build locally.
+- `npm run lint` : Runs ESLint to check for code quality issues.
