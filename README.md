@@ -1,6 +1,14 @@
+<div align="center">
+
 # Collabnest
 
-A modern, dynamic React application built with Vite, Framer Motion, and Supabase.
+*A modern, dynamic React application built with Vite, Framer Motion, and Supabase.*
+
+![Release](https://img.shields.io/badge/Release-v1.0.0-yellow?style=flat)
+![Status](https://img.shields.io/badge/Status-Live-success?style=flat)
+![UI](https://img.shields.io/badge/UI-Modern_Glass-blue?style=flat)
+
+</div>
 
 ## 🚀 Technologies Used
 
