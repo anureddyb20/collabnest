@@ -53,6 +53,24 @@ Robust user management powered by Supabase:
 | 🧭 **Routing** | React Router DOM |
 | ⚙️ **Backend/BaaS** | Supabase |
 
+---
+
+## 🏗️ Project Architecture
+
+```mermaid
+graph TD
+    User([👤 User])
+    
+    User -->|Discovers & Collaborates| Frontend[💻 Frontend: React & Vite]
+    
+    Frontend -->|Smooth Transitions| Animations[🎨 Framer Motion]
+    Frontend -->|Client-side Routing| Router[🧭 React Router DOM]
+    Frontend -->|Live Data Sync| Backend[⚙️ Backend: Supabase]
+    
+    Backend <-->|Auth & Security| Auth[🔒 Supabase Auth]
+    Backend <-->|Cloud Storage| DB[🗄️ PostgreSQL Database]
+```
+
 ## 📦 Getting Started
 
 ### Prerequisites
