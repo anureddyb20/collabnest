@@ -2,7 +2,7 @@
 
 # Collabnest
 
-*A modern, dynamic React application built with Vite, Framer Motion, and Supabase.*
+*From idea to execution — helping people find the right team and build together.*
 
 ![Release](https://img.shields.io/badge/Release-v1.0.0-yellow?style=flat)
 ![Status](https://img.shields.io/badge/Status-Live-success?style=flat)
