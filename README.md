@@ -144,3 +144,11 @@ If you'd like to run the app locally and explore the features:
 - `npm run build` : Bundles the app for production.
 - `npm run preview` : Previews the production build locally.
 - `npm run lint` : Runs ESLint to check for code quality issues.
+
+---
+
+## 🌍 Impact
+
+---
+
+Lack of effective collaboration tools and team-building platforms hinders **countless innovative ideas** from seeing the light of day. **Collabnest** aims to bridge this gap by connecting creators, developers, and visionaries, accelerating project execution and fostering a vibrant community of builders.
