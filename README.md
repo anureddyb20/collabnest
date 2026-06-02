@@ -152,3 +152,9 @@ If you'd like to run the app locally and explore the features:
 ---
 
 Lack of effective collaboration tools and team-building platforms hinders **countless innovative ideas** from seeing the light of day. **Collabnest** aims to bridge this gap by connecting creators, developers, and visionaries, accelerating project execution and fostering a vibrant community of builders.
+
+---
+
+<div align="center">
+  <p>Developed with passion for a Collaborative & Innovative Future by <b>Anu Reddy B</b></p>
+</div>
