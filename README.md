@@ -1,16 +1,61 @@
-# React + Vite
+# Collabnest (CoCreateX)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, dynamic React application built with Vite, Framer Motion, and Supabase.
 
-Currently, two official plugins are available:
+## 🚀 Technologies Used
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Frontend:** React 19, Vite
+- **Styling & Animation:** Framer Motion, Lucide React
+- **Routing:** React Router DOM
+- **Backend/BaaS:** Supabase
 
-## React Compiler
+## 📦 Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerequisites
 
-## Expanding the ESLint configuration
+- Node.js (v18 or higher recommended)
+- npm or yarn
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/anureddyb20/collabnest.git
+   ```
+
+2. Navigate into the project directory:
+   ```bash
+   cd collabnest
+   ```
+
+3. Install the dependencies:
+   ```bash
+   npm install
+   ```
+
+### Running the Development Server
+
+Start the Vite development server by running:
+
+```bash
+npm run dev
+```
+
+This will launch the application locally. Open the provided localhost link in your browser to view the app.
+
+### Building for Production
+
+To create a production-ready build:
+
+```bash
+npm run build
+```
+
+This will generate a `dist` folder containing the optimized and minified assets.
+
+## 🛠️ Scripts
+
+- `npm run dev`: Starts the local development server.
+- `npm run build`: Bundles the app for production.
+- `npm run preview`: Previews the production build locally.
+- `npm run lint`: Runs ESLint to check for code quality issues.
