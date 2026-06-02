@@ -127,6 +127,17 @@ The application will be available at:
 
 ---
 
+## 🎯 Manual Usage
+
+If you'd like to run the app locally and explore the features:
+
+1. **Environment Setup:** Ensure your `.env` file is properly configured with your Supabase credentials.
+2. **Launch App:** Run `npm run dev` to start the Vite development server.
+3. **Explore the Platform:**
+   - **Collabnest Dashboard:** `http://localhost:5173`
+
+---
+
 ## 🔧 Scripts
 
 - `npm run dev` : Starts the local development server.
