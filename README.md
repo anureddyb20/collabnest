@@ -10,6 +10,14 @@
 
 </div>
 
+---
+
+## 🏢 Overview
+
+**Collabnest** is a cutting-edge, interactive web application designed to simplify the process of **team building and project collaboration**. Using a dynamic interface and seamless networking features, Collabnest allows creators, developers, and visionaries to connect, share ideas, and build together efficiently.
+
+Our mission is to turn the complex process of finding the right team into an intuitive, seamless experience that inspires innovation and successful execution.
+
 ## 🚀 Technologies Used
 
 - **Frontend:** React 19, Vite
