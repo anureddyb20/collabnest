@@ -29,12 +29,22 @@ const saveUsers = (users) => {
 };
 
 const getCurrentSession = () => {
-  const stored = getLocalStorageWithFallback(SESSION_KEY, OLD_SESSION_KEY);
-  return stored ? JSON.parse(stored) : null;
+  const stored = sessionStorage.getItem(SESSION_KEY);
+  if (stored) return JSON.parse(stored);
+  
+  // Fallback to check localStorage once, then migrate to sessionStorage
+  const localStored = getLocalStorageWithFallback(SESSION_KEY, OLD_SESSION_KEY);
+  if (localStored) {
+    sessionStorage.setItem(SESSION_KEY, localStored);
+    return JSON.parse(localStored);
+  }
+  return null;
 };
 
 const saveSession = (user) => {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+  // Remove from localStorage to enforce tab-specific sessions moving forward
+  localStorage.removeItem(SESSION_KEY);
 };
 
 const getGlobalProblems = () => {
@@ -169,6 +179,7 @@ export const userService = {
   },
 
   logout: () => {
+    sessionStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(OLD_SESSION_KEY);
   },

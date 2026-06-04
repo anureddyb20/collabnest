@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabase';
 
 import Landing from './pages/Landing';
@@ -11,6 +11,13 @@ import Profile from './pages/Profile';
 import BuilderHub from './pages/BuilderHub';
 import Navbar from './components/Navbar';
 import { userService } from './data/userService';
+
+const ProtectedRoute = ({ user, children }) => {
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
 
 function App() {
   const [user, setUser] = useState(userService.getCurrentUser());
@@ -42,10 +49,10 @@ function App() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/onboarding" element={<Onboarding setUser={setUser} />} />
-            <Route path="/hub" element={<Hub user={user} />} />
-            <Route path="/builder" element={<BuilderHub user={user} />} />
-            <Route path="/workspace/:id" element={<Workspace />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/hub" element={<ProtectedRoute user={user}><Hub user={user} /></ProtectedRoute>} />
+            <Route path="/builder" element={<ProtectedRoute user={user}><BuilderHub user={user} /></ProtectedRoute>} />
+            <Route path="/workspace/:id" element={<ProtectedRoute user={user}><Workspace /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute user={user}><Profile /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>
