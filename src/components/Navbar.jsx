@@ -10,7 +10,7 @@ const Navbar = ({ user }) => {
   const currentUser = user || userService.getCurrentUser();
   const myWorkspaces = userService.getJoinedProblems();
   const latestWorkspaceId = myWorkspaces.length > 0 ? myWorkspaces[myWorkspaces.length - 1].id : 1;
-  const { isMobileView, toggleViewMode, isManualOverride, resetToAuto } = useView();
+  const { isMobileView } = useView();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = () => {
@@ -64,14 +64,7 @@ const Navbar = ({ user }) => {
 
         {isMobileView ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button 
-              onClick={isManualOverride ? resetToAuto : toggleViewMode}
-              className="btn-ghost" 
-              style={{ padding: '8px' }}
-              title="Switch to Desktop View"
-            >
-              <Monitor size={20} />
-            </button>
+
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="btn-ghost"
@@ -116,14 +109,7 @@ const Navbar = ({ user }) => {
             })}
             
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginLeft: '1rem' }}>
-              <button 
-                onClick={isManualOverride ? resetToAuto : toggleViewMode}
-                className="btn-ghost" 
-                style={{ padding: '8px' }}
-                title="Switch to Mobile View"
-              >
-                <Smartphone size={20} />
-              </button>
+
               {currentUser ? (
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>
