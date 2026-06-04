@@ -203,7 +203,7 @@ export default function BuilderHub({ user }) {
           {recommended.length > 0 && (
             <div style={{ marginBottom: 32 }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16 }}>⭐ Recommended for You</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 20 }}>
+              <div className="grid-auto">
                 {recommended.slice(0, 3).map(p => card(p))}
               </div>
             </div>
@@ -213,7 +213,7 @@ export default function BuilderHub({ user }) {
           <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16 }}>
             {recommended.length > 0 ? 'All Projects' : 'Available Projects'} ({filtered.length})
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 20 }}>
+          <div className="grid-auto">
             {filtered.map(p => card(p))}
             {filtered.length === 0 && <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1' }}>No projects match your filters.</p>}
           </div>
@@ -306,7 +306,7 @@ export default function BuilderHub({ user }) {
               <button onClick={() => setTab('discover')} style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 16 }}>Discover Projects</button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
+            <div className="grid-auto">
               {joinedProblems.map(p => (
                 <motion.div key={p.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                   style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>

@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import BuilderHub from './pages/BuilderHub';
 import Navbar from './components/Navbar';
 import { userService } from './data/userService';
+import { useView } from './context/ViewContext';
 
 const ProtectedRoute = ({ user, children }) => {
   if (!user) {
@@ -21,6 +22,7 @@ const ProtectedRoute = ({ user, children }) => {
 
 function App() {
   const [user, setUser] = useState(userService.getCurrentUser());
+  const { isMobileView } = useView();
 
   async function checkConnection() {
     if (!supabase) return; // No env vars configured yet
@@ -43,7 +45,7 @@ function App() {
 
   return (
     <Router>
-      <div className="app-container">
+      <div className={`app-container ${isMobileView ? 'mobile-view' : 'desktop-view'}`}>
         <Navbar user={user} />
         <main>
           <Routes>

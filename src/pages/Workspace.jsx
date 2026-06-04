@@ -783,9 +783,9 @@ const Workspace = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '32px' }}>
+      <div className="workspace-layout" style={{ display: 'flex', gap: '32px' }}>
         {/* Sidebar: Team Health & Stats */}
-        <aside>
+        <aside className="workspace-sidebar" style={{ width: '280px', flexShrink: 0 }}>
           <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
             <h3 style={{ fontSize: '1.1rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Activity size={18} color="var(--secondary)" />

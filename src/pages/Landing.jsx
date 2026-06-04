@@ -35,7 +35,7 @@ const Landing = () => {
               No ghosting, just building.
             </p>
             
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button 
                 onClick={() => navigate('/onboarding')}
                 className="btn-primary" 
@@ -58,7 +58,7 @@ const Landing = () => {
           <motion.div 
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            style={{ marginTop: '60px', display: 'flex', justifyContent: 'center', gap: '40px' }}
+            style={{ marginTop: '60px', display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}
           >
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '2rem', fontWeight: 700 }}>250+</div>

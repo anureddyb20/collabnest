@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Rocket, LayoutGrid as Hub, Layout, User, Zap, LogOut, Hammer } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Rocket, LayoutGrid as Hub, Layout, User, Zap, LogOut, Hammer, Menu, X, Monitor, Smartphone } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { userService } from '../data/userService';
+import { useView } from '../context/ViewContext';
 
 const Navbar = ({ user }) => {
   const location = useLocation();
   const currentUser = user || userService.getCurrentUser();
   const myWorkspaces = userService.getJoinedProblems();
   const latestWorkspaceId = myWorkspaces.length > 0 ? myWorkspaces[myWorkspaces.length - 1].id : 1;
+  const { isMobileView, toggleViewMode, isManualOverride, resetToAuto } = useView();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = () => {
     userService.logout();
@@ -37,85 +40,182 @@ const Navbar = ({ user }) => {
           <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'flex' }}>
             <defs>
               <linearGradient id="left-leg-grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#8b5cf6" />
-                <stop offset="100%" stop-color="#6366f1" />
+                <stop offset="0%" stopColor="#8b5cf6" />
+                <stop offset="100%" stopColor="#6366f1" />
               </linearGradient>
               <linearGradient id="diagonal-grad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#6366f1" />
-                <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.8" />
+                <stop offset="0%" stopColor="#6366f1" />
+                <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.8" />
               </linearGradient>
               <linearGradient id="right-leg-grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#4f46e5" />
-                <stop offset="100%" stop-color="#3b82f6" />
+                <stop offset="0%" stopColor="#4f46e5" />
+                <stop offset="100%" stopColor="#3b82f6" />
               </linearGradient>
             </defs>
             <circle cx="5" cy="5" r="2.5" fill="#8b5cf6" />
             <rect x="3.5" y="10" width="3" height="11" rx="1.5" fill="url(#left-leg-grad)" />
             <rect x="14.5" y="10" width="3" height="11" rx="1.5" fill="url(#right-leg-grad)" />
-            <line x1="5" y1="10" x2="16" y2="21" stroke="url(#diagonal-grad)" stroke-width="3" stroke-linecap="round" />
+            <line x1="5" y1="10" x2="16" y2="21" stroke="url(#diagonal-grad)" strokeWidth="3" strokeLinecap="round" />
           </svg>
           <span style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
             <span style={{ color: 'var(--primary)' }}>Collab</span><span style={{ color: 'var(--text-main)' }}>Nest</span>
           </span>
         </Link>
 
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = (location.pathname.startsWith('/workspace') && link.path.startsWith('/workspace'))
-              ? true
-              : location.pathname === link.path;
-            return (
-              <Link 
-                key={link.path} 
-                to={link.path} 
-                style={{ 
-                  textDecoration: 'none', 
-                  color: isActive ? 'var(--primary)' : 'var(--text-muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  transition: 'color 0.2s'
-                }}
-              >
-                <Icon size={18} />
-                {link.label}
-                {isActive && (
-                  <motion.div 
-                    layoutId="nav-underline"
-                    style={{ position: 'absolute', bottom: '-1rem', height: '2px', background: 'var(--primary)', width: '100%' }}
-                  />
-                )}
-              </Link>
-            );
-          })}
-          
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginLeft: '1rem' }}>
-            {currentUser ? (
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                  Hi, {currentUser.name}
-                </span>
-                <button 
-                  onClick={handleLogout}
-                  className="btn-outline" 
-                  style={{ padding: '8px 16px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-                >
-                  <LogOut size={16} />
-                  Log Out
-                </button>
-              </div>
-            ) : (
-              <Link to="/onboarding" className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
-                Get Started
-                <Zap size={16} />
-              </Link>
-            )}
+        {isMobileView ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button 
+              onClick={isManualOverride ? resetToAuto : toggleViewMode}
+              className="btn-ghost" 
+              style={{ padding: '8px' }}
+              title="Switch to Desktop View"
+            >
+              <Monitor size={20} />
+            </button>
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="btn-ghost"
+              style={{ padding: '8px' }}
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
-        </div>
+        ) : (
+          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = (location.pathname.startsWith('/workspace') && link.path.startsWith('/workspace'))
+                ? true
+                : location.pathname === link.path;
+              return (
+                <Link 
+                  key={link.path} 
+                  to={link.path} 
+                  style={{ 
+                    textDecoration: 'none', 
+                    color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    transition: 'color 0.2s',
+                    position: 'relative'
+                  }}
+                >
+                  <Icon size={18} />
+                  {link.label}
+                  {isActive && (
+                    <motion.div 
+                      layoutId="nav-underline"
+                      style={{ position: 'absolute', bottom: '-1rem', height: '2px', background: 'var(--primary)', width: '100%' }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
+            
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginLeft: '1rem' }}>
+              <button 
+                onClick={isManualOverride ? resetToAuto : toggleViewMode}
+                className="btn-ghost" 
+                style={{ padding: '8px' }}
+                title="Switch to Mobile View"
+              >
+                <Smartphone size={20} />
+              </button>
+              {currentUser ? (
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    Hi, {currentUser.name}
+                  </span>
+                  <button 
+                    onClick={handleLogout}
+                    className="btn-outline" 
+                    style={{ padding: '8px 16px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                  >
+                    <LogOut size={16} />
+                    Log Out
+                  </button>
+                </div>
+              ) : (
+                <Link to="/onboarding" className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem', textDecoration: 'none' }}>
+                  Get Started
+                  <Zap size={16} />
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      <AnimatePresence>
+        {isMobileView && isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ overflow: 'hidden', background: '#fff', borderTop: '1px solid var(--border)', marginTop: '1rem' }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', padding: '1rem 0' }}>
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = (location.pathname.startsWith('/workspace') && link.path.startsWith('/workspace'))
+                  ? true
+                  : location.pathname === link.path;
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setIsMenuOpen(false)}
+                    style={{
+                      padding: '1rem 2rem',
+                      textDecoration: 'none',
+                      color: isActive ? 'var(--primary)' : 'var(--text-main)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      fontWeight: 600,
+                      background: isActive ? 'var(--primary-glow)' : 'transparent',
+                    }}
+                  >
+                    <Icon size={20} />
+                    {link.label}
+                  </Link>
+                );
+              })}
+              
+              <div style={{ padding: '1rem 2rem', borderTop: '1px solid var(--border)', marginTop: '0.5rem' }}>
+                {currentUser ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                      Hi, {currentUser.name}
+                    </span>
+                    <button 
+                      onClick={() => { setIsMenuOpen(false); handleLogout(); }}
+                      className="btn-outline" 
+                      style={{ padding: '12px', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', width: '100%' }}
+                    >
+                      <LogOut size={18} />
+                      Log Out
+                    </button>
+                  </div>
+                ) : (
+                  <Link 
+                    to="/onboarding" 
+                    onClick={() => setIsMenuOpen(false)}
+                    className="btn-primary" 
+                    style={{ padding: '12px', fontSize: '1rem', textDecoration: 'none', display: 'flex', justifyContent: 'center', width: '100%' }}
+                  >
+                    Get Started
+                    <Zap size={18} />
+                  </Link>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };

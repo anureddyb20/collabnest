@@ -121,9 +121,9 @@ const Hub = ({ user: initialUser }) => {
 
   return (
     <div className="container" style={{ padding: '40px 0' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '40px' }}>
+      <div className="workspace-layout" style={{ display: 'flex', gap: '40px' }}>
         {/* Left Sidebar - Profile */}
-        <aside>
+        <aside className="workspace-sidebar" style={{ width: '280px', flexShrink: 0 }}>
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -264,10 +264,11 @@ const Hub = ({ user: initialUser }) => {
 
           {/* Grid / List */}
           <div 
+            className={activeSidebar === 'MyProblems' ? '' : 'grid-auto'}
             style={
               activeSidebar === 'MyProblems'
                 ? { display: 'flex', flexDirection: 'column', gap: '24px' }
-                : { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }
+                : {}
             }
           >
             <AnimatePresence mode="popLayout">
