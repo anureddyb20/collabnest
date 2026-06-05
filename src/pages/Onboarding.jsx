@@ -13,7 +13,10 @@ const Onboarding = ({ setUser, user }) => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [isVerificationPending, setIsVerificationPending] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpValues, setOtpValues] = useState(['', '', '', '', '', '']);
+  const [otpCountdown, setOtpCountdown] = useState(0);
+  const [isVerifying, setIsVerifying] = useState(false);
   
   const [profileData, setProfileData] = useState({
     expertise: 'Frontend Developer',
@@ -30,7 +33,8 @@ const Onboarding = ({ setUser, user }) => {
   useEffect(() => {
     // If there is already a logged-in user with a role, redirect them
     const session = userService.getCurrentUser();
-    if (session) {
+    // We only redirect if NOT in OTP mode to prevent premature redirects
+    if (session && !showOtp) {
       if (session.role === 'builder') {
         navigate('/hub');
       } else if (session.role === 'owner') {
@@ -49,7 +53,15 @@ const Onboarding = ({ setUser, user }) => {
         setStep(1);
       }
     }
-  }, [navigate, user, step]);
+  }, [navigate, user, step, showOtp]);
+
+  useEffect(() => {
+    let timer;
+    if (showOtp && otpCountdown > 0) {
+      timer = setInterval(() => setOtpCountdown(prev => prev - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [showOtp, otpCountdown]);
 
   const validatePassword = (password) => {
     const minLength = 8;
@@ -108,8 +120,9 @@ const Onboarding = ({ setUser, user }) => {
            // sign out immediately so they have to verify
            await supabase.auth.signOut();
         }
-        setSuccessMsg("Please verify your email before accessing the platform.");
-        setIsVerificationPending(true);
+        setSuccessMsg("Please enter the 6-digit OTP sent to your email.");
+        setShowOtp(true);
+        setOtpCountdown(60);
       }
     } else {
       // Login flow
@@ -120,20 +133,109 @@ const Onboarding = ({ setUser, user }) => {
 
       if (error) {
         if (error.message.toLowerCase().includes('email not confirmed')) {
-          setErrorMsg("Your email is not verified. Please verify your email to continue.");
-          setIsVerificationPending(true);
+          const resendResponse = await supabase.auth.resend({
+            type: 'signup',
+            email: accountData.email,
+          });
+          if (resendResponse.error) {
+            setErrorMsg(resendResponse.error.message);
+            setLoading(false);
+            return;
+          }
+          setIsLoginMode(false); // They need to verify signup OTP
+          setShowOtp(true);
+          setOtpCountdown(60);
+          setSuccessMsg("Your email is not verified. A new OTP has been sent.");
         } else {
           setErrorMsg(error.message);
         }
       } else {
-        // Handled by App.jsx onAuthStateChange which sets the user
-        setSuccessMsg("Logged in successfully.");
+        // Password is correct. We now require OTP.
+        // Destroy the current session first.
+        await supabase.auth.signOut();
+        
+        // Trigger OTP generation
+        const otpResponse = await supabase.auth.signInWithOtp({
+          email: accountData.email,
+        });
+
+        if (otpResponse.error) {
+          setErrorMsg(otpResponse.error.message);
+        } else {
+          setShowOtp(true);
+          setOtpCountdown(60);
+          setSuccessMsg("Please enter the 6-digit OTP sent to your email.");
+        }
       }
     }
     setLoading(false);
   };
 
+  const handleOtpChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otpValues];
+    newOtp[index] = value;
+    setOtpValues(newOtp);
+
+    // Auto-focus next
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      if (nextInput) nextInput.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otpValues[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      if (prevInput) prevInput.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pastedData) {
+      const newOtp = [...otpValues];
+      for (let i = 0; i < pastedData.length; i++) {
+        newOtp[i] = pastedData[i];
+      }
+      setOtpValues(newOtp);
+      const focusIndex = Math.min(pastedData.length, 5);
+      const focusInput = document.getElementById(`otp-${focusIndex}`);
+      if (focusInput) focusInput.focus();
+    }
+  };
+
+  const verifyOtpSubmit = async (e) => {
+    if (e) e.preventDefault();
+    const token = otpValues.join('');
+    if (token.length !== 6) {
+      setErrorMsg("Please enter a valid 6-digit OTP.");
+      return;
+    }
+    setLoading(true);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const type = isLoginMode ? 'email' : 'signup';
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: accountData.email,
+      token,
+      type
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
+    } else {
+      setSuccessMsg("Verification successful!");
+      setShowOtp(false);
+      // App.jsx will automatically detect the new session and trigger the redirect via useEffect
+    }
+    setLoading(false);
+  };
+
   const resendVerification = async () => {
+    if (otpCountdown > 0) return;
     setLoading(true);
     setErrorMsg('');
     setSuccessMsg('');
@@ -144,15 +246,28 @@ const Onboarding = ({ setUser, user }) => {
       return;
     }
 
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: accountData.email,
-    });
+    let error;
+    if (!isLoginMode) {
+      const res = await supabase.auth.resend({
+        type: 'signup',
+        email: accountData.email,
+      });
+      error = res.error;
+    } else {
+      const res = await supabase.auth.signInWithOtp({
+        email: accountData.email,
+      });
+      error = res.error;
+    }
     
     if (error) {
       setErrorMsg(error.message);
     } else {
-      setSuccessMsg("Verification email resent. Please check your inbox.");
+      setSuccessMsg("A new OTP has been sent to your email.");
+      setOtpCountdown(60);
+      setOtpValues(['', '', '', '', '', '']);
+      const firstInput = document.getElementById('otp-0');
+      if (firstInput) firstInput.focus();
     }
     setLoading(false);
   };
@@ -217,29 +332,121 @@ const Onboarding = ({ setUser, user }) => {
               </p>
             </div>
             
-            <form onSubmit={handleAccountSubmit}>
-              {errorMsg && (
-                <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-                  <AlertCircle size={18} />
-                  {errorMsg}
+            {showOtp ? (
+              <form onSubmit={verifyOtpSubmit}>
+                {errorMsg && (
+                  <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                    <AlertCircle size={18} />
+                    {errorMsg}
+                  </div>
+                )}
+                {successMsg && (
+                  <div style={{ padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                    <CheckCircle2 size={18} />
+                    {successMsg}
+                  </div>
+                )}
+                
+                <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+                  <p style={{ color: 'var(--text-main)', marginBottom: '8px' }}>
+                    Sent to <strong>{accountData.email}</strong>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setShowOtp(false); setErrorMsg(''); setSuccessMsg(''); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--primary)', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.9rem' }}
+                  >
+                    Change Email
+                  </button>
                 </div>
-              )}
-              {successMsg && (
-                <div style={{ padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-                  <CheckCircle2 size={18} />
-                  {successMsg}
-                </div>
-              )}
 
-              {!isLoginMode && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '32px' }} onPaste={handleOtpPaste}>
+                  {otpValues.map((digit, index) => (
+                    <input
+                      key={index}
+                      id={`otp-${index}`}
+                      type="text"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      disabled={loading}
+                      style={{
+                        width: '48px', height: '56px', fontSize: '1.5rem', textAlign: 'center',
+                        background: 'rgba(255,255,255,0.05)', border: `1px solid ${errorMsg ? '#ef4444' : 'var(--border)'}`,
+                        borderRadius: '12px', color: 'white', outline: 'none',
+                        transition: 'border-color 0.2s ease'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                      onBlur={(e) => e.target.style.borderColor = errorMsg ? '#ef4444' : 'var(--border)'}
+                    />
+                  ))}
+                </div>
+
+                <button 
+                  type="submit"
+                  className="btn-primary" 
+                  disabled={loading || otpValues.join('').length !== 6}
+                  style={{ width: '100%', justifyContent: 'center', padding: '16px', marginBottom: '16px', opacity: (loading || otpValues.join('').length !== 6) ? 0.7 : 1 }}
+                >
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : 'Verify Account'}
+                  {!loading && <CheckCircle2 size={20} />}
+                </button>
+
+                <div style={{ textAlign: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={resendVerification}
+                    disabled={loading || otpCountdown > 0}
+                    style={{ 
+                      background: 'none', border: 'none', color: otpCountdown > 0 ? 'var(--text-muted)' : 'var(--primary)', 
+                      cursor: (loading || otpCountdown > 0) ? 'not-allowed' : 'pointer', fontSize: '0.9rem', fontWeight: 500
+                    }}
+                  >
+                    {otpCountdown > 0 ? `Resend OTP in ${otpCountdown}s` : "Didn't receive code? Resend OTP"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleAccountSubmit}>
+                {errorMsg && (
+                  <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                    <AlertCircle size={18} />
+                    {errorMsg}
+                  </div>
+                )}
+                {successMsg && (
+                  <div style={{ padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                    <CheckCircle2 size={18} />
+                    {successMsg}
+                  </div>
+                )}
+
+                {!isLoginMode && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Full Name</label>
+                    <input 
+                      type="text" 
+                      required={!isLoginMode}
+                      value={accountData.name}
+                      onChange={(e) => setAccountData({...accountData, name: e.target.value})}
+                      placeholder="John Doe"
+                      disabled={loading}
+                      style={{ 
+                        width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
+                        borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem'
+                      }}
+                    />
+                  </div>
+                )}
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Full Name</label>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Email Address</label>
                   <input 
-                    type="text" 
-                    required={!isLoginMode}
-                    value={accountData.name}
-                    onChange={(e) => setAccountData({...accountData, name: e.target.value})}
-                    placeholder="John Doe"
+                    type="email" 
+                    required
+                    value={accountData.email}
+                    onChange={(e) => setAccountData({...accountData, email: e.target.value})}
+                    placeholder="john@example.com"
                     disabled={loading}
                     style={{ 
                       width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
@@ -247,78 +454,48 @@ const Onboarding = ({ setUser, user }) => {
                     }}
                   />
                 </div>
-              )}
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Email Address</label>
-                <input 
-                  type="email" 
-                  required
-                  value={accountData.email}
-                  onChange={(e) => setAccountData({...accountData, email: e.target.value})}
-                  placeholder="john@example.com"
+                <div style={{ marginBottom: '32px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Password</label>
+                  <input 
+                    type="password" 
+                    required
+                    value={accountData.password}
+                    onChange={(e) => setAccountData({...accountData, password: e.target.value})}
+                    placeholder="••••••••"
+                    disabled={loading}
+                    style={{ 
+                      width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
+                      borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem'
+                    }}
+                  />
+                </div>
+                
+                <button 
+                  type="submit"
+                  className="btn-primary" 
                   disabled={loading}
-                  style={{ 
-                    width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
-                    borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '32px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Password</label>
-                <input 
-                  type="password" 
-                  required
-                  value={accountData.password}
-                  onChange={(e) => setAccountData({...accountData, password: e.target.value})}
-                  placeholder="••••••••"
-                  disabled={loading}
-                  style={{ 
-                    width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
-                    borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem'
-                  }}
-                />
-              </div>
-              
-              <button 
-                type="submit"
-                className="btn-primary" 
-                disabled={loading}
-                style={{ width: '100%', justifyContent: 'center', padding: '16px', marginBottom: '16px', opacity: loading ? 0.7 : 1 }}
-              >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : (isLoginMode ? 'Log In' : 'Continue')}
-                {!loading && <ChevronRight size={20} />}
-              </button>
-
-              {isVerificationPending && (
-                <button
-                  type="button"
-                  onClick={resendVerification}
-                  disabled={loading}
-                  style={{ 
-                    width: '100%', background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-main)', 
-                    borderRadius: '8px', padding: '12px', marginBottom: '16px', cursor: loading ? 'not-allowed' : 'pointer',
-                    fontSize: '0.9rem', fontWeight: 500, display: 'flex', justifyContent: 'center', alignItems: 'center'
-                  }}
+                  style={{ width: '100%', justifyContent: 'center', padding: '16px', marginBottom: '16px', opacity: loading ? 0.7 : 1 }}
                 >
-                  Resend Verification Email
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : (isLoginMode ? 'Log In' : 'Create Account')}
+                  {!loading && <ChevronRight size={20} />}
                 </button>
-              )}
 
-              <div style={{ textAlign: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => { setIsLoginMode(!isLoginMode); setErrorMsg(''); setSuccessMsg(''); setIsVerificationPending(false); }}
-                  disabled={loading}
-                  style={{ 
-                    background: 'none', border: 'none', color: 'var(--primary)', 
-                    cursor: loading ? 'not-allowed' : 'pointer', textDecoration: 'underline', fontSize: '0.9rem',
-                    fontWeight: 500
-                  }}
-                >
-                  {isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Log In"}
-                </button>
-              </div>
-            </form>
+                <div style={{ textAlign: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setIsLoginMode(!isLoginMode); setErrorMsg(''); setSuccessMsg(''); }}
+                    disabled={loading}
+                    style={{ 
+                      background: 'none', border: 'none', color: 'var(--primary)', 
+                      cursor: loading ? 'not-allowed' : 'pointer', textDecoration: 'underline', fontSize: '0.9rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    {isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Log In"}
+                  </button>
+                </div>
+              </form>
+            )}
           </motion.div>
         ) : step === 1 ? (
           <motion.div 
