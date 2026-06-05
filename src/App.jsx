@@ -41,6 +41,9 @@ function App() {
         setUser(null);
       }
       setIsLoading(false);
+    }).catch((error) => {
+      console.error("Supabase session error:", error);
+      setIsLoading(false);
     });
 
     // Listen for auth changes
