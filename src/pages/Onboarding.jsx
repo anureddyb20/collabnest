@@ -72,6 +72,12 @@ const Onboarding = ({ setUser, user }) => {
     setSuccessMsg('');
     setLoading(true);
 
+    if (!supabase) {
+      setErrorMsg("Authentication is currently unavailable. Please check backend configuration.");
+      setLoading(false);
+      return;
+    }
+
     if (!isLoginMode) {
       const pwdError = validatePassword(accountData.password);
       if (pwdError) {
@@ -131,6 +137,13 @@ const Onboarding = ({ setUser, user }) => {
     setLoading(true);
     setErrorMsg('');
     setSuccessMsg('');
+
+    if (!supabase) {
+      setErrorMsg("Authentication is currently unavailable. Please check backend configuration.");
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: accountData.email,

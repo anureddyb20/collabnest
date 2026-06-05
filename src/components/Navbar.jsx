@@ -15,7 +15,9 @@ const Navbar = ({ user }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     userService.logout();
     window.location.href = '/';
   };

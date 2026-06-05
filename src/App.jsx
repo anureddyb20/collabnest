@@ -26,6 +26,12 @@ function App() {
   const { isMobileView } = useView();
 
   useEffect(() => {
+    if (!supabase) {
+      console.error("Supabase is not initialized. Please check your .env variables.");
+      setIsLoading(false);
+      return;
+    }
+
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -48,7 +54,7 @@ function App() {
       setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => subscription?.unsubscribe();
   }, []);
 
   if (isLoading) {
