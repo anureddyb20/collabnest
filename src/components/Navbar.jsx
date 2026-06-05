@@ -4,6 +4,7 @@ import { Rocket, LayoutGrid as Hub, Layout, User, Zap, LogOut, Hammer, Menu, X, 
 import { motion, AnimatePresence } from 'framer-motion';
 import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
+import { supabase } from '../supabase';
 
 const Navbar = ({ user }) => {
   const location = useLocation();
@@ -13,7 +14,8 @@ const Navbar = ({ user }) => {
   const { isMobileView, toggleViewMode, isManualOverride, resetToAuto } = useView();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     userService.logout();
     window.location.href = '/';
   };

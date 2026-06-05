@@ -21,27 +21,43 @@ const ProtectedRoute = ({ user, children }) => {
 };
 
 function App() {
-  const [user, setUser] = useState(userService.getCurrentUser());
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { isMobileView } = useView();
 
-  async function checkConnection() {
-    if (!supabase) return; // No env vars configured yet
-    const { data, error } = await supabase
-      .from('test')
-      .select('*');
-    console.log('SUPABASE DATA:', data);
-    console.log('SUPABASE ERROR:', error);
-  }
-
   useEffect(() => {
-    const session = userService.getCurrentUser();
-    if (session) {
-      setUser(session);
-    }
-    
-    // Supabase Connection Test
-    checkConnection();
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const localUser = userService.getCurrentUser() || userService.registerOrLogin({ email: session.user.email });
+        setUser(localUser);
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const localUser = userService.getCurrentUser() || userService.registerOrLogin({ email: session.user.email });
+        setUser(localUser);
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-main)', color: 'var(--primary)' }}>
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <Router>
