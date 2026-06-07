@@ -28,8 +28,7 @@ const Onboarding = ({ setUser, user }) => {
   const [otpValues, setOtpValues] = useState(['', '', '', '', '', '']);
   const [otpCountdown, setOtpCountdown] = useState(0);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [mockOtp, setMockOtp] = useState('');
-  const [mockExpiry, setMockExpiry] = useState(300);
+
   
   const [profileData, setProfileData] = useState({
     expertise: 'Frontend Developer',
@@ -126,26 +125,7 @@ const Onboarding = ({ setUser, user }) => {
     const isDev = import.meta.env.DEV;
     console.log(`[Auth] Attempting ${isLoginMode ? 'Login' : 'Signup'} for ${accountData.email}`);
 
-    const isMockAuth = import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true';
 
-    if (!supabase || isMockAuth) {
-      console.warn(`[Auth] Mock Authentication Mode activated.`);
-      setTimeout(() => {
-        const users = userService.getAllUsers ? userService.getAllUsers() : {};
-        const cleanEmail = accountData.email.toLowerCase().trim();
-        if (!isLoginMode && !users[cleanEmail]) {
-           userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
-        }
-        const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        setMockOtp(generatedOtp);
-        setSuccessMsg("Please enter the 6-digit OTP sent to your email.");
-        setShowOtp(true);
-        setOtpCountdown(60);
-        setMockExpiry(300);
-        setLoading(false);
-      }, 500);
-      return;
-    }
 
     try {
       if (!isLoginMode) {
@@ -303,24 +283,7 @@ const Onboarding = ({ setUser, user }) => {
     const type = isLoginMode ? 'email' : 'signup';
     console.log(`[Auth] Attempting to verify OTP for ${accountData.email} with type: ${type}`);
 
-    const isMockAuth = import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true';
 
-    if (!supabase || isMockAuth) {
-      console.warn(`[Auth] Mock verifying OTP.`);
-      setTimeout(() => {
-        if (token === mockOtp || (!supabase && !isMockAuth)) {
-          setSuccessMsg("Mock verification successful!");
-          setShowOtp(false);
-          const cleanEmail = accountData.email.toLowerCase().trim();
-          const finalUser = userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
-          setUser(finalUser);
-        } else {
-          setErrorMsg("Token has expired or is invalid");
-        }
-        setLoading(false);
-      }, 500);
-      return;
-    }
 
     try {
       const { data, error } = await supabase.auth.verifyOtp({
@@ -360,23 +323,7 @@ const Onboarding = ({ setUser, user }) => {
     const isDev = import.meta.env.DEV;
     console.log(`[Auth] Attempting to resend verification to ${accountData.email}`);
 
-    const isMockAuth = import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true';
 
-    if (!supabase || isMockAuth) {
-      console.warn(`[Auth] Mock resending OTP.`);
-      setTimeout(() => {
-        const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        setMockOtp(generatedOtp);
-        setSuccessMsg("A new OTP has been sent to your email.");
-        setOtpCountdown(60);
-        setMockExpiry(300);
-        setOtpValues(['', '', '', '', '', '']);
-        const firstInput = document.getElementById('otp-0');
-        if (firstInput) firstInput.focus();
-        setLoading(false);
-      }, 500);
-      return;
-    }
 
     try {
       let response;
@@ -452,20 +399,8 @@ const Onboarding = ({ setUser, user }) => {
     navigate('/hub');
   };
 
-  const isMockAuth = import.meta.env.VITE_ENABLE_MOCK_AUTH === 'true';
-
   return (
     <div className="container" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative' }}>
-      {isMockAuth && showOtp && (
-        <div style={{ position: 'fixed', bottom: 20, right: 20, background: 'var(--bg-card)', border: '2px solid var(--primary)', borderRadius: 12, padding: 20, zIndex: 9999, boxShadow: '0 10px 25px rgba(0,0,0,0.5)', maxWidth: 300 }}>
-          <h4 style={{ margin: '0 0 12px 0', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <AlertCircle size={18} /> Mock Auth Enabled
-          </h4>
-          <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Email:<br/><strong style={{color: 'var(--text-main)'}}>{accountData.email}</strong></p>
-          <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Generated OTP:<br/><strong style={{fontSize: '1.5rem', color: 'var(--text-main)', letterSpacing: 2}}>{mockOtp}</strong></p>
-          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Expires In: {Math.floor(mockExpiry / 60)}m {(mockExpiry % 60).toString().padStart(2, '0')}s</p>
-        </div>
-      )}
       <AnimatePresence mode="wait">
         {step === 0 ? (
           <motion.div 
