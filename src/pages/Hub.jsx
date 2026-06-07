@@ -4,8 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, TrendingUp, Users, Clock, Target, Plus, ChevronRight, Bookmark, Trash2, Briefcase } from 'lucide-react';
 import { problems } from '../data/problems';
 import { userService } from '../data/userService';
+import { useView } from '../context/ViewContext';
 
 const Hub = ({ user: initialUser }) => {
+  const { isMobileView } = useView();
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeSidebar, setActiveSidebar] = useState('Problems');
   const [displayProblems, setDisplayProblems] = useState(userService.getAllProblems());
