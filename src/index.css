@@ -369,15 +369,13 @@ h1, h2, h3, h4 {
     gap: 16px;
   }
 
-  h1 { font-size: 2rem !important; }
-  h2 { font-size: 1.5rem !important; }
-  h3 { font-size: 1.25rem !important; }
+  h1 { font-size: 1.35rem !important; }
+  h2 { font-size: 1.1rem !important; }
+  h3 { font-size: 1rem !important; }
 
   .btn-primary, 
   .btn-outline {
-    width: 100%;
-    justify-content: center;
-    min-height: 48px; /* Touch target size */
+    min-height: 44px; /* Touch target size */
   }
 
   /* Fix forms for touch */

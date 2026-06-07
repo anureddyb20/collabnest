@@ -699,9 +699,9 @@ const Workspace = () => {
   };
 
   return (
-    <div className="container" style={{ padding: '40px 0' }}>
+    <div className="container" style={{ padding: isMobileView ? '16px 0' : '40px 0' }}>
       {/* Project Header */}
-      <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
+      <div className="glass-panel" style={{ padding: isMobileView ? '16px' : '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'flex-end', marginBottom: '24px', gap: isMobileView ? '16px' : '0' }}>
           <div style={{ width: isMobileView ? '100%' : 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
@@ -711,7 +711,7 @@ const Workspace = () => {
                     value={selectedProblem.id}
                     onChange={(e) => navigate(`/workspace/${e.target.value}`)}
                     style={{
-                      fontSize: isMobileView ? '24px' : '32px',
+                      fontSize: isMobileView ? '15px' : '32px',
                       fontWeight: 800,
                       color: 'var(--text-main)',
                       background: 'rgba(255, 255, 255, 0.05)',
@@ -733,7 +733,7 @@ const Workspace = () => {
                   </select>
                 </div>
               ) : (
-                <h1 style={{ margin: 0, fontSize: isMobileView ? '24px' : '32px', fontWeight: 800 }}>{selectedProblem.title}</h1>
+                <h1 style={{ margin: 0, fontSize: isMobileView ? '15px' : '32px', fontWeight: 800 }}>{selectedProblem.title}</h1>
               )}
               <span className="badge badge-primary">{stages[stageIndex]}</span>
               {isOwner && (

@@ -219,9 +219,9 @@ const Hub = ({ user: initialUser }) => {
         {/* Main Content */}
         <div>
           {/* Header & Search */}
-          <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'flex-end', gap: isMobileView ? '20px' : '0', marginBottom: '40px' }}>
+          <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'flex-end', gap: isMobileView ? '12px' : '0', marginBottom: isMobileView ? '20px' : '40px' }}>
             <div>
-              <h1 style={{ fontSize: isMobileView ? '2rem' : '2.5rem', marginBottom: '8px' }}>
+              <h1 style={{ fontSize: isMobileView ? '1.3rem' : '2.5rem', marginBottom: '8px' }}>
                 {activeSidebar === 'Problems' ? 'Problem Hub' : 
                  activeSidebar === 'Teams' ? 'My Joined Teams' :
                  activeSidebar === 'Submissions' ? 'My Submissions' : 
@@ -351,7 +351,7 @@ const Hub = ({ user: initialUser }) => {
                   <div 
                     onClick={() => window.location.href = `/workspace/${p.id}`}
                     style={{ 
-                      padding: '24px', 
+                      padding: isMobileView ? '16px' : '24px', 
                       display: 'flex', 
                       flexDirection: 'column', 
                       height: '100%',
