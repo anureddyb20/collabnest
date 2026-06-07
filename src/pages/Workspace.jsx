@@ -176,11 +176,9 @@ const Workspace = () => {
   const [expandedMemberTasks, setExpandedMemberTasks] = useState(null);
   const [taskAssignee, setTaskAssignee] = useState('');
 
-  const isTeamMember = isOwner || team.some(m => {
-    const isSameName = m.name && currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase();
-    const isSameEmail = m.email && currentUser?.email && m.email.toLowerCase() === currentUser.email.toLowerCase();
-    return isSameName || isSameEmail;
-  });
+  const isTeamMember = isOwner || 
+    (currentUser?.joined && currentUser.joined.some(id => String(id) === String(selectedProblem.id))) ||
+    team.some(m => m.email && currentUser?.email && m.email.toLowerCase() === currentUser.email.toLowerCase());
 
   useEffect(() => {
     const refreshData = () => {
