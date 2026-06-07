@@ -701,7 +701,7 @@ const Workspace = () => {
   return (
     <div className="container" style={{ padding: '40px 0' }}>
       {/* Project Header */}
-      <div className="glass-panel" style={{ padding: '32px', marginBottom: '32px' }}>
+      <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'flex-end', marginBottom: '24px', gap: isMobileView ? '16px' : '0' }}>
           <div style={{ width: isMobileView ? '100%' : 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
@@ -711,8 +711,8 @@ const Workspace = () => {
                     value={selectedProblem.id}
                     onChange={(e) => navigate(`/workspace/${e.target.value}`)}
                     style={{
-                      fontSize: '1.8rem',
-                      fontWeight: 700,
+                      fontSize: isMobileView ? '24px' : '32px',
+                      fontWeight: 800,
                       color: 'var(--text-main)',
                       background: 'rgba(255, 255, 255, 0.05)',
                       border: '1px solid var(--border)',
@@ -720,7 +720,7 @@ const Workspace = () => {
                       padding: '6px 12px',
                       cursor: 'pointer',
                       outline: 'none',
-                      maxWidth: '450px',
+                      maxWidth: '100%',
                       textOverflow: 'ellipsis',
                       fontFamily: 'inherit'
                     }}
@@ -733,7 +733,7 @@ const Workspace = () => {
                   </select>
                 </div>
               ) : (
-                <h1 style={{ fontSize: isMobileView ? '2rem' : '2.5rem' }}>{selectedProblem.title}</h1>
+                <h1 style={{ margin: 0, fontSize: isMobileView ? '24px' : '32px', fontWeight: 800 }}>{selectedProblem.title}</h1>
               )}
               <span className="badge badge-primary">{stages[stageIndex]}</span>
               {isOwner && (
@@ -746,7 +746,7 @@ const Workspace = () => {
                 </button>
               )}
             </div>
-            <p style={{ color: 'var(--text-muted)' }}>{selectedProblem.desc}</p>
+            <p style={{ color: 'var(--text-secondary)', marginTop: 8, fontSize: '13px' }}>{selectedProblem.desc}</p>
           </div>
           <div style={{ textAlign: isMobileView ? 'left' : 'right', width: isMobileView ? '100%' : 'auto' }}>
             <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Project Progress</div>
@@ -901,7 +901,7 @@ const Workspace = () => {
                 <div 
                   key={status} 
                   className="glass-card" 
-                  style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', minHeight: '400px' }}
+                  style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', minHeight: '150px' }}
                   onDragOver={isOwner ? handleDragOver : undefined}
                   onDrop={isOwner ? (e) => handleDrop(e, status) : undefined}
                 >
@@ -1318,7 +1318,7 @@ const Workspace = () => {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="glass-panel"
-                    style={{ padding: '32px', maxWidth: '400px', width: '100%' }}
+                    style={{ padding: '24px', maxWidth: '400px', width: '100%' }}
                   >
                     <h3 style={{ marginBottom: '16px' }}>Upload Document</h3>
                     
@@ -1410,9 +1410,9 @@ const Workspace = () => {
               )}
             </div>
           ) : activeTab === 'graph' ? (
-            <div className="glass-panel" style={{ padding: '32px' }}>
+            <div className="glass-panel" style={{ padding: '24px' }}>
               <h3 style={{ marginBottom: '8px' }}>Project Progress Timeline</h3>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '0.9rem' }}>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '0.9rem' }}>
                 Hover over the data nodes on the progress curve to see details and team member attributions.
               </p>
 
@@ -1696,7 +1696,7 @@ const Workspace = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px', marginBottom: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px', marginBottom: '24px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Team Size Needed</label>
                   <input 
@@ -1843,7 +1843,7 @@ const Workspace = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="glass-panel"
-            style={{ padding: '32px', maxWidth: '450px', width: '100%', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+            style={{ padding: '24px', maxWidth: '450px', width: '100%', border: '1px solid rgba(239, 68, 68, 0.3)' }}
           >
             <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: '#f87171' }}>
               <AlertCircle size={20} /> Specify Rejection Reason

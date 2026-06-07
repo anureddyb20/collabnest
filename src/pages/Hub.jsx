@@ -300,7 +300,7 @@ const Hub = ({ user: initialUser }) => {
                   className="glass-card"
                   style={{ 
                     position: 'relative',
-                    minHeight: activeSidebar === 'MyProblems' ? 'auto' : '400px',
+                    minHeight: 'auto',
                     height: '100%',
                     overflow: 'hidden'
                   }}
@@ -359,27 +359,27 @@ const Hub = ({ user: initialUser }) => {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center', paddingRight: '100px' }}>
-                      <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>{p.domain}</span>
+                      <span className="badge badge-info" style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px' }}>{p.domain}</span>
                       <div style={{ display: 'flex', gap: '4px', color: 'var(--secondary)', alignItems: 'center' }}>
                         <TrendingUp size={14} />
-                        <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{p.impact} Impact</span>
+                        <span style={{ fontSize: '11px', fontWeight: 600 }}>{p.impact} Impact</span>
                       </div>
                     </div>
                     
-                    <h3 style={{ marginBottom: '12px', lineHeight: 1.3, minHeight: '3.4em' }}>{p.title}</h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px', flex: 1, lineHeight: 1.6 }}>{p.desc}</p>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, lineHeight: 1.4, marginBottom: '12px' }}>{p.title}</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '24px', flex: 1, lineHeight: 1.6 }}>{p.desc}</p>
                     
                     <div style={{ marginBottom: '24px' }}>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '10px', fontWeight: 500 }}>Required Skills</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '10px', fontWeight: 500 }}>Required Skills</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {p.skills.map(s => <span key={s} style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', border: '1px solid var(--border)' }}>{s}</span>)}
+                        {p.skills.map(s => <span key={s} style={{ background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', border: '1px solid var(--border)' }}>{s}</span>)}
                       </div>
                     </div>
         
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Users size={16} color="var(--text-muted)" />
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{p.team.current}/{p.team.total} builders</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{p.team.current}/{p.team.total} builders</span>
                       </div>
                       
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
