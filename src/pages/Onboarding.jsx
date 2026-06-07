@@ -84,91 +84,129 @@ const Onboarding = ({ setUser, user }) => {
     setSuccessMsg('');
     setLoading(true);
 
+    const isDev = import.meta.env.DEV;
+    console.log(`[Auth] Attempting ${isLoginMode ? 'Login' : 'Signup'} for ${accountData.email}`);
+
     if (!supabase) {
-      setErrorMsg("Authentication is currently unavailable. Please check backend configuration.");
-      setLoading(false);
+      console.warn(`[Auth] Supabase not available. Falling back to Mock Authentication Mode.`);
+      setTimeout(() => {
+        const users = userService.getAllUsers ? userService.getAllUsers() : {};
+        const cleanEmail = accountData.email.toLowerCase().trim();
+        if (!isLoginMode && !users[cleanEmail]) {
+           userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
+        }
+        setSuccessMsg("[MOCK MODE] Please enter ANY 6-digit OTP to proceed.");
+        setShowOtp(true);
+        setOtpCountdown(60);
+        setLoading(false);
+      }, 500);
       return;
     }
 
-    if (!isLoginMode) {
-      const pwdError = validatePassword(accountData.password);
-      if (pwdError) {
-        setErrorMsg(pwdError);
-        setLoading(false);
-        return;
-      }
+    try {
+      if (!isLoginMode) {
+        const pwdError = validatePassword(accountData.password);
+        if (pwdError) {
+          setErrorMsg(pwdError);
+          setLoading(false);
+          return;
+        }
 
-      // Signup flow
-      const { data, error } = await supabase.auth.signUp({
-        email: accountData.email,
-        password: accountData.password,
-        options: {
-          data: {
-            full_name: accountData.name
+        // Signup flow
+        console.log(`[Auth] Requesting Supabase signUp...`);
+        const { data, error } = await supabase.auth.signUp({
+          email: accountData.email,
+          password: accountData.password,
+          options: {
+            data: { full_name: accountData.name }
           }
-        }
-      });
+        });
+        
+        console.log(`[Auth] signUp response:`, { data, error });
 
-      if (error) {
-        setErrorMsg(error.message);
+        if (error) {
+          console.error(`[Auth] signUp error:`, error.message);
+          setErrorMsg(isDev ? `[Dev Error] ${error.message}` : error.message);
+        } else if (!data?.user) {
+          console.error(`[Auth] signUp silent failure: No user returned`);
+          setErrorMsg("Failed to create account. Please try again.");
+        } else {
+          // Success
+          console.log(`[Auth] signUp successful, transitioning to OTP view`);
+          const users = userService.getAllUsers ? userService.getAllUsers() : {};
+          const cleanEmail = accountData.email.toLowerCase().trim();
+          if (!users[cleanEmail]) {
+             userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
+             await supabase.auth.signOut();
+          }
+          if (isDev) {
+             console.log(`[Auth][Dev] Note: OTP is sent via email and not accessible to the client.`);
+          }
+          setSuccessMsg("Please enter the 6-digit OTP sent to your email.");
+          setShowOtp(true);
+          setOtpCountdown(60);
+        }
       } else {
-        // Save name to local storage profile preemptively
-        const users = userService.getAllUsers ? userService.getAllUsers() : {};
-        const cleanEmail = accountData.email.toLowerCase().trim();
-        if (!users[cleanEmail]) {
-           userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
-           // sign out immediately so they have to verify
-           await supabase.auth.signOut();
-        }
-        setSuccessMsg("Please enter the 6-digit OTP sent to your email.");
-        setShowOtp(true);
-        setOtpCountdown(60);
-      }
-    } else {
-      // Login flow
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: accountData.email,
-        password: accountData.password
-      });
+        // Login flow
+        console.log(`[Auth] Requesting Supabase signInWithPassword...`);
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: accountData.email,
+          password: accountData.password
+        });
+        
+        console.log(`[Auth] signInWithPassword response:`, { data, error });
 
-      if (error) {
-        if (error.message.toLowerCase().includes('email not confirmed')) {
-          const resendResponse = await supabase.auth.resend({
-            type: 'signup',
+        if (error) {
+          if (error.message.toLowerCase().includes('email not confirmed')) {
+            console.log(`[Auth] Email not confirmed, attempting resend...`);
+            const resendResponse = await supabase.auth.resend({
+              type: 'signup',
+              email: accountData.email,
+            });
+            console.log(`[Auth] resend response:`, resendResponse);
+            
+            if (resendResponse.error) {
+              console.error(`[Auth] resend error:`, resendResponse.error.message);
+              setErrorMsg(isDev ? `[Dev Error] ${resendResponse.error.message}` : resendResponse.error.message);
+              setLoading(false);
+              return;
+            }
+            setIsLoginMode(false); 
+            setShowOtp(true);
+            setOtpCountdown(60);
+            setSuccessMsg("Your email is not verified. A new OTP has been sent.");
+          } else {
+            console.error(`[Auth] signInWithPassword error:`, error.message);
+            setErrorMsg(isDev ? `[Dev Error] ${error.message}` : error.message);
+          }
+        } else {
+          // Password is correct. We now require OTP.
+          await supabase.auth.signOut();
+          
+          console.log(`[Auth] Requesting Supabase signInWithOtp...`);
+          const otpResponse = await supabase.auth.signInWithOtp({
             email: accountData.email,
           });
-          if (resendResponse.error) {
-            setErrorMsg(resendResponse.error.message);
-            setLoading(false);
-            return;
-          }
-          setIsLoginMode(false); // They need to verify signup OTP
-          setShowOtp(true);
-          setOtpCountdown(60);
-          setSuccessMsg("Your email is not verified. A new OTP has been sent.");
-        } else {
-          setErrorMsg(error.message);
-        }
-      } else {
-        // Password is correct. We now require OTP.
-        // Destroy the current session first.
-        await supabase.auth.signOut();
-        
-        // Trigger OTP generation
-        const otpResponse = await supabase.auth.signInWithOtp({
-          email: accountData.email,
-        });
+          
+          console.log(`[Auth] signInWithOtp response:`, otpResponse);
 
-        if (otpResponse.error) {
-          setErrorMsg(otpResponse.error.message);
-        } else {
-          setShowOtp(true);
-          setOtpCountdown(60);
-          setSuccessMsg("Please enter the 6-digit OTP sent to your email.");
+          if (otpResponse.error) {
+            console.error(`[Auth] signInWithOtp error:`, otpResponse.error.message);
+            setErrorMsg(isDev ? `[Dev Error] ${otpResponse.error.message}` : otpResponse.error.message);
+          } else {
+            console.log(`[Auth] signInWithOtp successful, transitioning to OTP view`);
+            setShowOtp(true);
+            setOtpCountdown(60);
+            setSuccessMsg("Please enter the 6-digit OTP sent to your email.");
+          }
         }
       }
+    } catch (err) {
+      console.error(`[Auth] Unexpected exception caught:`, err);
+      setErrorMsg("A network or configuration error occurred. Check console for details.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleOtpChange = (index, value) => {
@@ -217,21 +255,50 @@ const Onboarding = ({ setUser, user }) => {
     setErrorMsg('');
     setSuccessMsg('');
 
+    const isDev = import.meta.env.DEV;
     const type = isLoginMode ? 'email' : 'signup';
-    const { data, error } = await supabase.auth.verifyOtp({
-      email: accountData.email,
-      token,
-      type
-    });
+    console.log(`[Auth] Attempting to verify OTP for ${accountData.email} with type: ${type}`);
 
-    if (error) {
-      setErrorMsg(error.message);
-    } else {
-      setSuccessMsg("Verification successful!");
-      setShowOtp(false);
-      // App.jsx will automatically detect the new session and trigger the redirect via useEffect
+    if (!supabase) {
+      console.warn(`[Auth] Supabase not available. Mock verifying OTP.`);
+      setTimeout(() => {
+        setSuccessMsg("Mock verification successful!");
+        setShowOtp(false);
+        const cleanEmail = accountData.email.toLowerCase().trim();
+        const finalUser = userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
+        setUser(finalUser);
+        setLoading(false);
+      }, 500);
+      return;
     }
-    setLoading(false);
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: accountData.email,
+        token,
+        type
+      });
+      
+      console.log(`[Auth] verifyOtp response:`, { data, error });
+
+      if (error) {
+        console.error(`[Auth] verifyOtp error:`, error.message);
+        setErrorMsg(isDev ? `[Dev Error] ${error.message}` : error.message);
+      } else if (!data?.session) {
+        console.error(`[Auth] verifyOtp silent failure: No session established`);
+        setErrorMsg("Failed to verify OTP. Please try again.");
+      } else {
+        console.log(`[Auth] OTP Verification successful! Session established.`);
+        setSuccessMsg("Verification successful!");
+        setShowOtp(false);
+        // App.jsx will automatically detect the new session and trigger the redirect via useEffect
+      }
+    } catch (err) {
+      console.error(`[Auth] Unexpected exception during verifyOtp:`, err);
+      setErrorMsg("A network or configuration error occurred during verification.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resendVerification = async () => {
@@ -240,36 +307,56 @@ const Onboarding = ({ setUser, user }) => {
     setErrorMsg('');
     setSuccessMsg('');
 
+    const isDev = import.meta.env.DEV;
+    console.log(`[Auth] Attempting to resend verification to ${accountData.email}`);
+
     if (!supabase) {
-      setErrorMsg("Authentication is currently unavailable. Please check backend configuration.");
-      setLoading(false);
+      console.warn(`[Auth] Supabase not available. Mock resending OTP.`);
+      setTimeout(() => {
+        setSuccessMsg("[MOCK MODE] A new mock OTP has been sent.");
+        setOtpCountdown(60);
+        setOtpValues(['', '', '', '', '', '']);
+        const firstInput = document.getElementById('otp-0');
+        if (firstInput) firstInput.focus();
+        setLoading(false);
+      }, 500);
       return;
     }
 
-    let error;
-    if (!isLoginMode) {
-      const res = await supabase.auth.resend({
-        type: 'signup',
-        email: accountData.email,
-      });
-      error = res.error;
-    } else {
-      const res = await supabase.auth.signInWithOtp({
-        email: accountData.email,
-      });
-      error = res.error;
+    try {
+      let response;
+      if (!isLoginMode) {
+        console.log(`[Auth] Calling resend for signup...`);
+        response = await supabase.auth.resend({
+          type: 'signup',
+          email: accountData.email,
+        });
+      } else {
+        console.log(`[Auth] Calling signInWithOtp for login...`);
+        response = await supabase.auth.signInWithOtp({
+          email: accountData.email,
+        });
+      }
+      
+      console.log(`[Auth] Resend response:`, response);
+      
+      if (response.error) {
+        console.error(`[Auth] Resend error:`, response.error.message);
+        setErrorMsg(isDev ? `[Dev Error] ${response.error.message}` : response.error.message);
+      } else {
+        console.log(`[Auth] Resend successful`);
+        setSuccessMsg("A new OTP has been sent to your email.");
+        setOtpCountdown(60);
+        setOtpValues(['', '', '', '', '', '']);
+        const firstInput = document.getElementById('otp-0');
+        if (firstInput) firstInput.focus();
+      }
+    } catch (err) {
+      console.error(`[Auth] Unexpected exception during resend:`, err);
+      setErrorMsg("A network or configuration error occurred during resend.");
+    } finally {
+      setLoading(false);
     }
-    
-    if (error) {
-      setErrorMsg(error.message);
-    } else {
-      setSuccessMsg("A new OTP has been sent to your email.");
-      setOtpCountdown(60);
-      setOtpValues(['', '', '', '', '', '']);
-      const firstInput = document.getElementById('otp-0');
-      if (firstInput) firstInput.focus();
-    }
-    setLoading(false);
   };
 
   const handleRoleSelect = (selectedRole) => {
