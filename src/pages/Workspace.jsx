@@ -53,7 +53,7 @@ const Workspace = () => {
   // If the logged-in user has the 'owner' role (from 'I have an idea') and is the author of this specific project, they are the admin
   const isOwner = currentUser && (
     currentUser.role === 'owner' && 
-    (!selectedProblem.author || userService.areEmailsSimilar(selectedProblem.author, currentUser.email))
+    selectedProblem.author && userService.areEmailsSimilar(selectedProblem.author, currentUser.email)
   );
 
   const ownerName = selectedProblem.author 
@@ -852,13 +852,15 @@ const Workspace = () => {
             >
               <Layout size={16} /> Task Board
             </button>
-            <button 
-              onClick={() => setActiveTab('chat')}
-              className={activeTab === 'chat' ? 'btn-primary' : 'btn-outline'} 
-              style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-            >
-              <MessageSquare size={16} /> Team Chat
-            </button>
+            {isTeamMember && (
+              <button 
+                onClick={() => setActiveTab('chat')}
+                className={activeTab === 'chat' ? 'btn-primary' : 'btn-outline'} 
+                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+              >
+                <MessageSquare size={16} /> Team Chat
+              </button>
+            )}
             <button 
               onClick={() => setActiveTab('contributions')}
               className={activeTab === 'contributions' ? 'btn-primary' : 'btn-outline'} 
@@ -875,13 +877,15 @@ const Workspace = () => {
                 <Users size={16} /> Applicants {localApplicants.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem', marginLeft: '4px' }}>{localApplicants.length}</span>}
               </button>
             )}
-            <button 
-              onClick={() => setActiveTab('docs')}
-              className={activeTab === 'docs' ? 'btn-primary' : 'btn-outline'} 
-              style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-            >
-              <Files size={16} /> Docs & Files
-            </button>
+            {isTeamMember && (
+              <button 
+                onClick={() => setActiveTab('docs')}
+                className={activeTab === 'docs' ? 'btn-primary' : 'btn-outline'} 
+                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+              >
+                <Files size={16} /> Docs & Files
+              </button>
+            )}
             <button 
               onClick={() => setActiveTab('graph')}
               className={activeTab === 'graph' ? 'btn-primary' : 'btn-outline'} 
@@ -898,8 +902,8 @@ const Workspace = () => {
                   key={status} 
                   className="glass-card" 
                   style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', minHeight: '400px' }}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, status)}
+                  onDragOver={isOwner ? handleDragOver : undefined}
+                  onDrop={isOwner ? (e) => handleDrop(e, status) : undefined}
                 >
                   <h4 style={{ textTransform: 'capitalize', marginBottom: '16px', color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between' }}>
                     {status}
@@ -912,9 +916,9 @@ const Workspace = () => {
                       <div 
                         key={typeof task === 'string' ? task : task.id} 
                         className="glass-card" 
-                        style={{ padding: '12px', marginBottom: '12px', fontSize: '0.85rem', cursor: 'grab' }}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, task, status)}
+                        style={{ padding: '12px', marginBottom: '12px', fontSize: '0.85rem', cursor: isOwner ? 'grab' : 'default' }}
+                        draggable={isOwner}
+                        onDragStart={isOwner ? (e) => handleDragStart(e, task, status) : undefined}
                       >
                         <div style={{ marginBottom: '8px', wordBreak: 'break-word', fontWeight: 500 }}>{taskText}</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
@@ -924,6 +928,7 @@ const Workspace = () => {
                             </div>
                             <select
                               value={taskAssigneeName}
+                              disabled={!isOwner}
                               onChange={(e) => {
                                 const newAssignee = e.target.value;
                                 const updatedTasks = { ...tasks };
@@ -960,22 +965,24 @@ const Workspace = () => {
                             </select>
                           </div>
                           
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteTask(task, status);
-                            }} 
-                            style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '4px', color: '#f87171', cursor: 'pointer', padding: '4px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            title="Delete task"
-                          >
-                            Delete
-                          </button>
+                          {isOwner && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTask(task, status);
+                              }} 
+                              style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '4px', color: '#f87171', cursor: 'pointer', padding: '4px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              title="Delete task"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
                   })}
 
-                  {activeInputColumn === status ? (
+                  {isOwner && (activeInputColumn === status ? (
                     <div style={{ marginTop: '8px' }}>
                       <input 
                         type="text" 
@@ -1021,7 +1028,7 @@ const Workspace = () => {
                     >
                       + Add Task
                     </button>
-                  )}
+                  ))}
                 </div>
               ))}
             </div>
