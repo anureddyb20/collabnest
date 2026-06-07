@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { problems } from '../data/problems';
 import { userService } from '../data/userService';
+import { useView } from '../context/ViewContext';
 
 const getChatsWithFallback = (problemId) => {
   const newKey = `collabnest_chats_${problemId}`;
@@ -24,6 +25,7 @@ const getChatsWithFallback = (problemId) => {
 };
 
 const Workspace = () => {
+  const { isMobileView } = useView();
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('board');
