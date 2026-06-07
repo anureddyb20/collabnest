@@ -700,8 +700,8 @@ const Workspace = () => {
     <div className="container" style={{ padding: '40px 0' }}>
       {/* Project Header */}
       <div className="glass-panel" style={{ padding: '32px', marginBottom: '32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-          <div>
+        <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'flex-end', marginBottom: '24px', gap: isMobileView ? '16px' : '0' }}>
+          <div style={{ width: isMobileView ? '100%' : 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
               {myWorkspaces.length > 1 ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -731,7 +731,7 @@ const Workspace = () => {
                   </select>
                 </div>
               ) : (
-                <h1 style={{ fontSize: '2rem' }}>{selectedProblem.title}</h1>
+                <h1 style={{ fontSize: isMobileView ? '2rem' : '2.5rem' }}>{selectedProblem.title}</h1>
               )}
               <span className="badge badge-primary">{stages[stageIndex]}</span>
               {isOwner && (
@@ -746,9 +746,9 @@ const Workspace = () => {
             </div>
             <p style={{ color: 'var(--text-muted)' }}>{selectedProblem.desc}</p>
           </div>
-          <div style={{ textAlign: 'right' }}>
+          <div style={{ textAlign: isMobileView ? 'left' : 'right', width: isMobileView ? '100%' : 'auto' }}>
             <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Project Progress</div>
-            <div style={{ width: '200px', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+            <div style={{ width: isMobileView ? '100%' : '200px', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
@@ -894,7 +894,7 @@ const Workspace = () => {
           </div>
 
           {activeTab === 'board' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
               {['todo', 'doing', 'done'].map(status => (
                 <div 
                   key={status} 
@@ -1079,7 +1079,7 @@ const Workspace = () => {
             </div>
           ) : activeTab === 'contributions' ? (
             <div className="glass-panel" style={{ padding: '24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr', gap: '32px' }}>
                 <div>
                   <h3 style={{ marginBottom: '20px' }}>Team Output Tracking</h3>
                   <div style={{ display: 'grid', gap: '16px' }}>
@@ -1414,8 +1414,8 @@ const Workspace = () => {
                 Hover over the data nodes on the progress curve to see details and team member attributions.
               </p>
 
-              <div style={{ position: 'relative', width: '100%', minHeight: '380px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                
+              <div style={{ position: 'relative', width: '100%', minHeight: '380px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', overflowX: 'auto' }}>
+                <div style={{ width: isMobileView ? '600px' : '100%', minWidth: isMobileView ? '600px' : 'auto' }}>
                 {/* SVG Graph */}
                 <svg width="100%" height="240" viewBox="0 0 600 240" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
                   <defs>
@@ -1557,6 +1557,7 @@ const Workspace = () => {
                     Hover over any dot on the chart to reveal contributor details
                   </div>
                 )}
+                </div>
               </div>
             </div>
           ) : null}
