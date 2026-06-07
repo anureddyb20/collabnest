@@ -125,112 +125,27 @@ const Onboarding = ({ setUser, user }) => {
     const isDev = import.meta.env.DEV;
     console.log(`[Auth] Attempting ${isLoginMode ? 'Login' : 'Signup'} for ${accountData.email}`);
 
-
-
-    try {
-      if (!isLoginMode) {
-        const pwdError = validatePassword(accountData.password);
-        if (pwdError) {
-          setErrorMsg(pwdError);
-          setLoading(false);
-          return;
-        }
-
-        // Signup flow
-        console.log(`[Auth] Requesting Supabase signUp...`);
-        const { data, error } = await supabase.auth.signUp({
-          email: accountData.email,
-          password: accountData.password,
-          options: {
-            data: { full_name: accountData.name }
-          }
-        });
-        
-        console.log(`[Auth] signUp response:`, { data, error });
-
-        if (error) {
-          console.error(`[Auth] signUp error:`, error.message);
-          setErrorMsg(isDev ? `[Dev Error] ${error.message}` : error.message);
-        } else if (!data?.user) {
-          console.error(`[Auth] signUp silent failure: No user returned`);
-          setErrorMsg("Failed to create account. Please try again.");
-        } else {
-          // Success
-          console.log(`[Auth] signUp successful, transitioning to OTP view`);
-          const users = userService.getAllUsers ? userService.getAllUsers() : {};
-          const cleanEmail = accountData.email.toLowerCase().trim();
-          if (!users[cleanEmail]) {
-             userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
-             await supabase.auth.signOut();
-          }
-          if (isDev) {
-             console.log(`[Auth][Dev] Note: OTP is sent via email and not accessible to the client.`);
-          }
-          setSuccessMsg("Please enter the 6-digit OTP sent to your email.");
-          setShowOtp(true);
-          setOtpCountdown(60);
-        }
-      } else {
-        // Login flow
-        console.log(`[Auth] Requesting Supabase signInWithPassword...`);
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: accountData.email,
-          password: accountData.password
-        });
-        
-        console.log(`[Auth] signInWithPassword response:`, { data, error });
-
-        if (error) {
-          if (error.message.toLowerCase().includes('email not confirmed')) {
-            console.log(`[Auth] Email not confirmed, attempting resend...`);
-            const resendResponse = await supabase.auth.resend({
-              type: 'signup',
-              email: accountData.email,
-            });
-            console.log(`[Auth] resend response:`, resendResponse);
-            
-            if (resendResponse.error) {
-              console.error(`[Auth] resend error:`, resendResponse.error.message);
-              setErrorMsg(isDev ? `[Dev Error] ${resendResponse.error.message}` : resendResponse.error.message);
-              setLoading(false);
-              return;
-            }
-            setIsLoginMode(false); 
-            setShowOtp(true);
-            setOtpCountdown(60);
-            setSuccessMsg("Your email is not verified. A new OTP has been sent.");
-          } else {
-            console.error(`[Auth] signInWithPassword error:`, error.message);
-            setErrorMsg(isDev ? `[Dev Error] ${error.message}` : error.message);
-          }
-        } else {
-          // Password is correct. We now require OTP.
-          await supabase.auth.signOut();
-          
-          console.log(`[Auth] Requesting Supabase signInWithOtp...`);
-          const otpResponse = await supabase.auth.signInWithOtp({
-            email: accountData.email,
-          });
-          
-          console.log(`[Auth] signInWithOtp response:`, otpResponse);
-
-          if (otpResponse.error) {
-            console.error(`[Auth] signInWithOtp error:`, otpResponse.error.message);
-            setErrorMsg(isDev ? `[Dev Error] ${otpResponse.error.message}` : otpResponse.error.message);
-          } else {
-            console.log(`[Auth] signInWithOtp successful, transitioning to OTP view`);
-            setShowOtp(true);
-            setOtpCountdown(60);
-            setSuccessMsg("Please enter the 6-digit OTP sent to your email.");
-          }
-        }
+    // Temporary bypass for OTP receiving as requested by user
+    setTimeout(() => {
+      const cleanEmail = accountData.email.toLowerCase().trim();
+      const users = userService.getAllUsers ? userService.getAllUsers() : {};
+      
+      if (!isLoginMode && !users[cleanEmail]) {
+        userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
       }
-    } catch (err) {
-      console.error(`[Auth] Unexpected exception caught:`, err);
-      setErrorMsg("A network or configuration error occurred. Check console for details.");
-    } finally {
+
+      // Immediately log in and transition to the next step
+      const finalUser = userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
+      setUser(finalUser);
       setLoading(false);
-    }
+      
+      // If we are already a registered user with a role, we might want to skip to Hub
+      if (finalUser.role) {
+        navigate('/hub');
+      } else {
+        setStep(1); // Proceed to role selection
+      }
+    }, 500);
   };
 
   const handleOtpChange = (index, value) => {

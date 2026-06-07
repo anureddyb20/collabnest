@@ -38,7 +38,12 @@ function App() {
         const localUser = userService.getCurrentUser() || userService.registerOrLogin({ email: session.user.email });
         setUser(localUser);
       } else {
-        setUser(null);
+        const localUser = userService.getCurrentUser();
+        if (localUser) {
+          setUser(localUser);
+        } else {
+          setUser(null);
+        }
       }
       setIsLoading(false);
     }).catch((error) => {
@@ -52,7 +57,12 @@ function App() {
         const localUser = userService.getCurrentUser() || userService.registerOrLogin({ email: session.user.email });
         setUser(localUser);
       } else {
-        setUser(null);
+        const localUser = userService.getCurrentUser();
+        if (localUser) {
+          setUser(localUser);
+        } else {
+          setUser(null);
+        }
       }
       setIsLoading(false);
     });
