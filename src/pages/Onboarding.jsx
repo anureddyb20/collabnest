@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Lightbulb, Code, ChevronRight, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { Lightbulb, Code, ChevronRight, CheckCircle2, Loader2, AlertCircle, X } from 'lucide-react';
 import { userService } from '../data/userService';
 import { supabase } from '../supabase';
+
+const AVAILABLE_SKILLS = [
+  "JavaScript", "TypeScript", "Python", "Java", "C++", "C#", "Ruby", "Go", "Rust", "Swift", "Kotlin", "PHP",
+  "React", "Angular", "Vue.js", "Next.js", "Node.js", "Express", "Django", "Flask", "Spring Boot", "HTML/CSS", "TailwindCSS", "Sass",
+  "React Native", "Flutter", "iOS (Swift)", "Android (Kotlin)",
+  "Machine Learning", "Deep Learning", "TensorFlow", "PyTorch", "Data Analysis", "Pandas", "Scikit-Learn", "NLP", "Computer Vision",
+  "AWS", "Google Cloud", "Azure", "Docker", "Kubernetes", "CI/CD", "Terraform", "Linux",
+  "UI/UX Design", "Figma", "Adobe XD", "Sketch", "Prototyping",
+  "Cybersecurity", "Penetration Testing", "Cryptography", "Network Security",
+  "Product Management", "Agile/Scrum", "Marketing", "SEO", "Content Creation", "Electronics", "Embedded Systems", "IoT"
+];
 
 const Onboarding = ({ setUser, user }) => {
   const [step, setStep] = useState(0); // 0: Account, 1: Role, 2: Profile, 3: Idea
@@ -21,9 +32,48 @@ const Onboarding = ({ setUser, user }) => {
   const [profileData, setProfileData] = useState({
     expertise: 'Frontend Developer',
     experience: 'Entry Level (0-2 years)',
-    skills: '',
     commitment: 'Less than 5 hours / week'
   });
+  
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [skillInput, setSkillInput] = useState('');
+  const [skillSuggestions, setSkillSuggestions] = useState([]);
+  const [selectedMotivations, setSelectedMotivations] = useState([]);
+
+  // Handle skill input
+  const handleSkillInputChange = (e) => {
+    const value = e.target.value;
+    setSkillInput(value);
+    if (value.trim().length >= 1) {
+      const suggestions = AVAILABLE_SKILLS.filter(skill => 
+        skill.toLowerCase().includes(value.toLowerCase()) && !selectedSkills.includes(skill)
+      );
+      setSkillSuggestions(suggestions.slice(0, 5));
+    } else {
+      setSkillSuggestions([]);
+    }
+  };
+
+  const addSkill = (skill) => {
+    if (!selectedSkills.includes(skill)) {
+      setSelectedSkills([...selectedSkills, skill]);
+    }
+    setSkillInput('');
+    setSkillSuggestions([]);
+  };
+
+  const removeSkill = (skillToRemove) => {
+    setSelectedSkills(selectedSkills.filter(skill => skill !== skillToRemove));
+  };
+  
+  const handleMotivationToggle = (motivation) => {
+    if (selectedMotivations.includes(motivation)) {
+      setSelectedMotivations(selectedMotivations.filter(m => m !== motivation));
+    } else if (selectedMotivations.length < 2) {
+      setSelectedMotivations([...selectedMotivations, motivation]);
+    }
+  };
+
   const [newIdea, setNewIdea] = useState({ 
     title: '', domain: 'Sustainability', difficulty: 'Medium', desc: '', skills: [],
     expectedOutcome: '', projectGoals: '', teamSize: 5
@@ -367,13 +417,12 @@ const Onboarding = ({ setUser, user }) => {
   };
 
   const handleFinish = () => {
-    const finalSkills = profileData.skills
-      ? profileData.skills.split(',').map(s => s.trim()).filter(Boolean)
-      : ['Developer'];
+    const finalSkills = selectedSkills.length > 0 ? selectedSkills : ['Developer'];
     const finalUser = userService.registerOrLogin({ 
       ...accountData, 
       role,
       skills: finalSkills,
+      motivations: selectedMotivations,
       expertise: profileData.expertise,
       experience: profileData.experience,
       commitment: profileData.commitment
@@ -664,18 +713,86 @@ const Onboarding = ({ setUser, user }) => {
               </div>
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Key Skills (Comma separated)</label>
+            <div style={{ marginBottom: '24px', position: 'relative' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Key Skills</label>
+              
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: selectedSkills.length > 0 ? '12px' : '0' }}>
+                <AnimatePresence>
+                  {selectedSkills.map(skill => (
+                    <motion.div 
+                      key={skill}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      style={{ 
+                        display: 'flex', alignItems: 'center', gap: '6px', 
+                        background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary)',
+                        padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem',
+                        border: '1px solid rgba(99, 102, 241, 0.3)'
+                      }}
+                    >
+                      {skill}
+                      <button 
+                        type="button" 
+                        onClick={() => removeSkill(skill)}
+                        style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0' }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+
               <input 
                 type="text" 
-                value={profileData.skills}
-                onChange={(e) => setProfileData({ ...profileData, skills: e.target.value })}
-                placeholder="e.g. React, Node.js, Figma, Python..."
+                value={skillInput}
+                onChange={handleSkillInputChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && skillSuggestions.length > 0) {
+                    e.preventDefault();
+                    addSkill(skillSuggestions[0]);
+                  }
+                }}
+                placeholder={selectedSkills.length === 0 ? "e.g. React, Node.js, Figma, Python..." : "Type to add more skills..."}
                 style={{ 
                   width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
                   borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem'
                 }}
               />
+              
+              <AnimatePresence>
+                {skillSuggestions.length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    style={{ 
+                      position: 'absolute', top: '100%', left: 0, right: 0, 
+                      background: '#1a1a2e', border: '1px solid var(--border)', 
+                      borderRadius: '12px', marginTop: '8px', zIndex: 10,
+                      overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+                    }}
+                  >
+                    {skillSuggestions.map((suggestion, idx) => (
+                      <div 
+                        key={suggestion}
+                        onClick={() => addSkill(suggestion)}
+                        style={{ 
+                          padding: '12px 16px', cursor: 'pointer', 
+                          borderBottom: idx < skillSuggestions.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                          background: 'transparent', transition: 'background 0.2s',
+                          color: 'white'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        {suggestion}
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div style={{ marginBottom: '24px' }}>
@@ -691,7 +808,17 @@ const Onboarding = ({ setUser, user }) => {
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>What motivates you most?</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>What motivates you most?</label>
+                <span style={{ fontSize: '0.8rem', color: selectedMotivations.length >= 2 ? 'var(--primary)' : 'var(--text-muted)' }}>
+                  {selectedMotivations.length}/2 selected
+                </span>
+              </div>
+              {selectedMotivations.length >= 2 && (
+                <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginBottom: '12px' }}>
+                  You can select up to 2 motivations.
+                </div>
+              )}
               <div className="onboarding-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 {[
                   "Building a Portfolio",
@@ -700,17 +827,38 @@ const Onboarding = ({ setUser, user }) => {
                   "Learning New Tech",
                   "Side Project Growth",
                   "Networking"
-                ].map(m => (
-                  <label key={m} style={{ 
-                    display: 'flex', alignItems: 'center', gap: '8px', 
-                    background: 'rgba(255,255,255,0.03)', padding: '10px', 
-                    borderRadius: '8px', border: '1px solid var(--border)',
-                    cursor: 'pointer', fontSize: '0.85rem'
-                  }}>
-                    <input type="checkbox" style={{ accentColor: 'var(--primary)' }} />
-                    {m}
-                  </label>
-                ))}
+                ].map(m => {
+                  const isSelected = selectedMotivations.includes(m);
+                  const isDisabled = !isSelected && selectedMotivations.length >= 2;
+                  
+                  return (
+                    <motion.label 
+                      key={m} 
+                      whileHover={isDisabled ? {} : { scale: 1.02 }}
+                      whileTap={isDisabled ? {} : { scale: 0.98 }}
+                      style={{ 
+                        display: 'flex', alignItems: 'center', gap: '8px', 
+                        background: isSelected ? 'rgba(99, 102, 241, 0.1)' : 'rgba(255,255,255,0.03)', 
+                        padding: '10px', 
+                        borderRadius: '8px', 
+                        border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
+                        cursor: isDisabled ? 'not-allowed' : 'pointer', 
+                        fontSize: '0.85rem',
+                        opacity: isDisabled ? 0.5 : 1,
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={isSelected}
+                        onChange={() => handleMotivationToggle(m)}
+                        disabled={isDisabled}
+                        style={{ accentColor: 'var(--primary)', cursor: isDisabled ? 'not-allowed' : 'pointer' }} 
+                      />
+                      <span style={{ color: isSelected ? 'white' : 'var(--text-muted)' }}>{m}</span>
+                    </motion.label>
+                  );
+                })}
               </div>
             </div>
 

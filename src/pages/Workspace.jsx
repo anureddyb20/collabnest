@@ -176,6 +176,12 @@ const Workspace = () => {
   const [expandedMemberTasks, setExpandedMemberTasks] = useState(null);
   const [taskAssignee, setTaskAssignee] = useState('');
 
+  const isTeamMember = isOwner || team.some(m => {
+    const isSameName = m.name && currentUser?.name && m.name.toLowerCase() === currentUser.name.toLowerCase();
+    const isSameEmail = m.email && currentUser?.email && m.email.toLowerCase() === currentUser.email.toLowerCase();
+    return isSameName || isSameEmail;
+  });
+
   useEffect(() => {
     const refreshData = () => {
       // Reload problem from database to get latest accepted/rejected members
@@ -1020,7 +1026,14 @@ const Workspace = () => {
               ))}
             </div>
           ) : activeTab === 'chat' ? (
-            <div className="glass-panel" style={{ height: '500px', display: 'flex', flexDirection: 'column' }}>
+            <div className="glass-panel" style={{ height: '500px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+              {!isTeamMember && (
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,10,20,0.8)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '12px' }}>
+                  <MessageSquare size={48} color="var(--text-muted)" style={{ marginBottom: '16px' }} />
+                  <h3 style={{ marginBottom: '8px' }}>Team Members Only</h3>
+                  <p style={{ color: 'var(--text-muted)' }}>You must join the team to view and participate in the team chat.</p>
+                </div>
+              )}
               <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {chatMessages.map((msg, i) => {
                   const isMe = msg.sender === (currentUser?.name || "You") || msg.sender === "You";
@@ -1226,7 +1239,14 @@ const Workspace = () => {
               </div>
             </div>
           ) : activeTab === 'docs' ? (
-            <div className="glass-panel" style={{ padding: '24px' }}>
+            <div className="glass-panel" style={{ padding: '24px', position: 'relative', minHeight: '400px' }}>
+              {!isTeamMember && (
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,10,20,0.8)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '12px' }}>
+                  <Files size={48} color="var(--text-muted)" style={{ marginBottom: '16px' }} />
+                  <h3 style={{ marginBottom: '8px' }}>Team Members Only</h3>
+                  <p style={{ color: 'var(--text-muted)' }}>You must join the team to access project documents and assets.</p>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <h3 style={{ margin: 0 }}>Project Docs & Assets</h3>
                 <button 
