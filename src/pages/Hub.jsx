@@ -43,26 +43,28 @@ const Hub = ({ user: initialUser }) => {
     window.addEventListener('changeHubTab', handleTabChange);
     return () => window.removeEventListener('changeHubTab', handleTabChange);
   }, []);
+
+  useEffect(() => {
     let list = [];
     const all = userService.getAllProblems();
 
     if (activeSidebar === 'Problems') {
       list = [...all];
-      if (user && user.email) {
+      if (userData && userData.email) {
         list.sort((a, b) => {
-          const aIsMine = isProblemMine(a, user);
-          const bIsMine = isProblemMine(b, user);
+          const aIsMine = isProblemMine(a, userData);
+          const bIsMine = isProblemMine(b, userData);
           if (aIsMine && !bIsMine) return -1;
           if (!aIsMine && bIsMine) return 1;
           return Number(b.id) - Number(a.id); // Sort in order of posting (newest first)
         });
       }
     } else if (activeSidebar === 'Teams') {
-      list = userService.getJoinedProblems();
+      list = all.filter(p => p.teamMembers?.some(m => userService.areEmailsSimilar(m.email, userData?.email)) || userData.joined?.some(id => String(id) === String(p.id)));
     } else if (activeSidebar === 'Submissions') {
-      list = userService.getSubmissions();
+      list = all.filter(p => userData.submissions?.some(id => String(id) === String(p.id)));
     } else if (activeSidebar === 'MyProblems') {
-      list = all.filter(p => isProblemMine(p, user));
+      list = all.filter(p => p.author && userData.email && userService.areEmailsSimilar(p.author, userData.email));
       list.sort((a, b) => Number(b.id) - Number(a.id)); // Sort in order of posting (newest first)
     } else if (activeSidebar === 'Saved') {
       list = userService.getSavedProblems();
@@ -74,7 +76,7 @@ const Hub = ({ user: initialUser }) => {
     }
 
     setDisplayProblems([...list]); // Force new array reference
-  }, [activeSidebar, activeFilter, refreshKey, initialUser]);
+  }, [activeSidebar, activeFilter, refreshKey, initialUser, userData]);
 
   const handleJoin = (id) => {
     const session = userService.getCurrentUser();
