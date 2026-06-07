@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Rocket, LayoutGrid as Hub, Layout, User, Zap, LogOut, Hammer, Menu, X, Monitor, Smartphone } from 'lucide-react';
+import { Rocket, LayoutGrid as Hub, Layout, User, Zap, LogOut, Hammer, Menu, X, Monitor, Smartphone, Filter, Users, Target, Briefcase, Bookmark } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
@@ -178,9 +178,32 @@ const Navbar = ({ user }) => {
               <div style={{ padding: '1rem 2rem', borderTop: '1px solid var(--border)', marginTop: '0.5rem' }}>
                 {currentUser ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                      Hi, {currentUser.name}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                       <div style={{ 
+                          width: '50px', height: '50px', borderRadius: '50%', 
+                          background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '1.5rem', fontWeight: 700, color: 'white'
+                        }}>
+                          {currentUser.name?.charAt(0) || 'U'}
+                        </div>
+                        <div>
+                          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{currentUser.name}</h3>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                            Reputation: {(currentUser.joined?.length || 0) * 10} XP
+                          </div>
+                        </div>
+                    </div>
+
+                    {location.pathname === '/hub' && (
+                       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                          <button onClick={() => { setIsMenuOpen(false); window.dispatchEvent(new CustomEvent('changeHubTab', { detail: 'Problems' })) }} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', color: 'var(--text-main)', padding: 0, fontSize: '1rem', cursor: 'pointer' }}><Filter size={18} /> Browse Hub</button>
+                          <button onClick={() => { setIsMenuOpen(false); window.dispatchEvent(new CustomEvent('changeHubTab', { detail: 'Teams' })) }} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', color: 'var(--text-main)', padding: 0, fontSize: '1rem', cursor: 'pointer' }}><Users size={18} /> My Teams</button>
+                          <button onClick={() => { setIsMenuOpen(false); window.dispatchEvent(new CustomEvent('changeHubTab', { detail: 'Submissions' })) }} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', color: 'var(--text-main)', padding: 0, fontSize: '1rem', cursor: 'pointer' }}><Target size={18} /> Submissions</button>
+                          <button onClick={() => { setIsMenuOpen(false); window.dispatchEvent(new CustomEvent('changeHubTab', { detail: 'MyProblems' })) }} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', color: 'var(--text-main)', padding: 0, fontSize: '1rem', cursor: 'pointer' }}><Briefcase size={18} /> My Posted Statements</button>
+                          <button onClick={() => { setIsMenuOpen(false); window.dispatchEvent(new CustomEvent('changeHubTab', { detail: 'Saved' })) }} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', border: 'none', color: 'var(--text-main)', padding: 0, fontSize: '1rem', cursor: 'pointer' }}><Bookmark size={18} /> Saved Problems</button>
+                       </div>
+                    )}
                     <button 
                       onClick={() => { setIsMenuOpen(false); handleLogout(); }}
                       className="btn-outline" 

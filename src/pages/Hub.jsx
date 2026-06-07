@@ -30,6 +30,19 @@ const Hub = ({ user: initialUser }) => {
     const user = userService.getCurrentUser() || { joined: [], saved: [], submissions: [], reputation: 0 };
     setUserData(user);
     
+    // Read from URL
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['Problems', 'Teams', 'Submissions', 'MyProblems', 'Saved'].includes(tabParam)) {
+      setActiveSidebar(tabParam);
+    }
+
+    const handleTabChange = (e) => {
+      if (e.detail) setActiveSidebar(e.detail);
+    };
+    window.addEventListener('changeHubTab', handleTabChange);
+    return () => window.removeEventListener('changeHubTab', handleTabChange);
+  }, []);
     let list = [];
     const all = userService.getAllProblems();
 
@@ -123,6 +136,7 @@ const Hub = ({ user: initialUser }) => {
     <div className="container" style={{ padding: '40px 0' }}>
       <div className="workspace-layout" style={{ display: 'flex', gap: '40px' }}>
         {/* Left Sidebar - Profile */}
+        {!isMobileView && (
         <aside className="workspace-sidebar" style={{ width: '280px', flexShrink: 0 }}>
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
@@ -196,13 +210,14 @@ const Hub = ({ user: initialUser }) => {
             </div>
           </motion.div>
         </aside>
+        )}
 
         {/* Main Content */}
         <div>
           {/* Header & Search */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px' }}>
+          <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'flex-end', gap: isMobileView ? '20px' : '0', marginBottom: '40px' }}>
             <div>
-              <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>
+              <h1 style={{ fontSize: isMobileView ? '2rem' : '2.5rem', marginBottom: '8px' }}>
                 {activeSidebar === 'Problems' ? 'Problem Hub' : 
                  activeSidebar === 'Teams' ? 'My Joined Teams' :
                  activeSidebar === 'Submissions' ? 'My Submissions' : 
@@ -215,22 +230,23 @@ const Hub = ({ user: initialUser }) => {
                  activeSidebar === 'MyProblems' ? 'All the problem statements you have posted.' : 'Your personal collection of interesting problems.'}
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <div style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', width: isMobileView ? '100%' : 'auto', flexDirection: isMobileView ? 'column' : 'row' }}>
+              <div style={{ position: 'relative', width: isMobileView ? '100%' : 'auto' }}>
                 <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} size={18} />
                 <input 
                   type="text" 
                   placeholder="Search..."
                   style={{ 
                     background: 'var(--bg-surface)', border: '1px solid var(--border)',
-                    borderRadius: '12px', padding: '12px 12px 12px 40px', color: 'white', width: '260px',
-                    height: '46px'
+                    borderRadius: '12px', padding: '12px 12px 12px 40px', color: 'white', 
+                    width: isMobileView ? '100%' : '260px',
+                    height: '46px', boxSizing: 'border-box'
                   }}
                 />
               </div>
               <button 
                 className="btn-primary" 
-                style={{ height: '46px' }}
+                style={{ height: '46px', width: isMobileView ? '100%' : 'auto', justifyContent: 'center' }}
                 onClick={() => setShowPostModal(true)}
               >
                 <Plus size={18} />
@@ -241,19 +257,17 @@ const Hub = ({ user: initialUser }) => {
 
           {/* Filters - Only show for Problems tab */}
           {activeSidebar === 'Problems' && (
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', overflowX: 'auto', paddingBottom: '8px' }}>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
               {['All', 'Sustainability', 'FinTech', 'AI/ML', 'HealthTech', 'Education'].map(filter => (
                 <button 
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
                   style={{ 
                     padding: '8px 24px', borderRadius: '12px', border: '1px solid var(--border)',
-                    borderBottom: '3px solid var(--primary)',
-                    borderRight: '3px solid var(--primary)',
-                    background: activeFilter === filter ? 'var(--primary)' : 'var(--bg-card)',
-                    color: activeFilter === filter ? '#FFFFFF' : 'var(--text-main)', 
-                    cursor: 'pointer', transition: 'var(--transition)',
-                    whiteSpace: 'nowrap', fontWeight: 600
+                    background: activeFilter === filter ? 'var(--primary)' : 'rgba(255,255,255,0.02)',
+                    color: activeFilter === filter ? 'white' : 'var(--text-muted)',
+                    whiteSpace: 'nowrap', flexShrink: 0,
+                    transition: 'all 0.2s', fontWeight: 600
                   }}
                 >
                   {filter}
