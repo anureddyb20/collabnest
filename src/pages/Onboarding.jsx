@@ -31,29 +31,13 @@ const Onboarding = ({ setUser, user }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // If there is already a logged-in user with a role, redirect them
+    // Check for a logged-in user
     const session = userService.getCurrentUser();
-    // We only redirect if NOT in OTP mode to prevent premature redirects
-    if (session && !showOtp) {
-      if (session.role === 'builder') {
-        navigate('/hub');
-      } else if (session.role === 'owner') {
-        const allProblems = userService.getAllProblems();
-        const myProblems = allProblems.filter(
-          p => p.author && userService.areEmailsSimilar(p.author, session.email)
-        );
-        if (myProblems.length > 0) {
-          myProblems.sort((a, b) => Number(b.id) - Number(a.id));
-          navigate(`/workspace/${myProblems[0].id}`);
-        } else {
-          navigate('/hub');
-        }
-      } else if (step === 0) {
-        // Logged in but no role assigned yet
-        setStep(1);
-      }
+    // Always transition to Role Selection (Step 1) after login instead of skipping it
+    if (session && !showOtp && step === 0) {
+      setStep(1);
     }
-  }, [navigate, user, step, showOtp]);
+  }, [step, showOtp]);
 
   useEffect(() => {
     let timer;
