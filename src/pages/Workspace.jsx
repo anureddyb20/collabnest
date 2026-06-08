@@ -840,7 +840,7 @@ const Workspace = () => {
                   onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: getAssigneeColor(m.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 600, color: 'white' }}>{m.name[0].toUpperCase()}</div>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: getAssigneeColor(m.name), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 600, color: 'white' }}>{(m.name && m.name[0]) ? m.name[0].toUpperCase() : 'U'}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '0.85rem', fontWeight: 600, textDecoration: 'underline' }}>{m.name}</div>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>{m.role}</div>
@@ -956,7 +956,7 @@ const Workspace = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: getAssigneeColor(taskAssigneeName), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 600 }} title={`Assigned to ${taskAssigneeName}`}>
-                              {taskAssigneeName[0].toUpperCase()}
+                              {(taskAssigneeName && taskAssigneeName[0]) ? taskAssigneeName[0].toUpperCase() : 'U'}
                             </div>
                             <select
                               value={taskAssigneeName}
@@ -1136,7 +1136,7 @@ const Workspace = () => {
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: 'white', fontWeight: 600 }}>{m.name[0].toUpperCase()}</div>
+                              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: 'white', fontWeight: 600 }}>{(m.name && m.name[0]) ? m.name[0].toUpperCase() : 'U'}</div>
                               <div>
                                 <h4 style={{ fontSize: '1rem', margin: '0 0 4px 0' }}>{m.name} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({m.role})</span></h4>
                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Completed Tasks: {completedCount}</div>
@@ -1570,7 +1570,7 @@ const Workspace = () => {
                     </div>
                     <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700 }}>
-                        {hoveredGraphPoint.assignee[0].toUpperCase()}
+                        {(hoveredGraphPoint.assignee && hoveredGraphPoint.assignee[0]) ? hoveredGraphPoint.assignee[0].toUpperCase() : 'U'}
                       </div>
                       <div style={{ fontSize: '0.85rem', color: 'white' }}>
                         Worked by: <strong style={{ color: 'var(--primary-light)' }}>{hoveredGraphPoint.assignee}</strong>
@@ -1793,7 +1793,7 @@ const Workspace = () => {
                 fontSize: '2rem', fontWeight: 700, color: 'white',
                 boxShadow: '0 0 15px var(--primary-glow)'
               }}>
-                {selectedMemberProfile.name[0].toUpperCase()}
+                {(selectedMemberProfile.name && selectedMemberProfile.name[0]) ? selectedMemberProfile.name[0].toUpperCase() : 'U'}
               </div>
               <div>
                 <h2 style={{ margin: '0 0 4px 0', fontSize: '1.6rem' }}>{selectedMemberProfile.name}</h2>
