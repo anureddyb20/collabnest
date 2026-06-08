@@ -422,6 +422,22 @@ h1, h2, h3, h4 {
     height: auto !important;
   }
 
+  /* Restore Landing Page Hero sizes on mobile */
+  .landing-page h1 {
+    font-size: 2.5rem !important;
+    line-height: 1.2 !important;
+  }
+  .landing-page .btn-primary,
+  .landing-page .btn-outline {
+    min-height: 48px !important;
+    padding: 14px 28px !important;
+    font-size: 1.05rem !important;
+    border-radius: 12px !important;
+  }
+  .landing-page p {
+    font-size: 1.1rem !important;
+  }
+
   /* Ensure no horizontal scrolling */
   body, html, #root, .app-container {
     overflow-x: hidden;
