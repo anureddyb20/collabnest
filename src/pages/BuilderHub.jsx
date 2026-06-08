@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userService } from '../data/userService';
+import { useView } from '../context/ViewContext';
 
 const DOMAINS = ['All', 'AI/ML', 'FinTech', 'HealthTech', 'Sustainability', 'Education'];
 const DIFFICULTIES = ['All', 'Intermediate', 'Advanced', 'Expert'];
@@ -10,6 +11,7 @@ const SKILL_OPTIONS = ['React', 'Python', 'Node.js', 'Machine Learning', 'UX Des
 
 export default function BuilderHub({ user }) {
   const navigate = useNavigate();
+  const { isMobileView } = useView();
   const [tab, setTab] = useState('discover'); // discover | profile | portfolio
   const [domainFilter, setDomainFilter] = useState('All');
   const [diffFilter, setDiffFilter] = useState('All');
@@ -155,13 +157,15 @@ export default function BuilderHub({ user }) {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
+    <div className="container" style={{ padding: isMobileView ? '16px 0' : '40px 0' }}>
       {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 800, background: 'linear-gradient(135deg, var(--primary), var(--secondary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
-          I Want to Build
+      <div style={{ marginBottom: '32px', padding: isMobileView ? '0 16px' : '0' }}>
+        <h1 style={{ fontSize: isMobileView ? '24px' : '32px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 8px 0' }}>
+          Problems
         </h1>
-        <p style={{ color: 'var(--text-secondary)', marginTop: 8, fontSize: 15 }}>Discover problems, join teams, and build real-world projects that matter.</p>
+        <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: isMobileView ? '14px' : '15px' }}>
+          Explore problem statements and discover projects.
+        </p>
 
         {/* Logged-in user pill */}
         {currentUser && (

@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Award, Shield, Star, Share2, Download, Briefcase, Zap, ExternalLink } from 'lucide-react';
 import { userService } from '../data/userService';
 import { Link } from 'react-router-dom';
+import { useView } from '../context/ViewContext';
 
 const Profile = () => {
+  const { isMobileView } = useView();
   const currentUser = userService.getCurrentUser();
   const joinedProblems = userService.getJoinedProblems();
   const [toast, setToast] = useState(null);
@@ -105,8 +107,16 @@ Generated via CollabNest Hub on ${new Date().toLocaleDateString()}
     .toUpperCase();
 
   return (
-    <div className="container" style={{ padding: '40px 0' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '40px' }}>
+    <div className="container" style={{ padding: isMobileView ? '16px 0' : '40px 0' }}>
+      <div style={{ marginBottom: '32px', padding: isMobileView ? '0 16px' : '0' }}>
+        <h1 style={{ fontSize: isMobileView ? '24px' : '32px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 8px 0' }}>
+          Profile
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: isMobileView ? '14px' : '15px' }}>
+          Manage your profile, skills and portfolio.
+        </p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '350px 1fr', gap: isMobileView ? '24px' : '40px' }}>
         {/* Profile Info Sidebar */}
         <aside>
           <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', marginBottom: '24px' }}>

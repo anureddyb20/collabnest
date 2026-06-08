@@ -709,6 +709,15 @@ const Workspace = () => {
 
   return (
     <div className="container" style={{ padding: isMobileView ? '16px 0' : '40px 0' }}>
+      <div style={{ marginBottom: '32px', padding: isMobileView ? '0 16px' : '0' }}>
+        <h1 style={{ fontSize: isMobileView ? '24px' : '32px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 8px 0' }}>
+          Workspace
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: isMobileView ? '14px' : '15px' }}>
+          Collaborate with your team, manage tasks and track project progress.
+        </p>
+      </div>
+
       {/* Project Header */}
       <div className="glass-panel" style={{ padding: isMobileView ? '16px' : '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'flex-end', marginBottom: '24px', gap: isMobileView ? '16px' : '0' }}>

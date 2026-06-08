@@ -137,7 +137,15 @@ const Hub = ({ user: initialUser }) => {
   };
 
   return (
-    <div className="container" style={{ padding: '40px 0' }}>
+    <div className="container" style={{ padding: isMobileView ? '16px 0' : '40px 0' }}>
+      <div style={{ marginBottom: '32px', padding: isMobileView ? '0 16px' : '0' }}>
+        <h1 style={{ fontSize: isMobileView ? '24px' : '32px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 8px 0' }}>
+          Hub
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: isMobileView ? '14px' : '15px' }}>
+          Connect with innovators, builders and collaborators.
+        </p>
+      </div>
       <div className="workspace-layout" style={{ display: 'flex', gap: '40px' }}>
         {/* Left Sidebar - Profile */}
         {!isMobileView && (
