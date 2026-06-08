@@ -288,6 +288,13 @@ const Workspace = () => {
     };
   }, [id, selectedProblem.id, selectedProblem.title, JSON.stringify(selectedProblem.skills), selectedProblem.domain, currentUser?.email]);
 
+  // Security Check: Redirect restricted users if they somehow access protected tabs
+  useEffect(() => {
+    if (!isTeamMember && (activeTab === 'chat' || activeTab === 'docs' || activeTab === 'applicants')) {
+      setActiveTab('board');
+    }
+  }, [isTeamMember, activeTab]);
+
   const handleMemberClick = (member) => {
     const lowerName = member.name.toLowerCase();
     let profileData = {};
@@ -1033,14 +1040,8 @@ const Workspace = () => {
               ))}
             </div>
           ) : activeTab === 'chat' ? (
+            isTeamMember ? (
             <div className="glass-panel" style={{ height: '500px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-              {!isTeamMember && (
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,10,20,0.8)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '12px' }}>
-                  <MessageSquare size={48} color="var(--text-muted)" style={{ marginBottom: '16px' }} />
-                  <h3 style={{ marginBottom: '8px' }}>Team Members Only</h3>
-                  <p style={{ color: 'var(--text-muted)' }}>You must join the team to view and participate in the team chat.</p>
-                </div>
-              )}
               <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {chatMessages.map((msg, i) => {
                   const isMe = msg.sender === (currentUser?.name || "You") || msg.sender === "You";
@@ -1079,6 +1080,13 @@ const Workspace = () => {
                 <button type="submit" className="btn-primary" style={{ padding: '0 24px' }}>Send</button>
               </form>
             </div>
+            ) : (
+              <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <MessageSquare size={48} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
+                <h3>Access Restricted</h3>
+                <p>You must join the project to access Team Chat.</p>
+              </div>
+            )
           ) : activeTab === 'contributions' ? (
             <div className="glass-panel" style={{ padding: '24px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr', gap: '32px' }}>
@@ -1246,14 +1254,8 @@ const Workspace = () => {
               </div>
             </div>
           ) : activeTab === 'docs' ? (
+            isTeamMember ? (
             <div className="glass-panel" style={{ padding: '24px', position: 'relative', minHeight: '400px' }}>
-              {!isTeamMember && (
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,10,20,0.8)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: '12px' }}>
-                  <Files size={48} color="var(--text-muted)" style={{ marginBottom: '16px' }} />
-                  <h3 style={{ marginBottom: '8px' }}>Team Members Only</h3>
-                  <p style={{ color: 'var(--text-muted)' }}>You must join the team to access project documents and assets.</p>
-                </div>
-              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <h3 style={{ margin: 0 }}>Project Docs & Assets</h3>
                 <button 
@@ -1409,6 +1411,13 @@ const Workspace = () => {
                 </div>
               )}
             </div>
+            ) : (
+              <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <Files size={48} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
+                <h3>Access Restricted</h3>
+                <p>You must join the project to access Docs & Files.</p>
+              </div>
+            )
           ) : activeTab === 'graph' ? (
             <div className="glass-panel" style={{ padding: '24px' }}>
               <h3 style={{ marginBottom: '8px' }}>Project Progress Timeline</h3>
