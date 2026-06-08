@@ -369,9 +369,9 @@ h1, h2, h3, h4 {
     gap: 16px;
   }
 
-  h1 { font-size: 1.35rem !important; }
-  h2 { font-size: 1.1rem !important; }
-  h3 { font-size: 1rem !important; }
+  h1 { font-size: 1.35rem; }
+  h2 { font-size: 1.1rem; }
+  h3 { font-size: 1rem; }
 
   .btn-primary, 
   .btn-outline {
