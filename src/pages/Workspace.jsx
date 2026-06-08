@@ -189,15 +189,8 @@ const Workspace = () => {
       const latestProblem = latestProblems.find(p => String(p.id) === String(id)) || problems.find(p => String(p.id) === String(id)) || problems[0];
 
       // Load applicants
-      const dbApplicants = userService.getApplicantsForProblem(latestProblem.id);
-      const acceptedEmails = (latestProblem.acceptedMembers || []).map(m => m.email ? m.email.toLowerCase() : '');
-      const rejectedEmails = (latestProblem.rejectedMembers || []).map(m => m.email ? m.email.toLowerCase() : '');
-      
-      const filteredApplicants = dbApplicants.filter(
-        app => app && app.email && !acceptedEmails.includes(app.email.toLowerCase()) && !rejectedEmails.includes(app.email.toLowerCase())
-      );
-      
-      setLocalApplicants(filteredApplicants);
+      const allApps = latestProblem.applications || [];
+      setLocalApplicants(allApps.filter(a => a.status === 'Pending'));
       
       const ownerName = latestProblem.author 
         ? userService.getUserNameByEmail(latestProblem.author) 
@@ -208,10 +201,14 @@ const Workspace = () => {
         { name: ownerName, role: "Product Owner", activity: "High", contributions: 10 },
         { name: "Alex", role: "UI Designer", activity: "High", contributions: 12 },
       ];
-      const initialTeam = latestProblem.acceptedMembers ? [...defaultTeam, ...latestProblem.acceptedMembers] : defaultTeam;
+      const additionalTeam = latestProblem.teamMembers ? latestProblem.teamMembers.filter(m => m.role !== 'Owner') : [];
+      const initialTeam = [...defaultTeam, ...additionalTeam];
+      
       setTeam(initialTeam);
 
-      const initialRejected = latestProblem.rejectedMembers || [];
+      const initialRejected = allApps.filter(a => a.status === 'Rejected').map(a => ({
+        name: a.name, email: a.email, role: a.skills?.[0] || 'Developer', reason: 'Rejected via dashboard'
+      }));
       setRejectedList(initialRejected);
 
       const defaultLogs = [
@@ -363,6 +360,12 @@ const Workspace = () => {
 
   // Handlers
   const handleAccept = (app) => {
+    const success = userService.acceptApplicant(selectedProblem.id, app.email);
+    if (!success) {
+      alert("Error accepting applicant");
+      return;
+    }
+    
     const roleForApp = app.skills && app.skills.length > 0 ? app.skills[0] : "Developer";
     const newMember = {
       name: app.name || app.email.split('@')[0],
@@ -373,28 +376,21 @@ const Workspace = () => {
       skills: app.skills || []
     };
     
-    const updatedTeamList = [...team, newMember];
-    setTeam(updatedTeamList);
+    setTeam([...team, newMember]);
+    setLocalApplicants(localApplicants.filter(a => a.email !== app.email));
     
-    // Save only the accepted members in the problem metadata
-    const acceptedOnly = selectedProblem.acceptedMembers ? [...selectedProblem.acceptedMembers, newMember] : [newMember];
-    
-    // Create Contribution Log
     const newLog = {
       text: `${newMember.name} joined the team as ${newMember.role}`,
       date: "Just now"
     };
-    const updatedLogs = selectedProblem.contributionsLogs ? [...selectedProblem.contributionsLogs, newLog] : [newLog];
     setContributionLogs([...contributionLogs, newLog]);
     
-    // Filter applicant out of queue
-    setLocalApplicants(localApplicants.filter(a => a.email !== app.email));
-    
-    // Persist to localStorage
-    userService.updateProblem(selectedProblem.id, {
-      acceptedMembers: acceptedOnly,
-      contributionsLogs: updatedLogs
-    });
+    // Save the log to problem for persistence
+    const currentProblem = userService.getAllProblems().find(p => String(p.id) === String(selectedProblem.id));
+    if (currentProblem) {
+      const logs = currentProblem.contributionsLogs ? [...currentProblem.contributionsLogs, newLog] : [newLog];
+      userService.updateProblem(selectedProblem.id, { contributionsLogs: logs });
+    }
     
     alert(`${app.name || app.email} has been accepted into the team!`);
   };
@@ -406,6 +402,13 @@ const Workspace = () => {
 
   const handleConfirmReject = () => {
     if (!rejectingApplicant) return;
+    
+    const success = userService.rejectApplicant(selectedProblem.id, rejectingApplicant.email);
+    if (!success) {
+      alert("Error rejecting applicant");
+      return;
+    }
+
     const roleForApp = rejectingApplicant.skills && rejectingApplicant.skills.length > 0 ? rejectingApplicant.skills[0] : "Developer";
     
     const newRejected = {
@@ -421,11 +424,6 @@ const Workspace = () => {
     
     // Filter out from active applicants
     setLocalApplicants(localApplicants.filter(a => a.email !== rejectingApplicant.email));
-    
-    // Persist to localStorage
-    userService.updateProblem(selectedProblem.id, {
-      rejectedMembers: updatedRejected
-    });
     
     alert(`Rejection confirmed for ${rejectingApplicant.name || rejectingApplicant.email}.`);
     setRejectingApplicant(null);

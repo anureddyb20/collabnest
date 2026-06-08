@@ -17,6 +17,8 @@ const Hub = ({ user: initialUser }) => {
     title: '', domain: 'Sustainability', difficulty: 'Medium', desc: '', skills: [],
     expectedOutcome: '', projectGoals: '', teamSize: 5
   });
+  const [applyingProblem, setApplyingProblem] = useState(null);
+  const [applicationData, setApplicationData] = useState({ motivation: '', portfolio: '', message: '' });
 
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -79,6 +81,27 @@ const Hub = ({ user: initialUser }) => {
 
     setDisplayProblems([...list]); // Force new array reference
   }, [activeSidebar, activeFilter, refreshKey, initialUser, userData]);
+
+  const handleClaim = (id) => {
+    const session = userService.getCurrentUser();
+    if (!session) {
+      alert('Please log in or create an account first to claim a project!');
+      window.location.href = '/onboarding';
+      return;
+    }
+    userService.claimProject(id);
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleApplySubmit = (e) => {
+    e.preventDefault();
+    if (!applyingProblem) return;
+    userService.applyToJoin(applyingProblem.id, applicationData);
+    setApplyingProblem(null);
+    setApplicationData({ motivation: '', portfolio: '', message: '' });
+    setRefreshKey(prev => prev + 1);
+    alert('Application submitted successfully!');
+  };
 
   const handleJoin = (id) => {
     const session = userService.getCurrentUser();
@@ -366,7 +389,14 @@ const Hub = ({ user: initialUser }) => {
                       </div>
                     </div>
                     
-                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, lineHeight: 1.4, marginBottom: '12px' }}>{p.title}</h3>
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, lineHeight: 1.4, marginBottom: '12px' }}>
+                      {p.title}
+                      {p.status === 'available_to_claim' && (
+                        <span style={{ marginLeft: '10px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600, border: '1px solid rgba(139, 92, 246, 0.25)', verticalAlign: 'middle' }}>
+                          Unclaimed AI Project
+                        </span>
+                      )}
+                    </h3>
                     <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '24px', flex: 1, lineHeight: 1.6 }}>{p.desc}</p>
                     
                     <div style={{ marginBottom: '24px' }}>
@@ -386,15 +416,24 @@ const Hub = ({ user: initialUser }) => {
                         {activeSidebar === 'Problems' && (!p.author || !userData.email || !userService.areEmailsSimilar(p.author, userData.email)) && !userData.joined.some(id => String(id) === String(p.id)) && (
                           userData.submissions.some(id => String(id) === String(p.id)) ? (
                             <span style={{ color: '#4ade80', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginRight: '8px' }}>
-                              ✓ Submitted
+                              ✓ Applied
                             </span>
-                          ) : (
+                          ) : p.status !== 'available_to_claim' && (
                             <button 
                               className="btn-outline" 
                               style={{ padding: '6px 14px', fontSize: '0.8rem', borderRadius: '8px' }}
-                              onClick={(e) => handleSubmitProposal(e, p.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const session = userService.getCurrentUser();
+                                if (!session) {
+                                  alert('Please log in or create an account first!');
+                                  window.location.href = '/onboarding';
+                                  return;
+                                }
+                                setApplyingProblem(p);
+                              }}
                             >
-                              Submit
+                              Apply to Join
                             </button>
                           )
                         )}
@@ -403,22 +442,22 @@ const Hub = ({ user: initialUser }) => {
                           <span style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 255, 255, 0.05)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
                             👑 Owner
                           </span>
+                        ) : p.status === 'available_to_claim' ? (
+                          <button 
+                            className="btn-primary" 
+                            style={{ padding: '6px 14px', fontSize: '0.8rem', borderRadius: '8px', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', border: 'none', color: '#fff' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleClaim(p.id);
+                            }}
+                          >
+                            Claim Project
+                          </button>
                         ) : userData.joined.some(id => String(id) === String(p.id)) ? (
                           <span style={{ color: 'var(--secondary)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <ChevronRight size={16} /> Joined
                           </span>
-                        ) : (
-                          <button 
-                            className="btn-primary" 
-                            style={{ padding: '6px 14px', fontSize: '0.8rem', borderRadius: '8px' }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleJoin(p.id);
-                            }}
-                          >
-                            Join
-                          </button>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -443,6 +482,61 @@ const Hub = ({ user: initialUser }) => {
           </div>
         </div>
       </div>
+
+      {/* Apply to Join Modal */}
+      <AnimatePresence>
+        {applyingProblem && (
+          <div className="modal-overlay" onClick={() => setApplyingProblem(null)}>
+            <motion.div 
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="glass-panel"
+              style={{ width: '90%', maxWidth: '500px', padding: '32px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <h2 style={{ margin: '0 0 24px', fontSize: '24px', fontWeight: 800 }}>Apply to Join</h2>
+              <form onSubmit={handleApplySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Motivation / Why you?</label>
+                  <textarea 
+                    required
+                    value={applicationData.motivation}
+                    onChange={(e) => setApplicationData({...applicationData, motivation: e.target.value})}
+                    className="form-input" 
+                    rows="3" 
+                    placeholder="Briefly explain why you are a good fit for this project..."
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Portfolio / LinkedIn / GitHub</label>
+                  <input 
+                    type="url"
+                    value={applicationData.portfolio}
+                    onChange={(e) => setApplicationData({...applicationData, portfolio: e.target.value})}
+                    className="form-input" 
+                    placeholder="https://..."
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Short Message to Owner (Optional)</label>
+                  <textarea 
+                    value={applicationData.message}
+                    onChange={(e) => setApplicationData({...applicationData, message: e.target.value})}
+                    className="form-input" 
+                    rows="2" 
+                    placeholder="Any additional notes..."
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                  <button type="submit" className="btn-primary" style={{ flex: 1, padding: '12px' }}>Submit Application</button>
+                  <button type="button" className="btn-outline" onClick={() => setApplyingProblem(null)} style={{ flex: 1, padding: '12px' }}>Cancel</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Post Problem Modal */}
       {showPostModal && (

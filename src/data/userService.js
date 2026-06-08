@@ -247,6 +247,204 @@ export const userService = {
   },
 
   // Actions
+  claimProject: (problemId) => {
+    const session = getCurrentSession();
+    if (!session) return false;
+    
+    const users = getAllUsers();
+    const user = users[session.email];
+    if (!user) return false;
+    
+    const stored = getLocalStorageWithFallback(PROBLEMS_KEY, OLD_PROBLEMS_KEY);
+    let userProblems = stored ? JSON.parse(stored) : [];
+    
+    // Find the problem globally
+    const allProblems = getGlobalProblems();
+    const problem = allProblems.find(p => String(p.id) === String(problemId));
+    
+    if (!problem || problem.author || problem.status !== 'available_to_claim') return false;
+    
+    // Claim it
+    const updatedProblem = { 
+      ...problem, 
+      author: session.email,
+      ownerId: session.email,
+      ownerEmail: session.email,
+      ownerName: user.name || session.email.split('@')[0],
+      claimedAt: new Date().toISOString(),
+      status: 'Ideation',
+      team: { current: 1, total: problem.team?.total || 5 },
+      teamMembers: [{ name: user.name, email: session.email, role: 'Owner' }]
+    };
+    
+    // Update or push to local storage
+    const existingIndex = userProblems.findIndex(p => String(p.id) === String(problemId));
+    if (existingIndex !== -1) {
+      userProblems[existingIndex] = updatedProblem;
+    } else {
+      userProblems.push(updatedProblem);
+    }
+    localStorage.setItem(PROBLEMS_KEY, JSON.stringify(userProblems));
+    
+    // Add to user joined and submissions so it acts like a normal project
+    if (!user.joined) user.joined = [];
+    if (!user.submissions) user.submissions = [];
+    
+    if (!user.joined.includes(problemId)) user.joined.push(problemId);
+    if (!user.submissions.includes(problemId)) user.submissions.push(problemId);
+    user.role = 'owner';
+    saveUsers(users);
+    
+    return true;
+  },
+
+  applyToJoin: (problemId, applicationData) => {
+    const session = getCurrentSession();
+    if (!session) return false;
+    
+    const users = getAllUsers();
+    const user = users[session.email];
+    if (!user) return false;
+    
+    const allProblems = getGlobalProblems();
+    const targetProblem = allProblems.find(p => String(p.id) === String(problemId));
+    if (!targetProblem) return false;
+    
+    // Create Application Object
+    const application = {
+      ...applicationData,
+      email: session.email,
+      name: user.name || applicationData.name,
+      status: 'Pending',
+      date: new Date().toISOString()
+    };
+    
+    // Save to problem
+    const currentApplications = targetProblem.applications || [];
+    currentApplications.push(application);
+    userService.updateProblem(problemId, { applications: currentApplications });
+    
+    // Notify Owner
+    if (targetProblem.author) {
+      userService.addNotification(
+        targetProblem.author, 
+        `${application.name} applied to join ${targetProblem.title}`, 
+        'application_received'
+      );
+    }
+    
+    // Also log to user's submissions
+    if (!user.submissions) user.submissions = [];
+    if (!user.submissions.includes(problemId)) {
+      user.submissions.push(problemId);
+      saveUsers(users);
+    }
+    return true;
+  },
+
+  acceptApplicant: (problemId, applicantEmail) => {
+    const session = getCurrentSession();
+    if (!session) return false;
+    
+    const allProblems = getGlobalProblems();
+    const targetProblem = allProblems.find(p => String(p.id) === String(problemId));
+    if (!targetProblem) return false;
+    
+    const apps = targetProblem.applications || [];
+    const applicantIndex = apps.findIndex(a => a.email.toLowerCase() === applicantEmail.toLowerCase());
+    if (applicantIndex === -1) return false;
+    
+    apps[applicantIndex].status = 'Accepted';
+    
+    // Add to team
+    const teamMembers = targetProblem.teamMembers || [];
+    teamMembers.push({ name: apps[applicantIndex].name, email: apps[applicantIndex].email, role: 'Team Member' });
+    
+    const team = targetProblem.team || { current: 1, total: 5 };
+    team.current += 1;
+    
+    userService.updateProblem(problemId, { applications: apps, teamMembers, team });
+    
+    // Update user's joined array
+    const users = getAllUsers();
+    const cleanEmail = applicantEmail.toLowerCase().trim();
+    if (users[cleanEmail]) {
+      if (!users[cleanEmail].joined) users[cleanEmail].joined = [];
+      if (!users[cleanEmail].joined.includes(problemId)) {
+        users[cleanEmail].joined.push(problemId);
+        saveUsers(users);
+      }
+    }
+    
+    // Notify Applicant
+    userService.addNotification(
+      applicantEmail,
+      `Your application to ${targetProblem.title} has been accepted.`,
+      'application_accepted'
+    );
+    return true;
+  },
+
+  rejectApplicant: (problemId, applicantEmail) => {
+    const session = getCurrentSession();
+    if (!session) return false;
+    
+    const allProblems = getGlobalProblems();
+    const targetProblem = allProblems.find(p => String(p.id) === String(problemId));
+    if (!targetProblem) return false;
+    
+    const apps = targetProblem.applications || [];
+    const applicantIndex = apps.findIndex(a => a.email.toLowerCase() === applicantEmail.toLowerCase());
+    if (applicantIndex === -1) return false;
+    
+    apps[applicantIndex].status = 'Rejected';
+    userService.updateProblem(problemId, { applications: apps });
+    
+    // Notify Applicant
+    userService.addNotification(
+      applicantEmail,
+      `Your application to ${targetProblem.title} has been rejected.`,
+      'application_rejected'
+    );
+    return true;
+  },
+
+  // Notifications
+  addNotification: (email, message, type) => {
+    const users = getAllUsers();
+    const cleanEmail = email.toLowerCase().trim();
+    if (users[cleanEmail]) {
+      if (!users[cleanEmail].notifications) users[cleanEmail].notifications = [];
+      users[cleanEmail].notifications.unshift({
+        id: Date.now() + Math.random(),
+        message,
+        type,
+        date: new Date().toISOString(),
+        read: false
+      });
+      saveUsers(users);
+    }
+  },
+
+  getNotifications: () => {
+    const session = getCurrentSession();
+    if (!session) return [];
+    const users = getAllUsers();
+    const user = users[session.email];
+    return user ? (user.notifications || []) : [];
+  },
+
+  markNotificationsRead: () => {
+    const session = getCurrentSession();
+    if (!session) return;
+    const users = getAllUsers();
+    const user = users[session.email];
+    if (user && user.notifications) {
+      user.notifications.forEach(n => n.read = true);
+      saveUsers(users);
+    }
+  },
+
   joinTeam: (problemId) => {
     const session = getCurrentSession();
     if (!session) return;

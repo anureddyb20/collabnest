@@ -19,6 +19,7 @@ export default function BuilderHub({ user }) {
   const [problems, setProblems] = useState([]);
   const [applying, setApplying] = useState(null);
   const [applyMsg, setApplyMsg] = useState('');
+  const [applicationData, setApplicationData] = useState({ motivation: '', portfolio: '', message: '' });
   const [applied, setApplied] = useState([]);
   const [profile, setProfile] = useState({
     skills: user?.skills || [],
@@ -61,12 +62,26 @@ export default function BuilderHub({ user }) {
     setApplyMsg('');
   };
 
-  const submitApplication = () => {
+  const submitApplication = (e) => {
+    e.preventDefault();
     if (!applying) return;
-    userService.joinTeam(applying.id);
+    userService.applyToJoin(applying.id, applicationData);
     setApplied(prev => [...prev, String(applying.id)]);
     setApplying(null);
+    setApplicationData({ motivation: '', portfolio: '', message: '' });
     setApplyMsg('');
+    alert('Application submitted successfully!');
+  };
+
+  const handleClaim = (id) => {
+    const session = userService.getCurrentUser();
+    if (!session) {
+      alert('Please log in or create an account first to claim a project!');
+      navigate('/onboarding');
+      return;
+    }
+    userService.claimProject(id);
+    setProblems(userService.getAllProblems());
   };
 
   const addSkill = (skill) => {
@@ -110,7 +125,14 @@ export default function BuilderHub({ user }) {
       <motion.div key={p.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>{p.title}</h3>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+            {p.title}
+            {p.status === 'available_to_claim' && (
+              <span style={{ marginLeft: '8px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600, border: '1px solid rgba(139, 92, 246, 0.25)', verticalAlign: 'middle' }}>
+                Unclaimed AI Project
+              </span>
+            )}
+          </h3>
           <span style={{ background: diffColor[p.difficulty] || '#6366f1', color: '#fff', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap' }}>{p.difficulty}</span>
         </div>
         <p style={{ margin: 0, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{p.desc}</p>
@@ -145,6 +167,10 @@ export default function BuilderHub({ user }) {
         <div style={{ display: 'flex', gap: 10, marginTop: 8, alignItems: 'center' }}>
           {isApplied ? (
             <span style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 10 }}>✓ Applied</span>
+          ) : p.status === 'available_to_claim' ? (
+            <button onClick={() => handleClaim(p.id)} style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              Claim Project
+            </button>
           ) : (
             <button onClick={() => handleApply(p)} style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               Apply to Join

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Rocket, LayoutGrid as Hub, Layout, User, Zap, LogOut, Hammer, Menu, X, Monitor, Smartphone, Filter, Users, Target, Briefcase, Bookmark } from 'lucide-react';
+import { Rocket, LayoutGrid as Hub, Layout, User, Zap, LogOut, Hammer, Menu, X, Monitor, Smartphone, Filter, Users, Target, Briefcase, Bookmark, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
@@ -13,6 +13,28 @@ const Navbar = ({ user }) => {
   const latestWorkspaceId = myWorkspaces.length > 0 ? myWorkspaces[myWorkspaces.length - 1].id : 1;
   const { isMobileView } = useView();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+
+  React.useEffect(() => {
+    if (currentUser) {
+      const fetchNotifs = () => setNotifications(userService.getNotifications() || []);
+      fetchNotifs();
+      // interval to poll localstorage for simplicity
+      const interval = setInterval(fetchNotifs, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [currentUser]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const handleOpenNotifications = () => {
+    setShowNotifications(!showNotifications);
+    if (!showNotifications && unreadCount > 0) {
+      userService.markNotificationsRead();
+      setNotifications(userService.getNotifications() || []);
+    }
+  };
 
   const handleLogout = async () => {
     if (supabase) {
@@ -68,7 +90,18 @@ const Navbar = ({ user }) => {
 
         {isMobileView ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-
+            {currentUser && (
+              <div style={{ position: 'relative' }}>
+                <button onClick={handleOpenNotifications} className="btn-ghost" style={{ padding: '8px', position: 'relative' }}>
+                  <Bell size={24} />
+                  {unreadCount > 0 && (
+                    <span style={{ position: 'absolute', top: '4px', right: '4px', background: 'var(--primary)', color: 'white', fontSize: '10px', fontWeight: 700, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="btn-ghost"
@@ -116,6 +149,44 @@ const Navbar = ({ user }) => {
 
               {currentUser ? (
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div style={{ position: 'relative' }}>
+                    <button onClick={handleOpenNotifications} className="btn-ghost" style={{ padding: '8px', position: 'relative', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                      <Bell size={20} color="var(--text-main)" />
+                      {unreadCount > 0 && (
+                        <span style={{ position: 'absolute', top: '2px', right: '2px', background: 'var(--primary)', color: 'white', fontSize: '10px', fontWeight: 700, width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {unreadCount}
+                        </span>
+                      )}
+                    </button>
+                    <AnimatePresence>
+                      {showNotifications && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          style={{ position: 'absolute', top: '40px', right: 0, width: '320px', background: '#fff', borderRadius: '12px', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', border: '1px solid var(--border)', overflow: 'hidden', zIndex: 1000 }}
+                        >
+                          <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            Notifications
+                          </div>
+                          <div style={{ maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                            {notifications.length === 0 ? (
+                              <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                                No notifications yet.
+                              </div>
+                            ) : (
+                              notifications.map(n => (
+                                <div key={n.id} style={{ padding: '16px', borderBottom: '1px solid var(--border)', background: n.read ? '#fff' : 'rgba(139, 92, 246, 0.05)' }}>
+                                  <div style={{ fontSize: '13px', color: 'var(--text-main)', marginBottom: '4px' }}>{n.message}</div>
+                                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{new Date(n.date).toLocaleString()}</div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                   <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                     Hi, {currentUser.name}
                   </span>
