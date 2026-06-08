@@ -451,9 +451,9 @@ const Hub = ({ user: initialUser }) => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="glass-panel"
-            style={{ padding: '40px', maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
+            style={{ padding: isMobileView ? '20px' : '40px', maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
           >
-            <h2 style={{ marginBottom: '24px' }}>Post New Idea / Problem Statement</h2>
+            <h2 style={{ marginBottom: '24px', fontSize: isMobileView ? '1.5rem' : '2rem' }}>Post New Idea / Problem Statement</h2>
             <form onSubmit={handlePostProblem}>
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Project Title</label>
@@ -467,7 +467,7 @@ const Hub = ({ user: initialUser }) => {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr', gap: isMobileView ? '12px' : '20px', marginBottom: '20px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Domain / Category</label>
                   <select 
@@ -501,7 +501,7 @@ const Hub = ({ user: initialUser }) => {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr', gap: isMobileView ? '12px' : '20px', marginBottom: '20px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Expected Outcome</label>
                   <input 
@@ -524,7 +524,7 @@ const Hub = ({ user: initialUser }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px', marginBottom: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 2fr', gap: isMobileView ? '12px' : '20px', marginBottom: '32px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Team Size Needed</label>
                   <input 
