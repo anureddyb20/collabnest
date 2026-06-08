@@ -235,13 +235,15 @@ const Workspace = () => {
         const defaultTasks = {
           todo: [
             { id: "def-todo-1", text: "Implement " + ((latestProblem.skills && latestProblem.skills[0]) || "Frontend"), assignee: "Alex", date: "Just now" },
-            { id: "def-todo-2", text: "Research " + latestProblem.domain + " market", assignee: ownerName, date: "Just now" }
+            { id: "def-todo-2", text: "Research " + latestProblem.domain + " market", assignee: ownerName, date: "Just now" },
+            ...(latestProblem.projectGoals ? [{ id: "def-todo-3", text: `Goal: ${latestProblem.projectGoals}`, assignee: ownerName, date: "Just now" }] : [])
           ],
           doing: [
             { id: "def-doing-1", text: "Architecture Setup", assignee: ownerName, date: "Just now" }
           ],
           done: [
-            { id: "def-done-1", text: "Initial Ideation", assignee: "Alex", date: "Just now" }
+            { id: "def-done-1", text: "Initial Ideation", assignee: "Alex", date: "Just now" },
+            ...(latestProblem.expectedOutcome ? [{ id: "def-done-2", text: `Define outcome: ${latestProblem.expectedOutcome}`, assignee: ownerName, date: "Just now" }] : [])
           ]
         };
         setTasks(defaultTasks);
@@ -754,6 +756,22 @@ const Workspace = () => {
               )}
             </div>
             <p style={{ color: 'var(--text-secondary)', marginTop: 8, fontSize: '13px' }}>{selectedProblem.desc}</p>
+            {(selectedProblem.projectGoals || selectedProblem.expectedOutcome) && (
+              <div style={{ display: 'flex', gap: '16px', marginTop: '16px', flexWrap: 'wrap' }}>
+                {selectedProblem.projectGoals && (
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Project Goals</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-main)' }}>{selectedProblem.projectGoals}</div>
+                  </div>
+                )}
+                {selectedProblem.expectedOutcome && (
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Expected Outcome</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-main)' }}>{selectedProblem.expectedOutcome}</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div style={{ textAlign: isMobileView ? 'left' : 'right', width: isMobileView ? '100%' : 'auto' }}>
             <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Project Progress</div>
