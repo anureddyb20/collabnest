@@ -24,7 +24,7 @@ const Navbar = ({ user }) => {
       const interval = setInterval(fetchNotifs, 3000);
       return () => clearInterval(interval);
     }
-  }, [currentUser]);
+  }, [currentUser?.email]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
