@@ -84,7 +84,7 @@ function App() {
         <Navbar user={user} />
         <main>
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<Landing user={user} />} />
             <Route path="/onboarding" element={<Onboarding setUser={setUser} />} />
             <Route path="/hub" element={<ProtectedRoute user={user}><Hub user={user} /></ProtectedRoute>} />
             <Route path="/builder" element={<ProtectedRoute user={user}><BuilderHub user={user} /></ProtectedRoute>} />

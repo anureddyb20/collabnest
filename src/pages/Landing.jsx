@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Code, Lightbulb, Users, Shield, BarChart, Award } from 'lucide-react';
 
-const Landing = () => {
+const Landing = ({ user }) => {
   const navigate = useNavigate();
 
   const features = [
@@ -37,17 +37,23 @@ const Landing = () => {
             
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button 
-                onClick={() => navigate('/onboarding')}
+                onClick={() => navigate(user ? '/hub' : '/onboarding')}
                 className="btn-primary" 
-                style={{ padding: '16px 32px', fontSize: '1.1rem' }}
+                style={{ padding: '16px 32px', fontSize: '1.1rem', cursor: 'pointer', zIndex: 10, position: 'relative' }}
               >
-                Start Collaborating
+                {user ? 'Go to Hub' : 'Start Collaborating'}
                 <ArrowRight size={20} />
               </button>
               <button 
-                onClick={() => navigate('/hub')}
+                onClick={() => {
+                  if (user) {
+                    navigate('/hub');
+                  } else {
+                    navigate('/onboarding');
+                  }
+                }}
                 className="btn-outline" 
-                style={{ padding: '16px 32px', fontSize: '1.1rem' }}
+                style={{ padding: '16px 32px', fontSize: '1.1rem', cursor: 'pointer', zIndex: 10, position: 'relative' }}
               >
                 Explore Problem Hub
               </button>
