@@ -52,10 +52,9 @@ const Workspace = () => {
   // Sort user's workspaces in order of posting (newest first)
   myWorkspaces.sort((a, b) => Number(b.id) - Number(a.id));
 
-  // If the logged-in user has the 'owner' role (from 'I have an idea') and is the author of this specific project, they are the admin
-  const isOwner = currentUser && (
-    currentUser.role === 'owner' && 
-    selectedProblem.author && userService.areEmailsSimilar(selectedProblem.author, currentUser.email)
+  const isOwner = currentUser && selectedProblem && (
+    (selectedProblem.ownerId && userService.areEmailsSimilar(selectedProblem.ownerId, currentUser.email)) ||
+    (selectedProblem.author && userService.areEmailsSimilar(selectedProblem.author, currentUser.email))
   );
 
   const ownerName = selectedProblem.author 
@@ -84,7 +83,7 @@ const Workspace = () => {
 
   const getAssigneeColor = (name) => {
     if (!name) return 'linear-gradient(135deg, var(--primary), var(--secondary))';
-    const lowerName = name.toLowerCase().trim();
+    const lowerName = String(name).toLowerCase().trim();
     let hash = 5381;
     for (let i = 0; i < lowerName.length; i++) {
       hash = ((hash << 5) + hash) + lowerName.charCodeAt(i);
@@ -127,7 +126,7 @@ const Workspace = () => {
       }
       // 2. Skill match in their skills array if they have one
       if (member.skills && Array.isArray(member.skills)) {
-        return member.skills.some(s => s.toLowerCase().includes(skillLower) || skillLower.includes(s.toLowerCase()));
+        return member.skills.some(s => (s || '').toLowerCase().includes(skillLower) || skillLower.includes((s || '').toLowerCase()));
       }
       return false;
     });
@@ -180,7 +179,7 @@ const Workspace = () => {
 
   const isTeamMember = isOwner || 
     (currentUser?.joined && currentUser.joined.some(id => String(id) === String(selectedProblem.id))) ||
-    team.some(m => m.email && currentUser?.email && m.email.toLowerCase() === currentUser.email.toLowerCase());
+    team.some(m => m.email && currentUser?.email && String(m.email).toLowerCase() === String(currentUser.email).toLowerCase());
 
   useEffect(() => {
     const refreshData = () => {
@@ -295,7 +294,7 @@ const Workspace = () => {
   }, [isTeamMember, activeTab]);
 
   const handleMemberClick = (member) => {
-    const lowerName = member.name.toLowerCase();
+    const lowerName = (member.name || '').toLowerCase();
     let profileData = {};
     if (lowerName.includes('alex')) {
       profileData = {
@@ -368,7 +367,7 @@ const Workspace = () => {
     
     const roleForApp = app.skills && app.skills.length > 0 ? app.skills[0] : "Developer";
     const newMember = {
-      name: app.name || app.email.split('@')[0],
+      name: app.name || (app.email ? String(app.email).split('@')[0] : 'Applicant'),
       email: app.email,
       role: roleForApp,
       activity: "High",
@@ -412,7 +411,7 @@ const Workspace = () => {
     const roleForApp = rejectingApplicant.skills && rejectingApplicant.skills.length > 0 ? rejectingApplicant.skills[0] : "Developer";
     
     const newRejected = {
-      name: rejectingApplicant.name || rejectingApplicant.email.split('@')[0],
+      name: rejectingApplicant.name || (rejectingApplicant.email ? String(rejectingApplicant.email).split('@')[0] : 'Applicant'),
       email: rejectingApplicant.email,
       role: roleForApp,
       reason: rejectReasonInput.trim() || "Skills did not fit the current requirements",
@@ -468,14 +467,14 @@ const Workspace = () => {
       ]
     };
 
-    const nameKey = Object.keys(mockTasks).find(k => k.toLowerCase() === memberName.toLowerCase());
+    const nameKey = Object.keys(mockTasks).find(k => k.toLowerCase() === (memberName || '').toLowerCase());
     const defaults = nameKey ? mockTasks[nameKey] : [];
 
     // Gather dynamic completed tasks assigned to this member from the "done" column
     const dynamicDone = (tasks.done || [])
       .filter(t => {
         const assignee = typeof t === 'string' ? 'Anu' : (t.assignee || 'Anu');
-        return assignee.toLowerCase() === memberName.toLowerCase();
+        return (assignee || '').toLowerCase() === (memberName || '').toLowerCase();
       })
       .map(t => typeof t === 'string' ? t : t.text);
 
@@ -487,7 +486,7 @@ const Workspace = () => {
     const memberNames = team.map(m => m.name);
     // Helper to get an assignee that exists in the team (fallback to ownerName or team[0].name)
     const getValidAssignee = (preferred) => {
-      const matched = memberNames.find(n => n.toLowerCase() === preferred.toLowerCase());
+      const matched = memberNames.find(n => (n || '').toLowerCase() === (preferred || '').toLowerCase());
       if (matched) return matched;
       return ownerName || (team[0] ? team[0].name : 'Anu');
     };

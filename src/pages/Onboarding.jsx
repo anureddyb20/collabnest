@@ -316,7 +316,7 @@ const Onboarding = ({ setUser, user }) => {
 
   return (
     <div className="container" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', position: 'relative' }}>
-      <AnimatePresence mode="wait">
+      <div>
         {step === 0 ? (
           <motion.div 
             key="step0"
@@ -909,8 +909,12 @@ const Onboarding = ({ setUser, user }) => {
               </button>
             </form>
           </motion.div>
-        ) : null}
-      </AnimatePresence>
+        ) : (
+          <div style={{ color: 'red', fontSize: '24px' }}>
+            Debug: Step is {String(step)}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -12,6 +12,7 @@ import BuilderHub from './pages/BuilderHub';
 import Navbar from './components/Navbar';
 import { userService } from './data/userService';
 import { useView } from './context/ViewContext';
+import { ErrorBoundary } from './ErrorBoundary';
 
 const ProtectedRoute = ({ user, children }) => {
   if (!user) {
@@ -83,14 +84,16 @@ function App() {
       <div className={`app-container ${isMobileView ? 'mobile-view' : 'desktop-view'}`}>
         <Navbar user={user} />
         <main>
-          <Routes>
+          <ErrorBoundary>
+            <Routes>
             <Route path="/" element={<Landing user={user} />} />
             <Route path="/onboarding" element={<Onboarding setUser={setUser} />} />
             <Route path="/hub" element={<ProtectedRoute user={user}><Hub user={user} /></ProtectedRoute>} />
             <Route path="/builder" element={<ProtectedRoute user={user}><BuilderHub user={user} /></ProtectedRoute>} />
             <Route path="/workspace/:id" element={<ProtectedRoute user={user}><Workspace /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute user={user}><Profile /></ProtectedRoute>} />
-          </Routes>
+            </Routes>
+          </ErrorBoundary>
         </main>
       </div>
     </Router>
