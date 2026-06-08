@@ -710,11 +710,6 @@ const Workspace = () => {
   return (
     <div className="container" style={{ padding: isMobileView ? '16px 0' : '40px 0' }}>
       {/* Project Header */}
-      {/* TEMPORARY VERIFICATION INDICATOR */}
-      <div style={{ background: 'var(--bg-surface)', border: '2px solid var(--primary)', padding: '12px', borderRadius: '8px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', color: 'white', zIndex: 100, position: 'relative' }}>
-        <div><strong>Detected Role:</strong> {isOwner ? 'Project Owner' : isTeamMember ? 'Team Member' : 'Visitor'}</div>
-        <div><strong>Access Level:</strong> {isTeamMember ? 'Full Access' : 'Limited Access'}</div>
-      </div>
       <div className="glass-panel" style={{ padding: isMobileView ? '16px' : '24px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'flex-end', marginBottom: '24px', gap: isMobileView ? '16px' : '0' }}>
           <div style={{ width: isMobileView ? '100%' : 'auto' }}>
@@ -1303,25 +1298,28 @@ const Workspace = () => {
                       padding: '16px', 
                       display: 'flex', 
                       justifyContent: 'space-between', 
-                      alignItems: 'center', 
+                      alignItems: isMobileView ? 'flex-start' : 'center', 
+                      flexDirection: isMobileView ? 'column' : 'row',
+                      gap: isMobileView ? '16px' : '0',
                       cursor: 'pointer',
-                      transition: 'all 0.2s ease-in-out'
+                      transition: 'all 0.2s ease-in-out',
+                      overflow: 'hidden'
                     }} 
                     onClick={() => handleOpenFile(doc)}
                     title="Click to open file in a new tab"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: isMobileView ? '100%' : 'auto', overflow: 'hidden' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <Files size={20} color="var(--primary)" />
                       </div>
-                      <div>
-                        <h4 style={{ fontSize: '0.95rem', margin: '0 0 4px 0', textDecoration: 'underline', color: 'var(--text-main)' }}>{doc.name}</h4>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                      <div style={{ overflow: 'hidden', width: '100%' }}>
+                        <h4 style={{ fontSize: '0.95rem', margin: '0 0 4px 0', textDecoration: 'underline', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.name}</h4>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {doc.type} • {doc.size} • Uploaded by {doc.uploader} • {doc.date}
                         </div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
                       <button className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => handleDownload(doc)}>
                         Download
                       </button>
