@@ -418,7 +418,6 @@ h1, h2, h3, h4 {
   select, 
   textarea {
     font-size: 14px !important; /* Slightly smaller but readable */
-    padding: 10px !important;
     height: auto !important;
   }
 
