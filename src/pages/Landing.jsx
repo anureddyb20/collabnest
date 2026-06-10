@@ -14,7 +14,7 @@ const Landing = ({ user }) => {
   ];
 
   return (
-    <div className="landing-page" style={{ background: 'var(--bg-main)', color: 'white', minHeight: '100vh', overflowX: 'hidden' }}>
+    <div className="landing-page" style={{ background: 'var(--bg-main)', color: 'var(--text-main)', minHeight: '100vh', overflowX: 'hidden' }}>
       {/* Hero Section */}
       <section style={{ padding: '80px 0', textAlign: 'center' }}>
         <div className="container">
