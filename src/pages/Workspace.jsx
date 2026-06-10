@@ -235,10 +235,11 @@ const Workspace = () => {
       }
 
       // Load tasks
+      let currentTasks;
       if (latestProblem.tasks && latestProblem.tasks.todo && latestProblem.tasks.doing && latestProblem.tasks.done) {
-        setTasks(latestProblem.tasks);
+        currentTasks = latestProblem.tasks;
       } else {
-        const defaultTasks = {
+        currentTasks = {
           todo: [
             { id: "def-todo-1", text: "Implement " + ((latestProblem.skills && latestProblem.skills[0]) || "Frontend"), assignee: "Alex", date: "Just now" },
             { id: "def-todo-2", text: "Research " + latestProblem.domain + " market", assignee: ownerName, date: "Just now" },
@@ -252,7 +253,31 @@ const Workspace = () => {
             ...(latestProblem.expectedOutcome ? [{ id: "def-done-2", text: `Define outcome: ${latestProblem.expectedOutcome}`, assignee: ownerName, date: "Just now" }] : [])
           ]
         };
-        setTasks(defaultTasks);
+      }
+
+      // Auto-assign tasks to any team member who currently has no tasks
+      let tasksUpdated = false;
+      const allAssignedNames = [
+        ...currentTasks.todo, ...currentTasks.doing, ...currentTasks.done
+      ].map(t => typeof t === 'string' ? 'Anu' : (t.assignee || 'Anu'));
+
+      initialTeam.forEach((member, idx) => {
+        if (!allAssignedNames.includes(member.name)) {
+          currentTasks.todo.push({
+            id: `auto-assign-${Date.now()}-${idx}`,
+            text: `Initial setup for ${member.role || 'Project'}`,
+            assignee: member.name,
+            date: "Just now"
+          });
+          tasksUpdated = true;
+        }
+      });
+
+      setTasks(currentTasks);
+      if (tasksUpdated && !latestProblem.tasks) {
+        // If we generated new defaults, we don't necessarily have to save them to DB immediately unless user interacts, 
+        // but saving ensures consistency.
+        userService.updateProblem(selectedProblem.id, { tasks: currentTasks });
       }
 
       // Load docs
