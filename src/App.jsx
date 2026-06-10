@@ -16,6 +16,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 
 const ProtectedRoute = ({ user, children }) => {
   if (!user) {
+    console.log("ProtectedRoute: Redirecting to Landing Page. User is:", user, "Path:", window.location.pathname);
     return <Navigate to="/" replace />;
   }
   return children;
@@ -29,6 +30,12 @@ function App() {
   useEffect(() => {
     if (!supabase) {
       console.error("Supabase is not initialized. Please check your .env variables.");
+      const localUser = userService.getCurrentUser();
+      if (localUser) {
+        setUser(localUser);
+      } else {
+        setUser(null);
+      }
       setIsLoading(false);
       return;
     }

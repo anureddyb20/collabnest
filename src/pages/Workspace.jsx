@@ -53,13 +53,23 @@ const Workspace = () => {
   myWorkspaces.sort((a, b) => Number(b.id) - Number(a.id));
 
   const isOwner = currentUser && selectedProblem && (
+    (selectedProblem.ownerEmail && String(selectedProblem.ownerEmail).toLowerCase() === String(currentUser.email).toLowerCase()) ||
+    (selectedProblem.ownerId && currentUser.id && String(selectedProblem.ownerId) === String(currentUser.id)) ||
     (selectedProblem.ownerId && userService.areEmailsSimilar(selectedProblem.ownerId, currentUser.email)) ||
     (selectedProblem.author && userService.areEmailsSimilar(selectedProblem.author, currentUser.email))
   );
 
-  const ownerName = selectedProblem.author 
+  console.log("WORKSPACE DEBUG LOGS:");
+  console.log("Current User:", currentUser?.name);
+  console.log("Current User Email:", currentUser?.email);
+  console.log("Project ID being opened:", id);
+  console.log("Project Owner Email:", selectedProblem?.ownerEmail);
+  console.log("Project Found:", !!selectedProblem);
+  console.log("isOwner:", isOwner);
+
+  const ownerName = selectedProblem.ownerName || (selectedProblem.author 
     ? userService.getUserNameByEmail(selectedProblem.author) 
-    : (currentUser?.role === 'owner' ? (currentUser?.name || "Anu") : "Anu");
+    : (currentUser?.role === 'owner' ? (currentUser?.name || "Anu") : "Anu"));
 
   // Helper to format event date based on creation timestamp (real-time scaling)
   const getDynamicEventDate = (offsetMinutes) => {
@@ -191,9 +201,9 @@ const Workspace = () => {
       const allApps = latestProblem.applications || [];
       setLocalApplicants(allApps.filter(a => a.status === 'Pending'));
       
-      const ownerName = latestProblem.author 
+      const ownerName = latestProblem.ownerName || (latestProblem.author 
         ? userService.getUserNameByEmail(latestProblem.author) 
-        : (currentUser?.role === 'owner' ? (currentUser?.name || "Anu") : "Anu");
+        : (currentUser?.role === 'owner' ? (currentUser?.name || "Anu") : "Anu"));
 
       // Sync accepted and rejected members list dynamically
       const defaultTeam = [

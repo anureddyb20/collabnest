@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, TrendingUp, Users, Clock, Target, Plus, ChevronRight, Bookmark, Trash2, Briefcase } from 'lucide-react';
 import { problems } from '../data/problems';
@@ -7,6 +8,7 @@ import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
 
 const Hub = ({ user: initialUser }) => {
+  const navigate = useNavigate();
   const { isMobileView } = useView();
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeSidebar, setActiveSidebar] = useState('Problems');
@@ -86,7 +88,7 @@ const Hub = ({ user: initialUser }) => {
     const session = userService.getCurrentUser();
     if (!session) {
       alert('Please log in or create an account first to claim a project!');
-      window.location.href = '/onboarding';
+      navigate('/onboarding');
       return;
     }
     userService.claimProject(id);
@@ -107,7 +109,7 @@ const Hub = ({ user: initialUser }) => {
     const session = userService.getCurrentUser();
     if (!session) {
       alert('Please log in or create an account first to join a team!');
-      window.location.href = '/onboarding';
+      navigate('/onboarding');
       return;
     }
     userService.joinTeam(id);
@@ -119,7 +121,7 @@ const Hub = ({ user: initialUser }) => {
     const session = userService.getCurrentUser();
     if (!session) {
       alert('Please log in or create an account first to save problems!');
-      window.location.href = '/onboarding';
+      navigate('/onboarding');
       return;
     }
     userService.saveProblem(id);
@@ -140,7 +142,7 @@ const Hub = ({ user: initialUser }) => {
     const session = userService.getCurrentUser();
     if (!session) {
       alert('Please log in or create an account first to submit a proposal!');
-      window.location.href = '/onboarding';
+      navigate('/onboarding');
       return;
     }
     userService.submitProposal(id);
@@ -372,7 +374,7 @@ const Hub = ({ user: initialUser }) => {
 
                   {/* Main Clickable Area */}
                   <div 
-                    onClick={() => window.location.href = `/workspace/${p.id}`}
+                    onClick={() => navigate(`/workspace/${p.id}`)}
                     style={{ 
                       padding: isMobileView ? '16px' : '24px', 
                       display: 'flex', 
@@ -427,7 +429,7 @@ const Hub = ({ user: initialUser }) => {
                                 const session = userService.getCurrentUser();
                                 if (!session) {
                                   alert('Please log in or create an account first!');
-                                  window.location.href = '/onboarding';
+                                  navigate('/onboarding');
                                   return;
                                 }
                                 setApplyingProblem(p);
@@ -506,6 +508,7 @@ const Hub = ({ user: initialUser }) => {
                     className="form-input" 
                     rows="3" 
                     placeholder="Briefly explain why you are a good fit for this project..."
+                    style={{ width: '100%', boxSizing: 'border-box' }}
                   />
                 </div>
                 <div>
@@ -516,6 +519,7 @@ const Hub = ({ user: initialUser }) => {
                     onChange={(e) => setApplicationData({...applicationData, portfolio: e.target.value})}
                     className="form-input" 
                     placeholder="https://..."
+                    style={{ width: '100%', boxSizing: 'border-box' }}
                   />
                 </div>
                 <div>
@@ -526,6 +530,7 @@ const Hub = ({ user: initialUser }) => {
                     className="form-input" 
                     rows="2" 
                     placeholder="Any additional notes..."
+                    style={{ width: '100%', boxSizing: 'border-box' }}
                   />
                 </div>
                 <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
