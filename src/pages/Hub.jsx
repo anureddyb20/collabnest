@@ -488,7 +488,13 @@ const Hub = ({ user: initialUser }) => {
       {/* Apply to Join Modal */}
       <AnimatePresence>
         {applyingProblem && (
-          <div className="modal-overlay" onClick={() => setApplyingProblem(null)}>
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}
+            onClick={() => setApplyingProblem(null)}
+          >
             <motion.div 
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -539,7 +545,7 @@ const Hub = ({ user: initialUser }) => {
                 </div>
               </form>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
