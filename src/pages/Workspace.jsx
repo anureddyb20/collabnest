@@ -29,6 +29,7 @@ const Workspace = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('board');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Post Another Idea Modal State
   const [showPostAnotherModal, setShowPostAnotherModal] = useState(false);
@@ -755,35 +756,15 @@ const Workspace = () => {
         <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'flex-end', marginBottom: '24px', gap: isMobileView ? '16px' : '0' }}>
           <div style={{ width: isMobileView ? '100%' : 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-              {myWorkspaces.length > 1 ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <select
-                    value={selectedProblem.id}
-                    onChange={(e) => navigate(`/workspace/${e.target.value}`)}
-                    style={{
-                      fontSize: isMobileView ? '15px' : '32px',
-                      fontWeight: 800,
-                      color: 'var(--text-main)',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px',
-                      padding: '6px 12px',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      maxWidth: '100%',
-                      textOverflow: 'ellipsis',
-                      fontFamily: 'inherit'
-                    }}
-                  >
-                    {myWorkspaces.map(w => (
-                      <option key={w.id} value={w.id} style={{ background: 'var(--bg-card)', color: 'white' }}>
-                        {w.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <h1 style={{ margin: 0, fontSize: isMobileView ? '15px' : '32px', fontWeight: 800 }}>{selectedProblem.title}</h1>
+              <h1 style={{ margin: 0, fontSize: isMobileView ? '20px' : '32px', fontWeight: 800 }}>{selectedProblem.title}</h1>
+              {myWorkspaces.length > 1 && (
+                <button 
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="btn-outline" 
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '6px 12px', borderColor: 'var(--border)', color: 'var(--text-main)', background: 'rgba(255,255,255,0.05)' }}
+                >
+                  <Briefcase size={14} /> Switch Project
+                </button>
               )}
               <span className="badge badge-primary">{stages[stageIndex]}</span>
               {isOwner && (
@@ -1961,6 +1942,110 @@ const Workspace = () => {
           </motion.div>
         </div>
       )}
+
+      {/* Project Switcher Sidebar */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              style={{
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                background: 'rgba(0,0,0,0.5)', zIndex: 1040, backdropFilter: 'blur(4px)'
+              }}
+            />
+            <motion.div 
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              style={{
+                position: 'fixed', top: 0, left: 0, bottom: 0,
+                width: isMobileView ? '100%' : '400px',
+                background: 'var(--bg-main)', zIndex: 1050,
+                borderRight: '1px solid var(--border)',
+                boxShadow: '4px 0 24px rgba(0,0,0,0.3)',
+                display: 'flex', flexDirection: 'column'
+              }}
+            >
+              <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Briefcase size={20} color="var(--primary)" /> My Projects
+                </h2>
+                <button onClick={() => setIsSidebarOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <XCircle size={24} />
+                </button>
+              </div>
+              <div style={{ padding: '24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {myWorkspaces.map(w => {
+                  const isSelected = String(w.id) === String(selectedProblem.id);
+                  const wProgress = ((w.stageIndex !== undefined ? w.stageIndex : 2) + 1) * 20;
+                  const wTeamSize = w.team?.current || (w.teamMembers?.length ? w.teamMembers.length + 1 : 2);
+                  const wMaxTeamSize = w.team?.total || 5;
+                  const pendingCount = (w.applications || []).filter(a => a.status === 'Pending').length;
+                  
+                  return (
+                    <div 
+                      key={w.id}
+                      onClick={() => {
+                        setIsSidebarOpen(false);
+                        navigate(`/workspace/${w.id}`);
+                      }}
+                      className="glass-card project-card-hover"
+                      style={{ 
+                        padding: '16px', 
+                        cursor: 'pointer',
+                        border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
+                        background: isSelected ? 'rgba(99, 102, 241, 0.05)' : 'rgba(255,255,255,0.02)',
+                        position: 'relative'
+                      }}
+                    >
+                      {isSelected && (
+                        <div style={{ position: 'absolute', top: '16px', right: '16px', color: 'var(--primary)' }}>
+                          <CheckCircle size={16} />
+                        </div>
+                      )}
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', paddingRight: '24px' }}>{w.title}</h4>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                        <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{w.domain || 'Tech'}</span>
+                        <span className="badge" style={{ background: 'rgba(255,255,255,0.1)', fontSize: '0.7rem' }}>{stages[w.stageIndex || 2]}</span>
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Users size={14} /> Team: {wTeamSize}/{wMaxTeamSize}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Activity size={14} /> {wProgress}% Done
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <MessageSquare size={14} /> {pendingCount} Pending
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Settings size={14} /> Active
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ padding: '24px', borderTop: '1px solid var(--border)' }}>
+                <button 
+                  onClick={() => { setIsSidebarOpen(false); setShowPostAnotherModal(true); }}
+                  className="btn-primary" 
+                  style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px' }}
+                >
+                  <Plus size={16} /> Create New Project
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

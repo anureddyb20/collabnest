@@ -137,6 +137,16 @@ h1, h2, h3, h4 {
   box-shadow: 6px 6px 16px rgba(108, 99, 255, 0.08);
 }
 
+.project-card-hover {
+  transition: var(--transition);
+}
+
+.project-card-hover:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary) !important;
+  box-shadow: 0 8px 24px rgba(108, 99, 255, 0.12);
+}
+
 .btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   color: #FFFFFF;
