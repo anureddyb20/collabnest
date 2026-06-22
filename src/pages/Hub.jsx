@@ -6,10 +6,16 @@ import { Search, Filter, TrendingUp, Users, Clock, Target, Plus, ChevronRight, B
 import { problems } from '../data/problems';
 import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
+import { useNotification } from '../context/NotificationContext';
+import ClaimProjectModal from '../components/ClaimProjectModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 const Hub = ({ user: initialUser }) => {
   const navigate = useNavigate();
   const { isMobileView } = useView();
+  const { showNotification } = useNotification();
+  const [claimingProject, setClaimingProject] = useState(null);
+  const [deletingProject, setDeletingProject] = useState(null);
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeSidebar, setActiveSidebar] = useState('Problems');
   const [displayProblems, setDisplayProblems] = useState(userService.getAllProblems());
@@ -87,12 +93,21 @@ const Hub = ({ user: initialUser }) => {
   const handleClaim = (id) => {
     const session = userService.getCurrentUser();
     if (!session) {
-      alert('Please log in or create an account first to claim a project!');
+      showNotification('Please log in or create an account first to claim a project!', 'warning');
       navigate('/onboarding');
       return;
     }
-    userService.claimProject(id);
-    setRefreshKey(prev => prev + 1);
+    const proj = displayProblems.find(p => String(p.id) === String(id)) || userService.getAllProblems().find(p => String(p.id) === String(id));
+    setClaimingProject(proj);
+  };
+
+  const confirmClaim = () => {
+    if (claimingProject) {
+      userService.claimProject(claimingProject.id);
+      setRefreshKey(prev => prev + 1);
+      showNotification('Project claimed successfully!', 'success');
+      setClaimingProject(null);
+    }
   };
 
   const handleApplySubmit = (e) => {
@@ -102,13 +117,13 @@ const Hub = ({ user: initialUser }) => {
     setApplyingProblem(null);
     setApplicationData({ motivation: '', portfolio: '', message: '' });
     setRefreshKey(prev => prev + 1);
-    alert('Application submitted successfully!');
+    showNotification('Application submitted successfully!', 'success');
   };
 
   const handleJoin = (id) => {
     const session = userService.getCurrentUser();
     if (!session) {
-      alert('Please log in or create an account first to join a team!');
+      showNotification('Please log in or create an account first to join a team!', 'warning');
       navigate('/onboarding');
       return;
     }
@@ -120,7 +135,7 @@ const Hub = ({ user: initialUser }) => {
     e.stopPropagation();
     const session = userService.getCurrentUser();
     if (!session) {
-      alert('Please log in or create an account first to save problems!');
+      showNotification('Please log in or create an account first to save problems!', 'warning');
       navigate('/onboarding');
       return;
     }
@@ -131,9 +146,16 @@ const Hub = ({ user: initialUser }) => {
   const handleDelete = (e, id) => {
     e.stopPropagation();
     e.preventDefault();
-    if (window.confirm('PERMANENT ACTION: Are you sure you want to delete this idea?')) {
-      userService.deleteProblem(id);
+    const proj = displayProblems.find(p => String(p.id) === String(id)) || userService.getAllProblems().find(p => String(p.id) === String(id));
+    setDeletingProject(proj);
+  };
+
+  const confirmDelete = () => {
+    if (deletingProject) {
+      userService.deleteProblem(deletingProject.id);
       setRefreshKey(prev => prev + 1);
+      showNotification('Project deleted successfully.', 'success');
+      setDeletingProject(null);
     }
   };
 
@@ -141,13 +163,13 @@ const Hub = ({ user: initialUser }) => {
     e.stopPropagation();
     const session = userService.getCurrentUser();
     if (!session) {
-      alert('Please log in or create an account first to submit a proposal!');
+      showNotification('Please log in or create an account first to submit a proposal!', 'warning');
       navigate('/onboarding');
       return;
     }
     userService.submitProposal(id);
     setUserData(userService.getCurrentUser() || { joined: [], saved: [], submissions: [], reputation: 0 });
-    alert('Submission successful! You can track it in the Submissions tab.');
+    showNotification('Submission successful! You can track it in the Submissions tab.', 'success');
   };
 
   const handlePostProblem = (e) => {
@@ -428,7 +450,7 @@ const Hub = ({ user: initialUser }) => {
                                 e.stopPropagation();
                                 const session = userService.getCurrentUser();
                                 if (!session) {
-                                  alert('Please log in or create an account first!');
+                                  showNotification('Please log in or create an account first!', 'warning');
                                   navigate('/onboarding');
                                   return;
                                 }
@@ -672,6 +694,23 @@ const Hub = ({ user: initialUser }) => {
           </motion.div>
         </div>
       )}
+
+      <ClaimProjectModal
+        isOpen={!!claimingProject}
+        project={claimingProject}
+        onConfirm={confirmClaim}
+        onCancel={() => setClaimingProject(null)}
+      />
+      
+      <ConfirmModal
+        isOpen={!!deletingProject}
+        title="Delete Project"
+        message="PERMANENT ACTION: Are you sure you want to delete this idea?"
+        confirmText="Delete"
+        isDanger={true}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeletingProject(null)}
+      />
     </div>
   );
 };

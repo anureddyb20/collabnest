@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
+import { useNotification } from '../context/NotificationContext';
+import ClaimProjectModal from '../components/ClaimProjectModal';
 
 const DOMAINS = ['All', 'AI/ML', 'FinTech', 'HealthTech', 'Sustainability', 'Education'];
 const DIFFICULTIES = ['All', 'Intermediate', 'Advanced', 'Expert'];
@@ -12,6 +14,8 @@ const SKILL_OPTIONS = ['React', 'Python', 'Node.js', 'Machine Learning', 'UX Des
 export default function BuilderHub({ user }) {
   const navigate = useNavigate();
   const { isMobileView } = useView();
+  const { showNotification } = useNotification();
+  const [claimingProject, setClaimingProject] = useState(null);
   const [tab, setTab] = useState('discover'); // discover | profile | portfolio
   const [domainFilter, setDomainFilter] = useState('All');
   const [diffFilter, setDiffFilter] = useState('All');
@@ -70,18 +74,27 @@ export default function BuilderHub({ user }) {
     setApplying(null);
     setApplicationData({ motivation: '', portfolio: '', message: '' });
     setApplyMsg('');
-    alert('Application submitted successfully!');
+    showNotification('Application submitted successfully!', 'success');
   };
 
   const handleClaim = (id) => {
     const session = userService.getCurrentUser();
     if (!session) {
-      alert('Please log in or create an account first to claim a project!');
+      showNotification('Please log in or create an account first to claim a project!', 'warning');
       navigate('/onboarding');
       return;
     }
-    userService.claimProject(id);
-    setProblems(userService.getAllProblems());
+    const proj = problems.find(p => String(p.id) === String(id));
+    setClaimingProject(proj);
+  };
+
+  const confirmClaim = () => {
+    if (claimingProject) {
+      userService.claimProject(claimingProject.id);
+      setProblems(userService.getAllProblems());
+      showNotification('Project claimed successfully!', 'success');
+      setClaimingProject(null);
+    }
   };
 
   const addSkill = (skill) => {
@@ -378,6 +391,13 @@ export default function BuilderHub({ user }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ClaimProjectModal
+        isOpen={!!claimingProject}
+        project={claimingProject}
+        onConfirm={confirmClaim}
+        onCancel={() => setClaimingProject(null)}
+      />
     </div>
   );
 }

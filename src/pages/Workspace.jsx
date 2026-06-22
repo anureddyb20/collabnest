@@ -10,6 +10,8 @@ import {
 import { problems } from '../data/problems';
 import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
+import { useNotification } from '../context/NotificationContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 const getChatsWithFallback = (problemId) => {
   const newKey = `collabnest_chats_${problemId}`;
@@ -26,6 +28,7 @@ const getChatsWithFallback = (problemId) => {
 
 const Workspace = () => {
   const { isMobileView } = useView();
+  const { showNotification } = useNotification();
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('board');
@@ -184,6 +187,7 @@ const Workspace = () => {
   const [newDocName, setNewDocName] = useState('');
   const [newDocType, setNewDocType] = useState('PDF');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [docToDelete, setDocToDelete] = useState(null);
 
   // Persistence & Reject Modal states
   const [rejectedList, setRejectedList] = useState([]);
@@ -408,7 +412,7 @@ const Workspace = () => {
   const handleAccept = (app) => {
     const success = userService.acceptApplicant(selectedProblem.id, app.email);
     if (!success) {
-      alert("Error accepting applicant");
+      showNotification("Error accepting applicant", "error");
       return;
     }
     
@@ -438,7 +442,7 @@ const Workspace = () => {
       userService.updateProblem(selectedProblem.id, { contributionsLogs: logs });
     }
     
-    alert(`${app.name || app.email} has been accepted into the team!`);
+    showNotification(`${app.name || app.email} has been accepted into the team!`, "success");
   };
 
   const handleReject = (app) => {
@@ -451,7 +455,7 @@ const Workspace = () => {
     
     const success = userService.rejectApplicant(selectedProblem.id, rejectingApplicant.email);
     if (!success) {
-      alert("Error rejecting applicant");
+      showNotification("Error rejecting applicant", "error");
       return;
     }
 
@@ -471,7 +475,7 @@ const Workspace = () => {
     // Filter out from active applicants
     setLocalApplicants(localApplicants.filter(a => a.email !== rejectingApplicant.email));
     
-    alert(`Rejection confirmed for ${rejectingApplicant.name || rejectingApplicant.email}.`);
+    showNotification(`Rejection confirmed for ${rejectingApplicant.name || rejectingApplicant.email}.`, "success");
     setRejectingApplicant(null);
   };
 
@@ -697,10 +701,16 @@ const Workspace = () => {
   };
 
   const handleDeleteFile = (docName) => {
-    if (window.confirm(`Are you sure you want to delete ${docName}?`)) {
-      const updatedDocs = docsList.filter(d => d.name !== docName);
+    setDocToDelete(docName);
+  };
+
+  const confirmDeleteFile = () => {
+    if (docToDelete) {
+      const updatedDocs = docsList.filter(d => d.name !== docToDelete);
       setDocsList(updatedDocs);
       userService.updateProblem(selectedProblem.id, { docs: updatedDocs });
+      showNotification(`Deleted ${docToDelete}`, "success");
+      setDocToDelete(null);
     }
   };
 
@@ -748,7 +758,7 @@ const Workspace = () => {
       contributionsLogs: updatedLogs
     });
 
-    alert(`${candidate.name} has accepted your invitation and joined the team!`);
+    showNotification(`${candidate.name} has accepted your invitation and joined the team!`, "success");
   };
 
   return (
@@ -1451,7 +1461,7 @@ const Workspace = () => {
                             setNewDocName('');
                             setSelectedFile(null);
                             setShowUploadModal(false);
-                            alert(`${newDocName} successfully uploaded to workspace!`);
+                            showNotification(`${newDocName} successfully uploaded to workspace!`, "success");
                           };
 
                           if (selectedFile) {
@@ -2065,6 +2075,16 @@ const Workspace = () => {
         )}
       </AnimatePresence>
 
+      {/* File Deletion Confirmation */}
+      <ConfirmModal
+        isOpen={!!docToDelete}
+        title="Delete Document"
+        message={`Are you sure you want to delete ${docToDelete}?`}
+        confirmText="Delete"
+        isDanger={true}
+        onConfirm={confirmDeleteFile}
+        onCancel={() => setDocToDelete(null)}
+      />
     </div>
   );
 };
