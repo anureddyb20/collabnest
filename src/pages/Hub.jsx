@@ -423,10 +423,10 @@ const Hub = ({ user: initialUser }) => {
                       </div>
                     </div>
                     
-                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, lineHeight: 1.4, marginBottom: '12px' }}>
-                      {p.title}
+                    <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, lineHeight: 1.4, marginBottom: '12px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                      <span>{p.title}</span>
                       {p.status === 'available_to_claim' && (
-                        <span style={{ marginLeft: '10px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600, border: '1px solid rgba(139, 92, 246, 0.25)', verticalAlign: 'middle' }}>
+                        <span style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600, border: '1px solid rgba(139, 92, 246, 0.25)', whiteSpace: 'nowrap' }}>
                           Unclaimed AI Project
                         </span>
                       )}
