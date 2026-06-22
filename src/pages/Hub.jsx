@@ -376,7 +376,7 @@ const Hub = ({ user: initialUser }) => {
                         style={{ 
                           color: 'var(--text-dim)',
                           cursor: p.team.current > 1 ? 'not-allowed' : 'pointer', 
-                          opacity: p.team.current > 1 ? 0.5 : 1
+                          opacity: 1
                         }}
                       >
                         <Trash2 size={20} />
