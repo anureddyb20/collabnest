@@ -471,3 +471,23 @@ h1, h2, h3, h4 {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Delete Button Hub */
+.delete-btn-hub {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: var(--transition);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-btn-hub:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}

@@ -365,11 +365,9 @@ const Hub = ({ user: initialUser }) => {
                         disabled={p.team.current > 1}
                         className="delete-btn-hub"
                         style={{ 
-                          background: 'rgba(255, 68, 68, 0.2)', border: '1px solid rgba(255, 68, 68, 0.4)', 
-                          color: p.team.current > 1 ? 'rgba(255,255,255,0.1)' : '#ff4444',
-                          cursor: p.team.current > 1 ? 'not-allowed' : 'pointer', transition: 'all 0.2s ease',
-                          width: '42px', height: '42px', borderRadius: '12px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          color: p.team.current > 1 ? 'rgba(255,255,255,0.1)' : 'var(--text-dim)',
+                          cursor: p.team.current > 1 ? 'not-allowed' : 'pointer', 
+                          opacity: p.team.current > 1 ? 0.3 : 1
                         }}
                       >
                         <Trash2 size={20} />
