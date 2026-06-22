@@ -275,46 +275,43 @@ const Hub = ({ user: initialUser }) => {
         {/* Main Content */}
         <div>
           {/* Header & Search */}
-          <div className="glass-panel" style={{ padding: isMobileView ? '24px' : '32px', marginBottom: '40px', background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(108,99,255,0.05) 100%)', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(108,99,255,0.1) 0%, transparent 70%)', borderRadius: '50%' }} />
-            <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'center', gap: isMobileView ? '20px' : '32px', position: 'relative', zIndex: 1 }}>
-              <div style={{ flex: 1 }}>
-                <h1 style={{ fontSize: isMobileView ? '24px' : '32px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 8px 0' }}>
-                  {activeSidebar === 'Problems' ? 'Problem Hub' : 
-                   activeSidebar === 'Teams' ? 'My Joined Teams' :
-                   activeSidebar === 'Submissions' ? 'My Submissions' : 
-                   activeSidebar === 'MyProblems' ? 'My Posted Statements' : 'Saved Problems'}
-                </h1>
-                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: isMobileView ? '14px' : '15px', maxWidth: '500px', lineHeight: '1.5' }}>
-                  {activeSidebar === 'Problems' ? 'Explore curated challenges and find your next mission.' : 
-                   activeSidebar === 'Teams' ? 'Keep track of projects you are building.' :
-                   activeSidebar === 'Submissions' ? 'Manage your proposals and validations.' : 
-                   activeSidebar === 'MyProblems' ? 'All the problem statements you have posted.' : 'Your personal collection of interesting problems.'}
-                </p>
+          <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'flex-end', gap: isMobileView ? '12px' : '0', marginBottom: isMobileView ? '20px' : '40px' }}>
+            <div>
+              <h1 style={{ fontSize: isMobileView ? '1.3rem' : '2.5rem', marginBottom: '8px' }}>
+                {activeSidebar === 'Problems' ? 'Problem Hub' : 
+                 activeSidebar === 'Teams' ? 'My Joined Teams' :
+                 activeSidebar === 'Submissions' ? 'My Submissions' : 
+                 activeSidebar === 'MyProblems' ? 'My Posted Statements' : 'Saved Problems'}
+              </h1>
+              <p style={{ color: 'var(--text-muted)' }}>
+                {activeSidebar === 'Problems' ? 'Explore curated challenges and find your next mission.' : 
+                 activeSidebar === 'Teams' ? 'Keep track of projects you are building.' :
+                 activeSidebar === 'Submissions' ? 'Manage your proposals and validations.' : 
+                 activeSidebar === 'MyProblems' ? 'All the problem statements you have posted.' : 'Your personal collection of interesting problems.'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', width: isMobileView ? '100%' : 'auto', flexDirection: isMobileView ? 'column' : 'row' }}>
+              <div style={{ position: 'relative', width: isMobileView ? '100%' : 'auto' }}>
+                <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Search..."
+                  style={{ 
+                    background: 'var(--bg-surface)', border: '1px solid var(--border)',
+                    borderRadius: '12px', padding: '12px 12px 12px 40px', color: 'white', 
+                    width: isMobileView ? '100%' : '260px',
+                    height: '46px', boxSizing: 'border-box'
+                  }}
+                />
               </div>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', width: isMobileView ? '100%' : 'auto', flexDirection: isMobileView ? 'column' : 'row' }}>
-                <div style={{ position: 'relative', width: isMobileView ? '100%' : '260px' }}>
-                  <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} size={18} />
-                  <input 
-                    type="text" 
-                    placeholder="Search..."
-                    style={{ 
-                      background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
-                      borderRadius: '12px', padding: '12px 12px 12px 40px', color: 'var(--text-main)', 
-                      width: '100%',
-                      height: '46px', boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-                <button 
-                  className="btn-primary" 
-                  style={{ height: '46px', width: isMobileView ? '100%' : 'auto', justifyContent: 'center', whiteSpace: 'nowrap', padding: '0 20px' }}
-                  onClick={() => setShowPostModal(true)}
-                >
-                  <Plus size={18} />
-                  Post Problem
-                </button>
-              </div>
+              <button 
+                className="btn-primary" 
+                style={{ height: '46px', width: isMobileView ? '100%' : 'auto', justifyContent: 'center' }}
+                onClick={() => setShowPostModal(true)}
+              >
+                <Plus size={18} />
+                Post Problem
+              </button>
             </div>
           </div>
 

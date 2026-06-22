@@ -47,38 +47,22 @@ const WorkspaceDashboard = () => {
 
   return (
     <div className="container" style={{ padding: isMobileView ? '24px 16px' : '40px 0' }}>
-      <div className="glass-panel" style={{ padding: isMobileView ? '24px' : '32px', marginBottom: '40px', background: 'linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(108,99,255,0.05) 100%)', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(108,99,255,0.1) 0%, transparent 70%)', borderRadius: '50%' }} />
-        
-        <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'center', gap: '24px', position: 'relative', zIndex: 1 }}>
-          <div>
-            <h1 style={{ fontSize: isMobileView ? '28px' : '36px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 12px 0' }}>
-              Welcome back, <span className="accent-gradient">{currentUser?.name || 'Builder'}</span>!
-            </h1>
-            <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: isMobileView ? '14px' : '16px', maxWidth: '600px', lineHeight: '1.6' }}>
-              Explore curated challenges, manage your active workspaces, and build impactful projects with your team.
-            </p>
-            
-            <div style={{ display: 'flex', gap: '16px', marginTop: '24px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <Activity size={18} color="var(--primary)" />
-                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{myProjects.length} Active Workspaces</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <Users size={18} color="var(--secondary)" />
-                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{currentUser?.reputation || 0} XP</span>
-              </div>
-            </div>
-          </div>
-          
-          <button 
-            onClick={() => navigate('/builder')}
-            className="btn-primary" 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', whiteSpace: 'nowrap', flexShrink: 0 }}
-          >
-            <Plus size={20} /> Post New Project
-          </button>
+      <div style={{ marginBottom: '40px', display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'center', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: isMobileView ? '28px' : '36px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 8px 0' }}>
+            My Workspaces
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: isMobileView ? '14px' : '16px' }}>
+            Manage all your owned projects and team collaborations in one place.
+          </p>
         </div>
+        <button 
+          onClick={() => navigate('/builder')}
+          className="btn-primary" 
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}
+        >
+          <Plus size={18} /> Post New Project
+        </button>
       </div>
 
       {myProjects.length === 0 ? (
