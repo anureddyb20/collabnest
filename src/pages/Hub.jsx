@@ -156,6 +156,10 @@ const Hub = ({ user: initialUser }) => {
     e.stopPropagation();
     e.preventDefault();
     const proj = displayProblems.find(p => String(p.id) === String(id)) || userService.getAllProblems().find(p => String(p.id) === String(id));
+    if (proj && proj.team && proj.team.current > 1) {
+      showNotification('You cannot delete a project that already has active builders!', 'warning');
+      return;
+    }
     setDeletingProject(proj);
   };
 
@@ -371,7 +375,6 @@ const Hub = ({ user: initialUser }) => {
                           e.stopPropagation();
                           handleDelete(e, p.id);
                         }}
-                        disabled={p.team.current > 1}
                         className="delete-btn-hub"
                         style={{ 
                           color: 'var(--text-dim)',
