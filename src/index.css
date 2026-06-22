@@ -39,7 +39,7 @@ body {
 }
 
 /* Global Input Fields Visibility Fix */
-input, textarea, select {
+input:not([type="checkbox"]):not([type="radio"]), textarea, select {
   color: var(--text-main) !important;
   background: #FFFFFF !important;
   border: 1px solid var(--border) !important;
