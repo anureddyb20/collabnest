@@ -72,7 +72,7 @@ const ConfirmModal = ({ isOpen, title, message, confirmText = "Confirm", cancelT
               <button 
                 onClick={onCancel}
                 className="btn-outline"
-                style={{ flex: 1, padding: '10px' }}
+                style={{ flex: 1, padding: '0 12px', height: '48px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box' }}
               >
                 {cancelText}
               </button>
@@ -80,7 +80,7 @@ const ConfirmModal = ({ isOpen, title, message, confirmText = "Confirm", cancelT
                 onClick={onConfirm}
                 className="btn-primary"
                 style={{ 
-                  flex: 1, padding: '10px',
+                  flex: 1, padding: '0 12px', height: '48px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box',
                   background: isDanger ? 'var(--error, #ef4444)' : 'var(--primary)',
                   color: 'white',
                   border: 'none'

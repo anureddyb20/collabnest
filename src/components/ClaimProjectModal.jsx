@@ -116,14 +116,14 @@ const ClaimProjectModal = ({ isOpen, project, onConfirm, onCancel }) => {
               <button 
                 onClick={onCancel}
                 className="btn-outline"
-                style={{ flex: 1, padding: '12px', fontSize: '0.95rem' }}
+                style={{ flex: 1, padding: '0 12px', fontSize: '0.95rem', height: '48px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box' }}
               >
                 Cancel
               </button>
               <button 
                 onClick={onConfirm}
                 className="btn-primary"
-                style={{ flex: 1, padding: '12px', fontSize: '0.95rem' }}
+                style={{ flex: 1, padding: '0 12px', fontSize: '0.95rem', height: '48px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box' }}
               >
                 Confirm Claim
               </button>
