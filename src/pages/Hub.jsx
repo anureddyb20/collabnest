@@ -374,9 +374,9 @@ const Hub = ({ user: initialUser }) => {
                         disabled={p.team.current > 1}
                         className="delete-btn-hub"
                         style={{ 
-                          color: p.team.current > 1 ? 'rgba(255,255,255,0.1)' : 'var(--text-dim)',
+                          color: 'var(--text-dim)',
                           cursor: p.team.current > 1 ? 'not-allowed' : 'pointer', 
-                          opacity: p.team.current > 1 ? 0.3 : 1
+                          opacity: p.team.current > 1 ? 0.5 : 1
                         }}
                       >
                         <Trash2 size={20} />
@@ -469,7 +469,7 @@ const Hub = ({ user: initialUser }) => {
                           )
                         )}
                         
-                        {p.author && userData.email && userService.areEmailsSimilar(p.author, userData.email) ? (
+                        {isOwnerFn(p, userData) ? (
                           <span style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 255, 255, 0.05)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
                             👑 Owner
                           </span>
