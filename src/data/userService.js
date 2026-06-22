@@ -105,7 +105,7 @@ export const userService = {
         .select(`
           *,
           project_members (*),
-          project_applications (*)
+          project_applications (*, users (*))
         `)
         .order('created_at', { ascending: false });
 
@@ -124,7 +124,13 @@ export const userService = {
           desc: p.description, // remap description -> desc for frontend
           team: { current: p.project_members?.length || 1, total: p.team_total || 5 },
           teamMembers: p.project_members || [],
-          applications: p.project_applications || [],
+          applications: (p.project_applications || []).map(app => ({
+            ...app,
+            email: app.users?.email || app.email,
+            name: app.users?.name || app.name,
+            reputation: app.users?.reputation || 10,
+            skills: app.users?.skills || []
+          })),
           author: p.author || p.owner_email,
           ownerId: p.owner_id,
           ownerEmail: p.owner_email,
@@ -154,7 +160,7 @@ export const userService = {
           .select(`
             *,
             project_members (*),
-            project_applications (*)
+            project_applications (*, users (*))
           `)
           .order('created_at', { ascending: false });
           
@@ -400,7 +406,7 @@ export const userService = {
         .select(`
           *,
           project_members (*),
-          project_applications (*)
+          project_applications (*, users (*))
         `)
         .in('id', allIds)
         .order('created_at', { ascending: false });
@@ -421,7 +427,13 @@ export const userService = {
         desc: p.description,
         team: { current: p.project_members?.length || 1, total: p.team_total || 5 },
         teamMembers: p.project_members || [],
-        applications: p.project_applications || [],
+        applications: (p.project_applications || []).map(app => ({
+          ...app,
+          email: app.users?.email || app.email,
+          name: app.users?.name || app.name,
+          reputation: app.users?.reputation || 10,
+          skills: app.users?.skills || []
+        })),
         author: p.author || p.owner_email,
         ownerId: p.owner_id,
         ownerEmail: p.owner_email
