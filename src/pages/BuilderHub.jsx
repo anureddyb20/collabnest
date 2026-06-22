@@ -35,18 +35,35 @@ export default function BuilderHub({ user }) {
   const [profileSaved, setProfileSaved] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [joinedProblems, setJoinedProblems] = useState([]);
+
   useEffect(() => {
-    setProblems(userService.getAllProblems());
-    const cur = userService.getCurrentUser() || user;
-    setCurrentUser(cur);
-    if (cur?.submissions) setApplied(cur.submissions.map(String));
-    if (cur) {
-      setProfile(p => ({
-        ...p,
-        skills: cur.skills || [],
-        experience: cur.experience || 'Entry Level'
-      }));
-    }
+    const fetchData = async () => {
+      setIsLoading(true);
+      
+      const allProblems = await userService.getAllProblems();
+      setProblems(allProblems || []);
+      
+      const cur = userService.getCurrentUser() || user;
+      setCurrentUser(cur);
+      
+      if (cur?.submissions) setApplied(cur.submissions.map(String));
+      if (cur) {
+        setProfile(p => ({
+          ...p,
+          skills: cur.skills || [],
+          experience: cur.experience || 'Entry Level'
+        }));
+      }
+
+      const joined = await userService.getJoinedProblems();
+      setJoinedProblems(joined || []);
+      
+      setIsLoading(false);
+    };
+
+    fetchData();
   }, [user]);
 
   const filtered = problems.filter(p => {
@@ -66,10 +83,10 @@ export default function BuilderHub({ user }) {
     setApplyMsg('');
   };
 
-  const submitApplication = (e) => {
+  const submitApplication = async (e) => {
     e.preventDefault();
     if (!applying) return;
-    userService.applyToJoin(applying.id, applicationData);
+    await userService.applyToJoin(applying.id, applicationData);
     setApplied(prev => [...prev, String(applying.id)]);
     setApplying(null);
     setApplicationData({ motivation: '', portfolio: '', message: '' });
@@ -88,10 +105,10 @@ export default function BuilderHub({ user }) {
     setClaimingProject(proj);
   };
 
-  const confirmClaim = () => {
+  const confirmClaim = async () => {
     if (claimingProject) {
-      userService.claimProject(claimingProject.id);
-      setProblems(userService.getAllProblems());
+      await userService.claimProject(claimingProject.id);
+      setProblems(await userService.getAllProblems());
       showNotification('Project claimed successfully!', 'success');
       setClaimingProject(null);
     }
@@ -107,9 +124,9 @@ export default function BuilderHub({ user }) {
     setProfile(p => ({ ...p, skills: p.skills.filter(s => s !== skill) }));
   };
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     if (currentUser) {
-      const updatedUser = userService.updateProfile(currentUser.email, {
+      const updatedUser = await userService.updateProfile(currentUser.email, {
         skills: profile.skills,
         experience: profile.experience,
         commitment: profile.availability,
@@ -123,7 +140,7 @@ export default function BuilderHub({ user }) {
     setTimeout(() => setProfileSaved(false), 2000);
   };
 
-  const joinedProblems = userService.getJoinedProblems();
+  // joinedProblems is now part of state
 
   const diffColor = { Intermediate: '#10b981', Advanced: '#f59e0b', Expert: '#ef4444', Medium: '#10b981' };
   const impactColor = { High: '#6366f1', Critical: '#ef4444', Medium: '#10b981', 'Life-changing': '#8b5cf6' };
@@ -231,6 +248,10 @@ export default function BuilderHub({ user }) {
       {/* DISCOVER TAB */}
       {tab === 'discover' && (
         <div>
+          {isLoading ? (
+            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading projects...</div>
+          ) : (
+            <>
           {/* Filters */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search problems..." style={{ flex: 1, minWidth: 200, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', color: 'var(--text-primary)', fontSize: 13 }} />
@@ -260,6 +281,8 @@ export default function BuilderHub({ user }) {
             {filtered.map(p => card(p))}
             {filtered.length === 0 && <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1' }}>No projects match your filters.</p>}
           </div>
+            </>
+          )}
         </div>
       )}
 
@@ -340,34 +363,40 @@ export default function BuilderHub({ user }) {
       {/* PORTFOLIO TAB */}
       {tab === 'portfolio' && (
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 20 }}>Your Project Portfolio</h2>
-          {joinedProblems.length === 0 ? (
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 40, textAlign: 'center' }}>
-              <p style={{ fontSize: 32, marginBottom: 12 }}>🚀</p>
-              <h3 style={{ color: 'var(--text-primary)', marginBottom: 8 }}>No projects yet</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Apply to projects in the Discover tab to start building your portfolio.</p>
-              <button onClick={() => setTab('discover')} style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 16 }}>Discover Projects</button>
-            </div>
+          {isLoading ? (
+            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading portfolio...</div>
           ) : (
-            <div className="grid-auto">
-              {joinedProblems.map(p => (
-                <motion.div key={p.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20 }}>✓ Contributor</span>
-                    <span style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8', fontSize: 11, padding: '3px 10px', borderRadius: 20 }}>{p.status}</span>
-                  </div>
-                  <h3 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{p.title}</h3>
-                  <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-secondary)' }}>{p.domain} · {p.difficulty}</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-                    {(p.skills || []).map(s => <span key={s} style={{ background: 'var(--bg-main)', color: 'var(--text-secondary)', fontSize: 11, padding: '2px 8px', borderRadius: 20, border: '1px solid var(--border)' }}>{s}</span>)}
-                  </div>
-                  <button onClick={() => navigate(`/workspace/${p.id}`)} style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                    Open Workspace →
-                  </button>
-                </motion.div>
-              ))}
-            </div>
+            <>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 24 }}>My Portfolio</h2>
+              {joinedProblems.length === 0 ? (
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 40, textAlign: 'center' }}>
+                  <p style={{ fontSize: 32, marginBottom: 12 }}>🚀</p>
+                  <h3 style={{ color: 'var(--text-primary)', marginBottom: 8 }}>No projects yet</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Apply to projects in the Discover tab to start building your portfolio.</p>
+                  <button onClick={() => setTab('discover')} style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 16 }}>Discover Projects</button>
+                </div>
+              ) : (
+                <div className="grid-auto">
+                  {joinedProblems.map(p => (
+                    <motion.div key={p.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <span style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20 }}>✓ Contributor</span>
+                        <span style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8', fontSize: 11, padding: '3px 10px', borderRadius: 20 }}>{p.status}</span>
+                      </div>
+                      <h3 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{p.title}</h3>
+                      <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-secondary)' }}>{p.domain} · {p.difficulty}</p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                        {(p.skills || []).map(s => <span key={s} style={{ background: 'var(--bg-main)', color: 'var(--text-secondary)', fontSize: 11, padding: '2px 8px', borderRadius: 20, border: '1px solid var(--border)' }}>{s}</span>)}
+                      </div>
+                      <button onClick={() => navigate(`/workspace/${p.id}`)} style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                        Open Workspace →
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

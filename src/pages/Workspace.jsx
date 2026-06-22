@@ -27,9 +27,47 @@ const getChatsWithFallback = (problemId) => {
 };
 
 const Workspace = () => {
+  const { id } = useParams();
+  const [selectedProblem, setSelectedProblem] = useState(null);
+  const [allWorkspaces, setAllWorkspaces] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWorkspaceData = async () => {
+      setIsLoading(true);
+      const all = await userService.getAllProblems();
+      let proj = all.find(p => String(p.id) === String(id));
+      if (!proj) {
+        proj = problems.find(p => String(p.id) === String(id)) || problems[0];
+        const storageKey = `collabnest_local_project_${proj.id}`;
+        const localDataStr = localStorage.getItem(storageKey);
+        if (localDataStr) {
+          proj = { ...proj, ...JSON.parse(localDataStr) };
+        }
+      }
+      const workspaces = await userService.getJoinedProblems();
+      
+      setSelectedProblem(proj);
+      setAllWorkspaces(workspaces);
+      setIsLoading(false);
+    };
+    fetchWorkspaceData();
+  }, [id]);
+
+  if (isLoading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-main)', color: 'var(--text-muted)' }}>Loading Workspace...</div>;
+  }
+
+  if (!selectedProblem) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-main)', color: 'var(--text-muted)' }}>Workspace not found.</div>;
+  }
+
+  return <WorkspaceContent id={id} selectedProblem={selectedProblem} allWorkspaces={allWorkspaces} />;
+};
+
+const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
   const { isMobileView } = useView();
   const { showNotification } = useNotification();
-  const { id } = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('board');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -41,14 +79,7 @@ const Workspace = () => {
     expectedOutcome: '', projectGoals: '', teamSize: 5
   });
   
-  // Find the problem based on the ID from the URL
-  const allProblems = userService.getAllProblems();
-  const selectedProblem = allProblems.find(p => String(p.id) === String(id)) || problems.find(p => String(p.id) === String(id)) || problems[0];
-  
   const currentUser = userService.getCurrentUser();
-  
-  // Get all user's workspaces to support dynamic switcher
-  const allWorkspaces = userService.getJoinedProblems();
   
   const isOwnerFn = (p) => {
     if (!currentUser) return false;
@@ -59,8 +90,8 @@ const Workspace = () => {
     );
   };
   
-  const ownedWorkspaces = allWorkspaces.filter(isOwnerFn).sort((a, b) => Number(b.id) - Number(a.id));
-  const joinedWorkspaces = allWorkspaces.filter(p => !isOwnerFn(p)).sort((a, b) => Number(b.id) - Number(a.id));
+  const ownedWorkspaces = allWorkspaces.filter(isOwnerFn).sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime());
+  const joinedWorkspaces = allWorkspaces.filter(p => !isOwnerFn(p)).sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime());
   const myWorkspaces = [...ownedWorkspaces, ...joinedWorkspaces];
   
   if (selectedProblem && !myWorkspaces.some(w => String(w.id) === String(selectedProblem.id))) {
@@ -83,7 +114,7 @@ const Workspace = () => {
   console.log("isOwner:", isOwner);
 
   const ownerName = selectedProblem.ownerName || (selectedProblem.author 
-    ? userService.getUserNameByEmail(selectedProblem.author) 
+    ? String(selectedProblem.author).split('@')[0]
     : (currentUser?.role === 'owner' ? (currentUser?.name || "Anu") : "Anu"));
 
   // Helper to format event date based on creation timestamp (real-time scaling)
@@ -208,18 +239,45 @@ const Workspace = () => {
     team.some(m => m.email && currentUser?.email && String(m.email).toLowerCase() === String(currentUser.email).toLowerCase());
 
   useEffect(() => {
-    const refreshData = () => {
+    const refreshData = async () => {
       // Reload problem from database to get latest accepted/rejected members
-      const latestProblems = userService.getAllProblems();
-      const latestProblem = latestProblems.find(p => String(p.id) === String(id)) || problems.find(p => String(p.id) === String(id)) || problems[0];
+      const latestProblems = await userService.getAllProblems();
+      let latestProblem = latestProblems.find(p => String(p.id) === String(id));
+      if (!latestProblem) {
+        latestProblem = problems.find(p => String(p.id) === String(id)) || problems[0];
+        const storageKey = `collabnest_local_project_${latestProblem.id}`;
+        const localDataStr = localStorage.getItem(storageKey);
+        if (localDataStr) {
+          latestProblem = { ...latestProblem, ...JSON.parse(localDataStr) };
+        }
+      }
 
       // Load applicants
       const allApps = latestProblem.applications || [];
       setLocalApplicants(allApps.filter(a => a.status === 'Pending'));
       
-      const ownerName = latestProblem.ownerName || (latestProblem.author 
-        ? userService.getUserNameByEmail(latestProblem.author) 
+      let rawOwnerName = latestProblem.ownerName || (latestProblem.author 
+        ? String(latestProblem.author).split('@')[0]
         : (currentUser?.role === 'owner' ? (currentUser?.name || "Anu") : "Anu"));
+      const ownerName = typeof rawOwnerName === 'object' ? String(latestProblem.author || "Anu").split('@')[0] : rawOwnerName;
+
+      // EMERGENCY SANITIZATION: Clean up poisoned local storage data caused by serialized Promises
+      if (latestProblem.tasks) {
+        Object.values(latestProblem.tasks).forEach(list => {
+          if (Array.isArray(list)) {
+            list.forEach(t => {
+              if (t && typeof t.assignee === 'object') t.assignee = ownerName;
+            });
+          }
+        });
+      }
+      if (latestProblem.docs) {
+        if (Array.isArray(latestProblem.docs)) {
+          latestProblem.docs.forEach(d => {
+            if (d && typeof d.uploader === 'object') d.uploader = ownerName;
+          });
+        }
+      }
 
       // Sync accepted and rejected members list dynamically
       const defaultTeam = [
@@ -271,39 +329,20 @@ const Workspace = () => {
         };
       }
 
-      // Auto-assign tasks to any team member who currently has no tasks
-      let tasksUpdated = false;
-      const allAssignedNames = [
-        ...currentTasks.todo, ...currentTasks.doing, ...currentTasks.done
-      ].map(t => typeof t === 'string' ? 'Anu' : (t.assignee || 'Anu'));
-
-      initialTeam.forEach((member, idx) => {
-        if (!allAssignedNames.includes(member.name)) {
-          currentTasks.todo.push({
-            id: `auto-assign-${Date.now()}-${idx}`,
-            text: `Initial setup for ${member.role || 'Project'}`,
-            assignee: member.name,
-            date: "Just now"
-          });
-          tasksUpdated = true;
-        }
-      });
-
       setTasks(currentTasks);
-      if (tasksUpdated && !latestProblem.tasks) {
-        // If we generated new defaults, we don't necessarily have to save them to DB immediately unless user interacts, 
-        // but saving ensures consistency.
-        userService.updateProblem(selectedProblem.id, { tasks: currentTasks });
-      }
-
+      
       // Load docs
       if (latestProblem.docs) {
         setDocsList(latestProblem.docs);
       } else {
+        const safeTitle = (latestProblem.title || 'Project').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+        const mainSkill = (latestProblem.skills && latestProblem.skills[0]) ? latestProblem.skills[0].replace(/[^a-zA-Z0-9]/g, '') : "Prototype";
+        const domainStr = latestProblem.domain ? latestProblem.domain.replace(/[^a-zA-Z0-9]/g, '') : "System";
+        
         const defaultDocs = [
-          { name: `System_Architecture_${latestProblem.title.replace(/\s+/g, '_')}.pdf`, type: "PDF", size: "2.4 MB", uploader: ownerName, date: getDynamicEventDate(5) },
-          { name: "UI_Wireframes_v2.fig", type: "Figma", size: "12.8 MB", uploader: "Alex", date: getDynamicEventDate(2) },
-          { name: "Project_Proposal.docx", type: "Word", size: "1.1 MB", uploader: ownerName, date: getDynamicEventDate(10) }
+          { name: `${domainStr}_Architecture_Design.pdf`, type: "PDF", size: "2.4 MB", uploader: ownerName, date: getDynamicEventDate(5) },
+          { name: `${safeTitle}_UI_Wireframes.fig`, type: "Figma", size: "12.8 MB", uploader: "Alex", date: getDynamicEventDate(2) },
+          { name: `${mainSkill}_Implementation_Plan.docx`, type: "Word", size: "1.1 MB", uploader: ownerName, date: getDynamicEventDate(10) }
         ];
         setDocsList(defaultDocs);
       }
@@ -311,7 +350,13 @@ const Workspace = () => {
       // Load chats
       const storedChats = getChatsWithFallback(latestProblem.id);
       if (storedChats) {
-        setChatMessages(JSON.parse(storedChats));
+        let parsedChats = JSON.parse(storedChats);
+        if (Array.isArray(parsedChats)) {
+          parsedChats.forEach(c => {
+            if (c && typeof c.sender === 'object') c.sender = ownerName;
+          });
+        }
+        setChatMessages(parsedChats);
       } else {
         const defaultChats = [
           { sender: ownerName, text: `Hey team! Let's get started on the prototype for ${latestProblem.title}.`, time: "10:30 AM" },
@@ -409,8 +454,8 @@ const Workspace = () => {
   ].filter(inv => missingRoles.some(mr => mr.toLowerCase().includes(inv.skill.toLowerCase()) || inv.skill.toLowerCase().includes(mr.toLowerCase())) || true);
 
   // Handlers
-  const handleAccept = (app) => {
-    const success = userService.acceptApplicant(selectedProblem.id, app.email);
+  const handleAccept = async (app) => {
+    const success = await userService.acceptApplicant(selectedProblem.id, app.email);
     if (!success) {
       showNotification("Error accepting applicant", "error");
       return;
@@ -436,7 +481,14 @@ const Workspace = () => {
     setContributionLogs([...contributionLogs, newLog]);
     
     // Save the log to problem for persistence
-    const currentProblem = userService.getAllProblems().find(p => String(p.id) === String(selectedProblem.id));
+    const allProblems = await userService.getAllProblems();
+    let currentProblem = allProblems.find(p => String(p.id) === String(selectedProblem.id));
+    if (!currentProblem) {
+      currentProblem = problems.find(p => String(p.id) === String(selectedProblem.id)) || problems[0];
+      const storageKey = `collabnest_local_project_${currentProblem.id}`;
+      const localDataStr = localStorage.getItem(storageKey);
+      if (localDataStr) currentProblem = { ...currentProblem, ...JSON.parse(localDataStr) };
+    }
     if (currentProblem) {
       const logs = currentProblem.contributionsLogs ? [...currentProblem.contributionsLogs, newLog] : [newLog];
       userService.updateProblem(selectedProblem.id, { contributionsLogs: logs });
@@ -450,10 +502,10 @@ const Workspace = () => {
     setRejectReasonInput('');
   };
 
-  const handleConfirmReject = () => {
+  const handleConfirmReject = async () => {
     if (!rejectingApplicant) return;
     
-    const success = userService.rejectApplicant(selectedProblem.id, rejectingApplicant.email);
+    const success = await userService.rejectApplicant(selectedProblem.id, rejectingApplicant.email);
     if (!success) {
       showNotification("Error rejecting applicant", "error");
       return;
@@ -662,12 +714,50 @@ const Workspace = () => {
       document.body.removeChild(a);
     } else {
       // Create a mock download
-      const content = `Mock document content for: ${doc.name}\nType: ${doc.type}\nUploaded by: ${doc.uploader}\nDate: ${doc.date}\nSize: ${doc.size}\nCollabNest - Collaboration Space.`;
-      const blob = new Blob([content], { type: 'text/plain' });
+      const content = `<!DOCTYPE html>
+<html>
+<head>
+  <title>${doc.name}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; background: #f8fafc; color: #0f172a; line-height: 1.6; }
+    .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 600px; margin: 0 auto; }
+    h1 { color: #4f46e5; font-size: 24px; margin-top: 0; word-break: break-all; margin-bottom: 8px; }
+    .meta { color: #64748b; margin-bottom: 24px; font-size: 14px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+    .footer { margin-top: 40px; font-size: 12px; color: #94a3b8; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>${doc.name}</h1>
+    <div class="meta">
+      <strong>Type:</strong> ${doc.type} &nbsp;|&nbsp; 
+      <strong>Uploaded by:</strong> ${doc.uploader} &nbsp;|&nbsp; 
+      <strong>Date:</strong> ${doc.date} &nbsp;|&nbsp; 
+      <strong>Size:</strong> ${doc.size}
+    </div>
+    <p style="background: #f1f5f9; padding: 16px; border-radius: 8px; border-left: 4px solid #4f46e5; margin-bottom: 24px;">
+      <strong>About this File:</strong> This is a placeholder <em>${doc.type}</em> document for the <strong>${selectedProblem.title}</strong> project.
+    </p>
+
+    <h2 style="font-size: 18px; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 32px;">Project Overview</h2>
+    <p><strong>Domain:</strong> ${selectedProblem.domain || 'N/A'} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Difficulty:</strong> ${selectedProblem.difficulty || 'N/A'}</p>
+    <p><strong>Description:</strong> ${selectedProblem.desc || 'No description provided.'}</p>
+    
+    <h2 style="font-size: 18px; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 32px;">Technical Requirements</h2>
+    <p><strong>Core Skills Needed:</strong> ${(selectedProblem.skills || []).join(', ') || 'None specified'}</p>
+    
+    <div class="footer">Generated by CollabNest Workspace</div>
+  </div>
+</body>
+</html>`;
+      let blob = new Blob([content], { type: 'text/html' });
+      // Always download as HTML so the browser renders the rich details securely
+      let downloadName = doc.name.replace(/\.[^/.]+$/, "") + ".html";
+      
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = doc.name;
+      a.download = downloadName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

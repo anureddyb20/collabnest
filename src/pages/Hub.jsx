@@ -18,7 +18,8 @@ const Hub = ({ user: initialUser }) => {
   const [deletingProject, setDeletingProject] = useState(null);
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeSidebar, setActiveSidebar] = useState('Problems');
-  const [displayProblems, setDisplayProblems] = useState(userService.getAllProblems());
+  const [displayProblems, setDisplayProblems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState(userService.getCurrentUser() || { joined: [], saved: [], submissions: [], reputation: 0 });
   const [showPostModal, setShowPostModal] = useState(false);
   const [newProblem, setNewProblem] = useState({ 
@@ -66,81 +67,88 @@ const Hub = ({ user: initialUser }) => {
   }, []);
 
   useEffect(() => {
-    let list = [];
-    const all = userService.getAllProblems();
+    const fetchData = async () => {
+      setIsLoading(true);
+      let list = [];
+      const all = await userService.getAllProblems();
 
-    if (activeSidebar === 'Problems') {
-      list = [...all];
-      if (userData && userData.email) {
-        list.sort((a, b) => {
-          const aIsMine = isProblemMine(a, userData);
-          const bIsMine = isProblemMine(b, userData);
-          if (aIsMine && !bIsMine) return -1;
-          if (!aIsMine && bIsMine) return 1;
-          return Number(b.id) - Number(a.id); // Sort in order of posting (newest first)
-        });
+      if (activeSidebar === 'Problems') {
+        list = [...all];
+        if (userData && userData.email) {
+          list.sort((a, b) => {
+            const aIsMine = isProblemMine(a, userData);
+            const bIsMine = isProblemMine(b, userData);
+            if (aIsMine && !bIsMine) return -1;
+            if (!aIsMine && bIsMine) return 1;
+            return new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime(); // Sort in order of posting (newest first)
+          });
+        }
+      } else if (activeSidebar === 'Teams') {
+        list = all.filter(p => p.teamMembers?.some(m => userService.areEmailsSimilar(m.email, userData?.email)) || userData.joined?.some(id => String(id) === String(p.id)));
+      } else if (activeSidebar === 'Submissions') {
+        list = all.filter(p => userData.submissions?.some(id => String(id) === String(p.id)));
+      } else if (activeSidebar === 'MyProblems') {
+        list = all.filter(p => p.author && userData.email && userService.areEmailsSimilar(p.author, userData.email));
+        list.sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime()); // Sort in order of posting (newest first)
+      } else if (activeSidebar === 'Saved') {
+        list = await userService.getSavedProblems();
       }
-    } else if (activeSidebar === 'Teams') {
-      list = all.filter(p => p.teamMembers?.some(m => userService.areEmailsSimilar(m.email, userData?.email)) || userData.joined?.some(id => String(id) === String(p.id)));
-    } else if (activeSidebar === 'Submissions') {
-      list = all.filter(p => userData.submissions?.some(id => String(id) === String(p.id)));
-    } else if (activeSidebar === 'MyProblems') {
-      list = all.filter(p => p.author && userData.email && userService.areEmailsSimilar(p.author, userData.email));
-      list.sort((a, b) => Number(b.id) - Number(a.id)); // Sort in order of posting (newest first)
-    } else if (activeSidebar === 'Saved') {
-      list = userService.getSavedProblems();
-    }
 
-    // Apply domain filter if on Problems tab
-    if (activeSidebar === 'Problems' && activeFilter !== 'All') {
-      list = list.filter(p => p.domain === activeFilter);
-    }
+      // Apply domain filter if on Problems tab
+      if (activeSidebar === 'Problems' && activeFilter !== 'All') {
+        list = list.filter(p => p.domain === activeFilter);
+      }
 
-    setDisplayProblems([...list]); // Force new array reference
+      setDisplayProblems([...list]);
+      setIsLoading(false);
+    };
+
+    fetchData();
   }, [activeSidebar, activeFilter, refreshKey, initialUser, userData]);
 
-  const handleClaim = (id) => {
+  const handleClaim = async (id) => {
     const session = userService.getCurrentUser();
     if (!session) {
       showNotification('Please log in or create an account first to claim a project!', 'warning');
       navigate('/onboarding');
       return;
     }
-    const proj = displayProblems.find(p => String(p.id) === String(id)) || userService.getAllProblems().find(p => String(p.id) === String(id));
+    const all = await userService.getAllProblems();
+    const proj = displayProblems.find(p => String(p.id) === String(id)) || all.find(p => String(p.id) === String(id));
     setClaimingProject(proj);
   };
 
-  const confirmClaim = () => {
+  const confirmClaim = async () => {
     if (claimingProject) {
-      userService.claimProject(claimingProject.id);
+      await userService.claimProject(claimingProject.id);
       setRefreshKey(prev => prev + 1);
       showNotification('Project claimed successfully!', 'success');
       setClaimingProject(null);
     }
   };
 
-  const handleApplySubmit = (e) => {
+  const handleApplySubmit = async (e) => {
     e.preventDefault();
     if (!applyingProblem) return;
-    userService.applyToJoin(applyingProblem.id, applicationData);
+    await userService.applyToJoin(applyingProblem.id, applicationData);
     setApplyingProblem(null);
     setApplicationData({ motivation: '', portfolio: '', message: '' });
     setRefreshKey(prev => prev + 1);
     showNotification('Application submitted successfully!', 'success');
   };
 
-  const handleJoin = (id) => {
+  const handleJoin = async (id) => {
     const session = userService.getCurrentUser();
     if (!session) {
       showNotification('Please log in or create an account first to join a team!', 'warning');
       navigate('/onboarding');
       return;
     }
-    userService.joinTeam(id);
+    await userService.joinTeam(id);
     setRefreshKey(prev => prev + 1);
   };
 
-  const handleSave = (e, id) => {
+  const handleSave = async (e, id) => {
     e.stopPropagation();
     const session = userService.getCurrentUser();
     if (!session) {
@@ -148,14 +156,15 @@ const Hub = ({ user: initialUser }) => {
       navigate('/onboarding');
       return;
     }
-    userService.saveProblem(id);
+    await userService.saveProblem(id);
     setRefreshKey(prev => prev + 1);
   };
 
-  const handleDelete = (e, id) => {
+  const handleDelete = async (e, id) => {
     e.stopPropagation();
     e.preventDefault();
-    const proj = displayProblems.find(p => String(p.id) === String(id)) || userService.getAllProblems().find(p => String(p.id) === String(id));
+    const all = await userService.getAllProblems();
+    const proj = displayProblems.find(p => String(p.id) === String(id)) || all.find(p => String(p.id) === String(id));
     if (proj && proj.team && proj.team.current > 1) {
       showNotification('You cannot delete a project that already has active builders!', 'warning');
       return;
@@ -163,16 +172,16 @@ const Hub = ({ user: initialUser }) => {
     setDeletingProject(proj);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingProject) {
-      userService.deleteProblem(deletingProject.id);
+      await userService.deleteProblem(deletingProject.id);
       setRefreshKey(prev => prev + 1);
       showNotification('Project deleted successfully.', 'success');
       setDeletingProject(null);
     }
   };
 
-  const handleSubmitProposal = (e, id) => {
+  const handleSubmitProposal = async (e, id) => {
     e.stopPropagation();
     const session = userService.getCurrentUser();
     if (!session) {
@@ -180,16 +189,16 @@ const Hub = ({ user: initialUser }) => {
       navigate('/onboarding');
       return;
     }
-    userService.submitProposal(id);
+    await userService.submitProposal(id);
     setUserData(userService.getCurrentUser() || { joined: [], saved: [], submissions: [], reputation: 0 });
     showNotification('Submission successful! You can track it in the Submissions tab.', 'success');
   };
 
-  const handlePostProblem = (e) => {
+  const handlePostProblem = async (e) => {
     e.preventDefault();
-    userService.addProblem(newProblem);
+    await userService.addProblem(newProblem);
     setShowPostModal(false);
-    setDisplayProblems(userService.getAllProblems());
+    setDisplayProblems(await userService.getAllProblems());
     setNewProblem({ 
       title: '', domain: 'Sustainability', difficulty: 'Medium', desc: '', skills: [],
       expectedOutcome: '', projectGoals: '', teamSize: 5
@@ -227,10 +236,10 @@ const Hub = ({ user: initialUser }) => {
               <div style={{ marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Reputation</span>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{userData.joined.length * 10} XP</span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{(userData?.joined?.length || 0) * 10} XP</span>
                 </div>
                 <div style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                  <div style={{ width: `${Math.min(userData.joined.length * 10, 100)}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.5s ease' }}></div>
+                  <div style={{ width: `${Math.min((userData?.joined?.length || 0) * 10, 100)}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.5s ease' }}></div>
                 </div>
               </div>
 
@@ -349,8 +358,11 @@ const Hub = ({ user: initialUser }) => {
                 : {}
             }
           >
-            <AnimatePresence mode="popLayout">
-              {displayProblems.length > 0 ? displayProblems.map((p, i) => (
+            {isLoading ? (
+              <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading projects...</div>
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {displayProblems.length > 0 ? displayProblems.map((p, i) => (
                 <motion.div 
                   key={`${activeSidebar}-${p.id}`}
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -394,13 +406,13 @@ const Hub = ({ user: initialUser }) => {
                       }}
                       style={{ 
                         background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
-                        color: userData.saved.some(id => String(id) === String(p.id)) ? 'var(--primary)' : 'var(--text-dim)',
+                        color: userData?.saved?.some(id => String(id) === String(p.id)) ? 'var(--primary)' : 'var(--text-dim)',
                         cursor: 'pointer', transition: 'var(--transition)',
                         width: '42px', height: '42px', borderRadius: '12px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                       }}
                     >
-                      <Bookmark size={20} fill={userData.saved.some(id => String(id) === String(p.id)) ? 'var(--primary)' : 'none'} />
+                      <Bookmark size={20} fill={userData?.saved?.some(id => String(id) === String(p.id)) ? 'var(--primary)' : 'none'} />
                     </button>
                   </div>
 
@@ -447,8 +459,8 @@ const Hub = ({ user: initialUser }) => {
                       </div>
                       
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        {activeSidebar === 'Problems' && (!p.author || !userData.email || !userService.areEmailsSimilar(p.author, userData.email)) && !userData.joined.some(id => String(id) === String(p.id)) && (
-                          userData.submissions.some(id => String(id) === String(p.id)) ? (
+                        {activeSidebar === 'Problems' && (!p.author || !userData.email || !userService.areEmailsSimilar(p.author, userData.email)) && !userData?.joined?.some(id => String(id) === String(p.id)) && (
+                          userData?.submissions?.some(id => String(id) === String(p.id)) ? (
                             <span style={{ color: '#4ade80', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginRight: '8px' }}>
                               ✓ Applied
                             </span>
@@ -487,7 +499,7 @@ const Hub = ({ user: initialUser }) => {
                           >
                             Claim Project
                           </button>
-                        ) : userData.joined.some(id => String(id) === String(p.id)) ? (
+                        ) : userData?.joined?.some(id => String(id) === String(p.id)) ? (
                           <span style={{ color: 'var(--secondary)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <ChevronRight size={16} /> Joined
                           </span>
@@ -513,6 +525,7 @@ const Hub = ({ user: initialUser }) => {
                 </div>
               )}
             </AnimatePresence>
+            )}
           </div>
         </div>
       </div>

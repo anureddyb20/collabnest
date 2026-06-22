@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Award, Shield, Star, Share2, Download, Briefcase, Zap, ExternalLink } from 'lucide-react';
 import { userService } from '../data/userService';
@@ -8,8 +8,18 @@ import { useView } from '../context/ViewContext';
 const Profile = () => {
   const { isMobileView } = useView();
   const currentUser = userService.getCurrentUser();
-  const joinedProblems = userService.getJoinedProblems();
+  const [joinedProblems, setJoinedProblems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      const problems = await userService.getJoinedProblems();
+      setJoinedProblems(problems);
+      setIsLoading(false);
+    };
+    fetchProfileData();
+  }, []);
 
   const showToast = (message) => {
     setToast(message);
@@ -116,6 +126,10 @@ Generated via CollabNest Hub on ${new Date().toLocaleDateString()}
           Manage your profile, skills and portfolio.
         </p>
       </div>
+      
+      {isLoading ? (
+        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading profile...</div>
+      ) : (
       <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '350px 1fr', gap: isMobileView ? '24px' : '40px' }}>
         {/* Profile Info Sidebar */}
         <aside>
@@ -226,6 +240,7 @@ Generated via CollabNest Hub on ${new Date().toLocaleDateString()}
           </section>
         </div>
       </div>
+      )}
       <AnimatePresence>
         {toast && (
           <motion.div

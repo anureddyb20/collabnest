@@ -126,25 +126,20 @@ const Onboarding = ({ setUser, user }) => {
     console.log(`[Auth] Attempting ${isLoginMode ? 'Login' : 'Signup'} for ${accountData.email}`);
 
     // Temporary bypass for OTP receiving as requested by user
-    setTimeout(() => {
+    setTimeout(async () => {
       const cleanEmail = accountData.email.toLowerCase().trim();
       const users = userService.getAllUsers ? userService.getAllUsers() : {};
       
       if (!isLoginMode && !users[cleanEmail]) {
-        userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
+        await userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
       }
 
       // Immediately log in and transition to the next step
-      const finalUser = userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
+      const finalUser = await userService.registerOrLogin({ email: cleanEmail, name: accountData.name });
       setUser(finalUser);
       setLoading(false);
-      
-      // If we are already a registered user with a role, we might want to skip to Hub
-      if (finalUser.role) {
-        navigate('/hub');
-      } else {
-        setStep(1); // Proceed to role selection
-      }
+      // Always proceed to role selection instead of skipping to Hub
+      setStep(1); 
     }, 500);
   };
 
@@ -276,14 +271,14 @@ const Onboarding = ({ setUser, user }) => {
     }
   };
 
-  const handleRoleSelect = (selectedRole) => {
+  const handleRoleSelect = async (selectedRole) => {
     setRole(selectedRole);
     // Immediately save role choice to session so navigating away works correctly
-    const finalUser = userService.registerOrLogin({ ...accountData, role: selectedRole });
+    const finalUser = await userService.registerOrLogin({ ...accountData, role: selectedRole });
     setUser(finalUser);
     
     if (selectedRole === 'owner') {
-      const allProblems = userService.getAllProblems();
+      const allProblems = await userService.getAllProblems();
       const myProblems = allProblems.filter(
         p => p.author && userService.areEmailsSimilar(p.author, finalUser.email)
       );
@@ -299,9 +294,9 @@ const Onboarding = ({ setUser, user }) => {
     }
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     const finalSkills = selectedSkills.length > 0 ? selectedSkills : ['Developer'];
-    const finalUser = userService.registerOrLogin({ 
+    const finalUser = await userService.registerOrLogin({ 
       ...accountData, 
       role,
       skills: finalSkills,
@@ -783,17 +778,19 @@ const Onboarding = ({ setUser, user }) => {
               <p style={{ color: 'var(--text-muted)' }}>Define your problem statement and build your dream team.</p>
             </div>
             
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               // Register user first
-              const finalUser = userService.registerOrLogin({ ...accountData, role: 'owner' });
+              const finalUser = await userService.registerOrLogin({ ...accountData, role: 'owner' });
               setUser(finalUser);
               
               // Post idea
-              const createdProblem = userService.addProblem(newIdea);
+              const createdProblem = await userService.addProblem(newIdea);
               
-              // Navigate to Workspace
-              navigate(`/workspace/${createdProblem.id}`);
+              if (createdProblem) {
+                // Navigate to Workspace
+                navigate(`/workspace/${createdProblem.id}`);
+              }
             }}>
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Project Title</label>

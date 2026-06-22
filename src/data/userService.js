@@ -1,63 +1,7 @@
+import { supabase } from '../supabase';
 import { problems } from './problems';
 
-const OLD_USERS_KEY = 'cocreatex_users_list';
-const OLD_SESSION_KEY = 'cocreatex_current_session';
-const OLD_PROBLEMS_KEY = 'cocreatex_global_problems';
-
-const USERS_KEY = 'collabnest_users_list';
 const SESSION_KEY = 'collabnest_current_session';
-const PROBLEMS_KEY = 'collabnest_global_problems';
-
-const getLocalStorageWithFallback = (newKey, oldKey) => {
-  const newVal = localStorage.getItem(newKey);
-  if (newVal) return newVal;
-  const oldVal = localStorage.getItem(oldKey);
-  if (oldVal) {
-    localStorage.setItem(newKey, oldVal);
-    return oldVal;
-  }
-  return null;
-};
-
-const getAllUsers = () => {
-  const stored = getLocalStorageWithFallback(USERS_KEY, OLD_USERS_KEY);
-  return stored ? JSON.parse(stored) : {};
-};
-
-const saveUsers = (users) => {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-};
-
-const getCurrentSession = () => {
-  const stored = sessionStorage.getItem(SESSION_KEY);
-  if (stored) return JSON.parse(stored);
-  
-  // Fallback to check localStorage once, then migrate to sessionStorage
-  const localStored = getLocalStorageWithFallback(SESSION_KEY, OLD_SESSION_KEY);
-  if (localStored) {
-    sessionStorage.setItem(SESSION_KEY, localStored);
-    return JSON.parse(localStored);
-  }
-  return null;
-};
-
-const saveSession = (user) => {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
-  // Remove from localStorage to enforce tab-specific sessions moving forward
-  localStorage.removeItem(SESSION_KEY);
-};
-
-const getGlobalProblems = () => {
-  const stored = getLocalStorageWithFallback(PROBLEMS_KEY, OLD_PROBLEMS_KEY);
-  const userProblems = stored ? JSON.parse(stored) : [];
-  
-  // Combine static and dynamic problems, ensuring no duplicates by ID
-  const allMap = new Map();
-  problems.forEach(p => allMap.set(String(p.id), p));
-  userProblems.forEach(p => allMap.set(String(p.id), p));
-  
-  return Array.from(allMap.values());
-};
 
 const areEmailsSimilar = (e1, e2) => {
   if (!e1 || !e2) return false;
@@ -69,543 +13,406 @@ const areEmailsSimilar = (e1, e2) => {
 
 export const userService = {
   areEmailsSimilar,
-  getAllUsers,
 
-  // Auth
-  registerOrLogin: (userData) => {
-    const users = getAllUsers();
-    const email = userData.email.toLowerCase().trim();
-    
-    // Claim any Guest/unauthored problems posted on this local machine
-    const stored = localStorage.getItem(PROBLEMS_KEY);
-    if (stored) {
-      try {
-        const userProblems = JSON.parse(stored);
-        let updated = false;
-        userProblems.forEach(p => {
-          if (!p.author || p.author === 'Guest') {
-            p.author = email;
-            updated = true;
-          }
-        });
-        if (updated) {
-          localStorage.setItem(PROBLEMS_KEY, JSON.stringify(userProblems));
-        }
-      } catch (e) {
-        console.error("Error claiming guest problems:", e);
-      }
-    }
-
-    if (users[email]) {
-      // User exists, save their email in session
-      // If they have posted problems (with typo-tolerant check), set/upgrade role to 'owner'
-      const storedProblems = getGlobalProblems();
-      const hasPosted = storedProblems.some(p => p.author && areEmailsSimilar(p.author, email));
-      
-      // Update any incoming profile/onboarding fields dynamically
-      if (userData.name) users[email].name = userData.name.trim();
-      if (userData.role) users[email].role = userData.role;
-      if (userData.skills) users[email].skills = userData.skills;
-      if (userData.expertise) users[email].expertise = userData.expertise;
-      if (userData.experience) users[email].experience = userData.experience;
-      if (userData.commitment) users[email].commitment = userData.commitment;
-      
-      if (hasPosted) {
-        users[email].role = 'owner';
-      }
-      saveUsers(users);
-      saveSession({ email });
-      return users[email];
-    } else {
-      // New user - starts fresh so they can test joining/submitting
-      const newUser = {
-        ...userData,
-        name: userData.name ? userData.name.trim() : '',
-        email,
-        joined: [], 
-        saved: [], 
-        submissions: [], 
-        reputation: 30
-      };
-      // Check if they already posted problems under similar email
-      const storedProblems = getGlobalProblems();
-      const hasPosted = storedProblems.some(p => p.author && areEmailsSimilar(p.author, email));
-      if (hasPosted || userData.role === 'owner') {
-        newUser.role = 'owner';
-      }
-      users[email] = newUser;
-      saveUsers(users);
-      saveSession({ email });
-      return newUser;
-    }
-  },
-
+  // Synchronous session check (from local cache)
   getCurrentUser: () => {
-    const session = getCurrentSession();
-    if (!session) return null;
-    const users = getAllUsers();
-    return session.email ? users[session.email.toLowerCase().trim()] || null : null;
+    const stored = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+    return stored ? JSON.parse(stored) : null;
   },
 
-  updateProfile: (email, profileData) => {
-    if (!email) return null;
-    const users = getAllUsers();
-    const cleanEmail = email.toLowerCase().trim();
-    if (users[cleanEmail]) {
-      users[cleanEmail] = {
-        ...users[cleanEmail],
-        ...profileData
+  registerOrLogin: async (userData) => {
+    try {
+      const email = userData.email.toLowerCase().trim();
+      let name = userData.name ? userData.name.trim() : email.split('@')[0];
+
+      // Upsert into Supabase users table
+      const { data, error } = await supabase
+        .from('users')
+        .upsert({
+          email: email,
+          name: name,
+          role: userData.role || 'builder',
+          reputation: 30
+        }, { onConflict: 'email', ignoreDuplicates: true })
+        .select()
+        .single();
+        
+      if (error && error.code !== '23505') {
+        console.error("Supabase user upsert error:", error);
+      }
+
+      // Fetch to ensure we get the ID if it was ignored
+      const { data: userRecord } = await supabase.from('users').select('*').eq('email', email).single();
+      const finalUser = userRecord || data || { email, role: userData.role || 'builder' };
+
+      // Set session locally
+      const sessionData = { 
+        id: finalUser.id,
+        email: finalUser.email, 
+        name: finalUser.name, 
+        role: finalUser.role 
       };
-      saveUsers(users);
-      return users[cleanEmail];
+      localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+      
+      return sessionData;
+    } catch (e) {
+      console.error(e);
+      const sessionData = { email: userData.email.toLowerCase().trim(), role: userData.role || 'builder' };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+      return sessionData;
     }
-    return null;
-  },
-
-  getUserNameByEmail: (email) => {
-    if (!email) return "Anu";
-    const users = getAllUsers();
-    const cleanEmail = email.toLowerCase().trim();
-    if (users[cleanEmail] && users[cleanEmail].name) {
-      return users[cleanEmail].name;
-    }
-    // Fallback: search for similar emails or capitalize the name part of the email
-    const matchedKey = Object.keys(users).find(k => areEmailsSimilar(k, cleanEmail));
-    if (matchedKey && users[matchedKey].name) {
-      return users[matchedKey].name;
-    }
-    const namePart = email.split('@')[0];
-    return namePart.charAt(0).toUpperCase() + namePart.slice(1);
   },
 
   logout: () => {
-    sessionStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem(OLD_SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+    supabase.auth.signOut();
   },
 
-  // Problem Management
-  getAllProblems: () => getGlobalProblems(),
+  getUserNameByEmail: async (email) => {
+    if (!email) return "Unknown";
+    try {
+      const { data } = await supabase.from('users').select('name').eq('email', email.toLowerCase().trim()).single();
+      return data?.name || email.split('@')[0];
+    } catch {
+      return email.split('@')[0];
+    }
+  },
 
-  addProblem: (newProblem) => {
-    const session = getCurrentSession();
-    const stored = getLocalStorageWithFallback(PROBLEMS_KEY, OLD_PROBLEMS_KEY);
-    const userProblems = stored ? JSON.parse(stored) : [];
-    const problemId = Date.now();
-    
-    const problemWithId = {
-      ...newProblem,
-      id: problemId,
-      team: { current: 1, total: 5 },
-      status: 'Ideation',
-      author: session?.email || 'Guest'
-    };
-    
-    userProblems.push(problemWithId);
-    localStorage.setItem(PROBLEMS_KEY, JSON.stringify(userProblems));
+  updateProfile: async (email, profileData) => {
+    if (!email) return null;
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update(profileData)
+        .eq('email', email.toLowerCase().trim())
+        .select()
+        .single();
+      if (!error && data) {
+        const current = userService.getCurrentUser() || {};
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ ...current, ...data }));
+      }
+      return data;
+    } catch {
+      return null;
+    }
+  },
 
-    // Automatically join and submit the creator's problem
-    if (session) {
-      const users = getAllUsers();
-      const user = users[session.email];
-      if (user) {
-        if (!user.joined) user.joined = [];
-        if (!user.submissions) user.submissions = [];
+  getAllProblems: async () => {
+    try {
+      const { data: projects, error } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          project_members (*),
+          project_applications (*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Fetch problems error:", error);
+        return problems;
+      }
+
+      const processProject = (p) => {
+        const storageKey = `collabnest_local_project_${p.id}`;
+        const localDataStr = localStorage.getItem(storageKey);
+        const localData = localDataStr ? JSON.parse(localDataStr) : {};
+
+        return {
+          ...p,
+          desc: p.description, // remap description -> desc for frontend
+          team: { current: p.project_members?.length || 1, total: p.team_total || 5 },
+          teamMembers: p.project_members || [],
+          applications: p.project_applications || [],
+          author: p.author || p.owner_email,
+          ownerId: p.owner_id,
+          ownerEmail: p.owner_email,
+          ...localData
+        };
+      };
+
+      if (projects && projects.length === 0) {
+        // Auto-seed
+        for (const p of problems) {
+          await supabase.from('projects').insert({
+            title: p.title,
+            description: p.desc,
+            domain: p.domain,
+            skills: p.skills || [],
+            difficulty: p.difficulty,
+            status: p.status,
+            team_total: p.team?.total || 5,
+            is_ai_generated: true,
+            author: p.author || 'AI System'
+          });
+        }
         
-        if (!user.joined.includes(problemId)) {
-          user.joined.push(problemId);
-        }
-        if (!user.submissions.includes(problemId)) {
-          user.submissions.push(problemId);
-        }
-        user.reputation = (user.reputation || 0) + 20; // Extra XP for posting
-        saveUsers(users);
-      }
-    }
-    
-    return problemWithId;
-  },
-
-  deleteProblem: (problemId) => {
-    const session = getCurrentSession();
-    if (!session) return;
-    
-    // Remove from global list
-    let allProblems = getGlobalProblems();
-    allProblems = allProblems.filter(p => String(p.id) !== String(problemId));
-    localStorage.setItem(PROBLEMS_KEY, JSON.stringify(allProblems));
-
-    // Remove from all users' private lists
-    const users = getAllUsers();
-    Object.keys(users).forEach(email => {
-      const u = users[email];
-      if (u.joined) u.joined = u.joined.filter(id => String(id) !== String(problemId));
-      if (u.saved) u.saved = u.saved.filter(id => String(id) !== String(problemId));
-      if (u.submissions) u.submissions = u.submissions.filter(id => String(id) !== String(problemId));
-    });
-    saveUsers(users);
-  },
-
-  // Actions
-  claimProject: (problemId) => {
-    const session = getCurrentSession();
-    if (!session) return false;
-    
-    const users = getAllUsers();
-    const user = users[session.email];
-    if (!user) return false;
-    
-    const stored = getLocalStorageWithFallback(PROBLEMS_KEY, OLD_PROBLEMS_KEY);
-    let userProblems = stored ? JSON.parse(stored) : [];
-    
-    // Find the problem globally
-    const allProblems = getGlobalProblems();
-    const problem = allProblems.find(p => String(p.id) === String(problemId));
-    
-    if (!problem || problem.author || problem.status !== 'available_to_claim') return false;
-    
-    // Claim it
-    const updatedProblem = { 
-      ...problem, 
-      author: session.email,
-      ownerId: session.email,
-      ownerEmail: session.email,
-      ownerName: user.name || session.email.split('@')[0],
-      claimedAt: new Date().toISOString(),
-      status: 'Ideation',
-      team: { current: 1, total: problem.team?.total || 5 },
-      teamMembers: [{ name: user.name, email: session.email, role: 'Owner' }]
-    };
-    
-    // Update or push to local storage
-    const existingIndex = userProblems.findIndex(p => String(p.id) === String(problemId));
-    if (existingIndex !== -1) {
-      userProblems[existingIndex] = updatedProblem;
-    } else {
-      userProblems.push(updatedProblem);
-    }
-    localStorage.setItem(PROBLEMS_KEY, JSON.stringify(userProblems));
-    
-    // Add to user joined and submissions so it acts like a normal project
-    if (!user.joined) user.joined = [];
-    if (!user.submissions) user.submissions = [];
-    
-    if (!user.joined.includes(problemId)) user.joined.push(problemId);
-    if (!user.submissions.includes(problemId)) user.submissions.push(problemId);
-    user.role = 'owner';
-    saveUsers(users);
-    
-    return true;
-  },
-
-  applyToJoin: (problemId, applicationData) => {
-    const session = getCurrentSession();
-    if (!session) return false;
-    
-    const users = getAllUsers();
-    const user = users[session.email];
-    if (!user) return false;
-    
-    const allProblems = getGlobalProblems();
-    const targetProblem = allProblems.find(p => String(p.id) === String(problemId));
-    if (!targetProblem) return false;
-    
-    // Create Application Object
-    const application = {
-      ...applicationData,
-      email: session.email,
-      name: user.name || applicationData.name,
-      status: 'Pending',
-      date: new Date().toISOString()
-    };
-    
-    // Save to problem
-    const currentApplications = targetProblem.applications || [];
-    currentApplications.push(application);
-    userService.updateProblem(problemId, { applications: currentApplications });
-    
-    // Notify Owner
-    if (targetProblem.author) {
-      userService.addNotification(
-        targetProblem.author, 
-        `${application.name} applied to join ${targetProblem.title}`, 
-        'application_received'
-      );
-    }
-    
-    // Also log to user's submissions
-    if (!user.submissions) user.submissions = [];
-    if (!user.submissions.includes(problemId)) {
-      user.submissions.push(problemId);
-      saveUsers(users);
-    }
-    return true;
-  },
-
-  acceptApplicant: (problemId, applicantEmail) => {
-    const session = getCurrentSession();
-    if (!session) return false;
-    
-    const allProblems = getGlobalProblems();
-    const targetProblem = allProblems.find(p => String(p.id) === String(problemId));
-    if (!targetProblem) return false;
-    
-    const apps = targetProblem.applications || [];
-    const applicantIndex = apps.findIndex(a => a.email.toLowerCase() === applicantEmail.toLowerCase());
-    if (applicantIndex === -1) return false;
-    
-    apps[applicantIndex].status = 'Accepted';
-    
-    // Add to team
-    const teamMembers = targetProblem.teamMembers || [];
-    teamMembers.push({ name: apps[applicantIndex].name, email: apps[applicantIndex].email, role: 'Team Member' });
-    
-    const team = targetProblem.team || { current: 1, total: 5 };
-    team.current += 1;
-    
-    userService.updateProblem(problemId, { applications: apps, teamMembers, team });
-    
-    // Update user's joined array
-    const users = getAllUsers();
-    const cleanEmail = applicantEmail.toLowerCase().trim();
-    if (users[cleanEmail]) {
-      if (!users[cleanEmail].joined) users[cleanEmail].joined = [];
-      if (!users[cleanEmail].joined.includes(problemId)) {
-        users[cleanEmail].joined.push(problemId);
-        saveUsers(users);
-      }
-    }
-    
-    // Notify Applicant
-    userService.addNotification(
-      applicantEmail,
-      `Your application to ${targetProblem.title} has been accepted.`,
-      'application_accepted'
-    );
-    return true;
-  },
-
-  rejectApplicant: (problemId, applicantEmail) => {
-    const session = getCurrentSession();
-    if (!session) return false;
-    
-    const allProblems = getGlobalProblems();
-    const targetProblem = allProblems.find(p => String(p.id) === String(problemId));
-    if (!targetProblem) return false;
-    
-    const apps = targetProblem.applications || [];
-    const applicantIndex = apps.findIndex(a => a.email.toLowerCase() === applicantEmail.toLowerCase());
-    if (applicantIndex === -1) return false;
-    
-    apps[applicantIndex].status = 'Rejected';
-    userService.updateProblem(problemId, { applications: apps });
-    
-    // Notify Applicant
-    userService.addNotification(
-      applicantEmail,
-      `Your application to ${targetProblem.title} has been rejected.`,
-      'application_rejected'
-    );
-    return true;
-  },
-
-  // Notifications
-  addNotification: (email, message, type) => {
-    const users = getAllUsers();
-    const cleanEmail = email.toLowerCase().trim();
-    if (users[cleanEmail]) {
-      if (!users[cleanEmail].notifications) users[cleanEmail].notifications = [];
-      users[cleanEmail].notifications.unshift({
-        id: Date.now() + Math.random(),
-        message,
-        type,
-        date: new Date().toISOString(),
-        read: false
-      });
-      saveUsers(users);
-    }
-  },
-
-  getNotifications: () => {
-    const session = getCurrentSession();
-    if (!session) return [];
-    const users = getAllUsers();
-    const user = users[session.email];
-    return user ? (user.notifications || []) : [];
-  },
-
-  markNotificationsRead: () => {
-    const session = getCurrentSession();
-    if (!session) return;
-    const users = getAllUsers();
-    const user = users[session.email];
-    if (user && user.notifications) {
-      user.notifications.forEach(n => n.read = true);
-      saveUsers(users);
-    }
-  },
-
-  joinTeam: (problemId) => {
-    const session = getCurrentSession();
-    if (!session) return;
-    
-    const users = getAllUsers();
-    const user = users[session.email];
-    if (!user) return;
-    
-    if (!user.joined) user.joined = [];
-    if (!user.submissions) user.submissions = [];
-    
-    const joinedExists = user.joined.some(id => String(id) === String(problemId));
-    if (!joinedExists) {
-      user.joined.push(problemId);
-      user.reputation = (user.reputation || 0) + 10;
-    }
-
-    const subExists = user.submissions.some(id => String(id) === String(problemId));
-    if (!subExists) {
-      user.submissions.push(problemId);
-    }
-    
-    saveUsers(users);
-  },
-
-  saveProblem: (problemId) => {
-    const session = getCurrentSession();
-    if (!session) return;
-    
-    const users = getAllUsers();
-    const user = users[session.email];
-    if (!user) return;
-    
-    if (!user.saved) user.saved = [];
-    
-    const savedExists = user.saved.some(id => String(id) === String(problemId));
-    if (!savedExists) {
-      user.saved.push(problemId);
-    } else {
-      user.saved = user.saved.filter(id => String(id) !== String(problemId));
-    }
-    saveUsers(users);
-  },
-
-  submitProposal: (problemId) => {
-    const session = getCurrentSession();
-    if (!session) return;
-    
-    const users = getAllUsers();
-    const user = users[session.email];
-    if (!user) return;
-    
-    if (!user.submissions) user.submissions = [];
-    
-    const exists = user.submissions.some(id => String(id) === String(problemId));
-    if (!exists) {
-      user.submissions.push(problemId);
-      saveUsers(users);
-    }
-  },
-
-  // Getters
-  getJoinedProblems: () => {
-    const session = getCurrentSession();
-    if (!session) return [];
-    const users = getAllUsers();
-    const user = users[session.email];
-    if (!user) return [];
-    
-    const all = getGlobalProblems();
-    return all.filter(p => 
-      (user.joined || []).some(id => String(id) === String(p.id)) || 
-      (p.author && areEmailsSimilar(p.author, session.email)) ||
-      (p.ownerEmail && String(p.ownerEmail).toLowerCase() === String(session.email).toLowerCase()) ||
-      (p.ownerId && String(p.ownerId) === String(session.email))
-    );
-  },
-
-  getSavedProblems: () => {
-    const session = getCurrentSession();
-    if (!session) return [];
-    const users = getAllUsers();
-    const user = users[session.email];
-    if (!user) return [];
-    
-    const all = getGlobalProblems();
-    return all.filter(p => (user.saved || []).some(id => String(id) === String(p.id)));
-  },
-
-  getSubmissions: () => {
-    const session = getCurrentSession();
-    if (!session) return [];
-    const users = getAllUsers();
-    const user = users[session.email];
-    if (!user) return [];
-    
-    const all = getGlobalProblems();
-    return all.filter(p => 
-      (user.submissions || []).some(id => String(id) === String(p.id)) || 
-      (p.author && areEmailsSimilar(p.author, session.email)) ||
-      (p.ownerEmail && String(p.ownerEmail).toLowerCase() === String(session.email).toLowerCase()) ||
-      (p.ownerId && String(p.ownerId) === String(session.email))
-    );
-  },
-
-  getApplicantsForProblem: (problemId) => {
-    const users = getAllUsers();
-    const applicants = [];
-    
-    // Get the target problem to compare titles
-    const allProblems = getGlobalProblems();
-    const targetProblem = allProblems.find(p => String(p.id) === String(problemId));
-    const targetTitle = targetProblem ? targetProblem.title.toLowerCase().trim() : '';
-    const authorEmail = targetProblem && targetProblem.author ? targetProblem.author.toLowerCase().trim() : '';
-
-    Object.keys(users).forEach(email => {
-      const cleanEmail = email.toLowerCase().trim();
-      // If the user is the author of this problem, they should NOT be in the applicants list
-      if (authorEmail && (cleanEmail === authorEmail || areEmailsSimilar(cleanEmail, authorEmail))) {
-        return;
+        // Fetch again after seeding
+        const { data: newProjects } = await supabase
+          .from('projects')
+          .select(`
+            *,
+            project_members (*),
+            project_applications (*)
+          `)
+          .order('created_at', { ascending: false });
+          
+        return (newProjects || []).map(processProject);
       }
 
-      if (users[email].submissions) {
-        const hasMatch = users[email].submissions.some(id => {
-          if (String(id) === String(problemId)) return true;
-          // Fallback: match by title to handle duplicate testing posts
-          if (targetTitle) {
-            const subProblem = allProblems.find(p => String(p.id) === String(id));
-            if (subProblem && subProblem.title.toLowerCase().trim() === targetTitle) {
-              return true;
-            }
-          }
-          return false;
+      return projects.map(processProject);
+    } catch (e) {
+      console.error(e);
+      return problems;
+    }
+  },
+
+  addProblem: async (newProblem) => {
+    const session = userService.getCurrentUser();
+    if (!session || !session.id) return null;
+
+    try {
+      const { data: project, error } = await supabase
+        .from('projects')
+        .insert({
+          title: newProblem.title,
+          description: newProblem.desc,
+          domain: newProblem.domain,
+          skills: newProblem.skills || [],
+          difficulty: newProblem.difficulty,
+          status: newProblem.status || 'Ideation',
+          owner_id: session.id,
+          owner_email: session.email,
+          author: session.email,
+          expected_outcome: newProblem.expectedOutcome,
+          project_goals: newProblem.projectGoals,
+          team_total: newProblem.teamSize || 5,
+          is_ai_generated: false
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (project && session.id) {
+        await supabase.from('project_members').insert({
+          project_id: project.id,
+          user_id: session.id,
+          role: 'owner'
         });
-        
-        if (hasMatch) {
-          applicants.push(users[email]);
-        }
       }
-    });
-    return applicants;
+
+      return {
+        ...project,
+        desc: project.description,
+        team: { current: 1, total: project.team_total },
+        teamMembers: [],
+        applications: [],
+        author: session.email,
+        ownerId: session.id,
+        ownerEmail: session.email
+      };
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   },
 
-  updateProblem: (problemId, updatedFields) => {
-    const stored = getLocalStorageWithFallback(PROBLEMS_KEY, OLD_PROBLEMS_KEY);
-    const userProblems = stored ? JSON.parse(stored) : [];
+  deleteProblem: async (problemId) => {
+    try {
+      await supabase.from('projects').delete().eq('id', problemId);
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+
+  updateProblem: async (problemId, updatedFields) => {
+    const mapped = { ...updatedFields };
+    if (mapped.desc) { mapped.description = mapped.desc; delete mapped.desc; }
     
-    // Find if the problem already exists in userProblems
-    const existingIndex = userProblems.findIndex(p => String(p.id) === String(problemId));
-    
-    if (existingIndex !== -1) {
-      userProblems[existingIndex] = { ...userProblems[existingIndex], ...updatedFields };
-    } else {
-      // Find from static problems list
-      const allProblems = getGlobalProblems();
-      const staticProb = allProblems.find(p => String(p.id) === String(problemId));
-      if (staticProb) {
-        userProblems.push({ ...staticProb, ...updatedFields });
+    // Save local-only fields (tasks, docs, logs, stage)
+    const localKeys = ['tasks', 'docs', 'contributionsLogs', 'stageIndex'];
+    let hasLocalUpdates = false;
+    const localUpdates = {};
+
+    localKeys.forEach(k => {
+      if (mapped[k] !== undefined) {
+        localUpdates[k] = mapped[k];
+        hasLocalUpdates = true;
       }
+    });
+
+    if (hasLocalUpdates) {
+      const storageKey = `collabnest_local_project_${problemId}`;
+      const existingStr = localStorage.getItem(storageKey);
+      const existing = existingStr ? JSON.parse(existingStr) : {};
+      localStorage.setItem(storageKey, JSON.stringify({ ...existing, ...localUpdates }));
     }
     
-    localStorage.setItem(PROBLEMS_KEY, JSON.stringify(userProblems));
-  }
+    const columnsToUpdate = {};
+    const validColumns = ['title', 'description', 'domain', 'skills', 'difficulty', 'status', 'expected_outcome', 'project_goals', 'team_total', 'is_ai_generated', 'owner_email', 'owner_id', 'author'];
+    
+    Object.keys(mapped).forEach(key => {
+      if (validColumns.includes(key)) {
+        columnsToUpdate[key] = mapped[key];
+      }
+    });
+
+    if (Object.keys(columnsToUpdate).length > 0) {
+      try {
+        await supabase.from('projects').update(columnsToUpdate).eq('id', problemId);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  },
+
+  claimProject: async (problemId) => {
+    const session = userService.getCurrentUser();
+    if (!session || !session.id) return false;
+
+    try {
+      const { data: problem } = await supabase.from('projects').select('*').eq('id', problemId).single();
+      if (!problem || problem.status !== 'available_to_claim') return false;
+
+      const { error } = await supabase.from('projects').update({
+        owner_id: session.id,
+        owner_email: session.email,
+        author: session.email,
+        status: 'Ideation',
+        is_ai_generated: true
+      }).eq('id', problemId);
+
+      if (error) throw error;
+
+      await supabase.from('project_members').insert({
+        project_id: problemId,
+        user_id: session.id,
+        role: 'owner'
+      });
+
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+
+  applyToJoin: async (problemId, applicationData) => {
+    const session = userService.getCurrentUser();
+    if (!session || !session.id) return false;
+
+    try {
+      const { error } = await supabase.from('project_applications').insert({
+        project_id: problemId,
+        applicant_id: session.id,
+        motivation: applicationData.motivation,
+        portfolio: applicationData.portfolio,
+        message: applicationData.message,
+        status: 'Pending'
+      });
+
+      return !error;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+
+  acceptApplicant: async (problemId, applicantEmail) => {
+    try {
+      const { data: applicant } = await supabase.from('users').select('id').eq('email', applicantEmail.toLowerCase().trim()).single();
+      if (!applicant) return false;
+
+      const { error: appError } = await supabase.from('project_applications')
+        .update({ status: 'Accepted' })
+        .eq('project_id', problemId)
+        .eq('applicant_id', applicant.id);
+
+      if (appError) throw appError;
+
+      const { error: memError } = await supabase.from('project_members').insert({
+        project_id: problemId,
+        user_id: applicant.id,
+        role: 'builder'
+      });
+
+      return !memError;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+
+  rejectApplicant: async (problemId, applicantEmail) => {
+    try {
+      const { data: applicant } = await supabase.from('users').select('id').eq('email', applicantEmail.toLowerCase().trim()).single();
+      if (!applicant) return false;
+
+      const { error } = await supabase.from('project_applications')
+        .update({ status: 'Rejected' })
+        .eq('project_id', problemId)
+        .eq('applicant_id', applicant.id);
+
+      return !error;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+
+  getJoinedProblems: async () => {
+    const session = userService.getCurrentUser();
+    if (!session || !session.id) return [];
+
+    try {
+      const { data: memberships } = await supabase.from('project_members').select('project_id').eq('user_id', session.id);
+      const joinedIds = memberships ? memberships.map(m => m.project_id) : [];
+
+      const { data: ownedProjects } = await supabase.from('projects').select('id').eq('owner_id', session.id);
+      const ownedIds = ownedProjects ? ownedProjects.map(p => p.id) : [];
+
+      const allIds = Array.from(new Set([...joinedIds, ...ownedIds]));
+
+      if (allIds.length === 0) return [];
+
+      const { data: projects, error } = await supabase.from('projects')
+        .select(`
+          *,
+          project_members (*),
+          project_applications (*)
+        `)
+        .in('id', allIds)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return projects.map(p => ({
+        ...p,
+        desc: p.description,
+        team: { current: p.project_members?.length || 1, total: p.team_total || 5 },
+        teamMembers: p.project_members || [],
+        applications: p.project_applications || [],
+        author: p.author || p.owner_email,
+        ownerId: p.owner_id,
+        ownerEmail: p.owner_email
+      }));
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  },
+
+  // Stub unused or unimplemented advanced functions
+  saveProblem: () => {},
+  getSavedProblems: async () => [],
+  joinTeam: () => {},
+  submitProposal: () => {},
+  getSubmissions: async () => [],
+  addNotification: () => {},
+  getNotifications: () => [],
+  markNotificationsRead: () => {}
 };

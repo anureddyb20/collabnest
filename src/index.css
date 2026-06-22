@@ -44,6 +44,16 @@ input, textarea, select {
   background: #FFFFFF !important;
   border: 1px solid var(--border) !important;
   font-family: inherit;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  transition: var(--transition);
+  width: 100%;
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 input::placeholder, textarea::placeholder {
@@ -54,7 +64,7 @@ input::placeholder, textarea::placeholder {
 input:focus, textarea:focus, select:focus {
   outline: none !important;
   border-color: var(--primary) !important;
-  box-shadow: 0 0 0 2px var(--primary-glow) !important;
+  box-shadow: 0 0 0 3px var(--primary-glow) !important;
   background: #FFFFFF !important;
 }
 

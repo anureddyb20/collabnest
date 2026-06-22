@@ -10,11 +10,13 @@ const WorkspaceDashboard = () => {
   const { isMobileView } = useView();
   const currentUser = userService.getCurrentUser();
   const [myProjects, setMyProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    const fetchProjects = () => {
+    const fetchProjects = async () => {
+      setIsLoading(true);
       // Get all projects the user is involved in
-      const allWorkspaces = userService.getJoinedProblems();
+      const allWorkspaces = await userService.getJoinedProblems();
       
       // Ownership rules: author matches email OR ownerEmail matches
       const isOwner = (p) => {
@@ -28,18 +30,17 @@ const WorkspaceDashboard = () => {
 
       // We want to show ALL projects the user owns or has joined.
       // We will sort them: Owned first, then Joined.
-      const owned = allWorkspaces.filter(isOwner).sort((a, b) => Number(b.id) - Number(a.id));
-      const joined = allWorkspaces.filter(p => !isOwner(p)).sort((a, b) => Number(b.id) - Number(a.id));
+      const owned = allWorkspaces.filter(isOwner).sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime());
+      const joined = allWorkspaces.filter(p => !isOwner(p)).sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime());
       
       setMyProjects([...owned, ...joined]);
+      setIsLoading(false);
     };
     
     fetchProjects();
     window.addEventListener('focus', fetchProjects);
-    window.addEventListener('storage', fetchProjects);
     return () => {
       window.removeEventListener('focus', fetchProjects);
-      window.removeEventListener('storage', fetchProjects);
     };
   }, [currentUser?.email, currentUser?.id]);
 
@@ -65,8 +66,10 @@ const WorkspaceDashboard = () => {
         </button>
       </div>
 
-      {myProjects.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '60px 20px', textAlign: 'center' }}>
+      {isLoading ? (
+        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading workspaces...</div>
+      ) : myProjects.length === 0 ? (
+        <div className="glass-card" style={{ padding: '40px', textAlign: 'center' }}>
           <Briefcase size={48} color="var(--primary)" style={{ opacity: 0.5, margin: '0 auto 16px' }} />
           <h2 style={{ marginBottom: '12px' }}>No Active Workspaces</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '24px', maxWidth: '400px', margin: '0 auto 24px' }}>
