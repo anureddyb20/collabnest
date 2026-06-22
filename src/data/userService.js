@@ -158,10 +158,27 @@ export const userService = {
           `)
           .order('created_at', { ascending: false });
           
-        return (newProjects || []).map(processProject);
+        const uniqueNewProjects = [];
+        const seenNewTitles = new Set();
+        for (const p of (newProjects || [])) {
+          if (!seenNewTitles.has(p.title)) {
+            seenNewTitles.add(p.title);
+            uniqueNewProjects.push(p);
+          }
+        }
+        return uniqueNewProjects.map(processProject);
       }
 
-      return projects.map(processProject);
+      const uniqueProjects = [];
+      const seenTitles = new Set();
+      for (const p of projects) {
+        if (!seenTitles.has(p.title)) {
+          seenTitles.add(p.title);
+          uniqueProjects.push(p);
+        }
+      }
+
+      return uniqueProjects.map(processProject);
     } catch (e) {
       console.error(e);
       return problems;
