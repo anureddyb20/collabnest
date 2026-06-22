@@ -38,6 +38,15 @@ const Hub = ({ user: initialUser }) => {
     return isAuthor || isJoined || isSubmitted;
   };
 
+  const isOwnerFn = (p, userObj) => {
+    if (!userObj) return false;
+    return (
+      (p.author && userService.areEmailsSimilar(p.author, userObj.email)) ||
+      (p.ownerEmail && userService.areEmailsSimilar(p.ownerEmail, userObj.email)) ||
+      (p.ownerId && String(p.ownerId) === String(userObj.id))
+    );
+  };
+
   useEffect(() => {
     const user = userService.getCurrentUser() || { joined: [], saved: [], submissions: [], reputation: 0 };
     setUserData(user);
@@ -354,7 +363,7 @@ const Hub = ({ user: initialUser }) => {
                 >
                   {/* Action Layer - HIGHEST Z-INDEX */}
                   <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '10px', zIndex: 100 }}>
-                    {p.author && userData.email && userService.areEmailsSimilar(p.author, userData.email) && (
+                    {isOwnerFn(p, userData) && (
                       <button 
                         type="button"
                         onClick={(e) => {
