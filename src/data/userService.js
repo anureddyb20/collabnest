@@ -407,7 +407,16 @@ export const userService = {
 
       if (error) throw error;
 
-      return projects.map(p => ({
+      const uniqueProjects = [];
+      const seenTitles = new Set();
+      for (const p of projects) {
+        if (!seenTitles.has(p.title)) {
+          seenTitles.add(p.title);
+          uniqueProjects.push(p);
+        }
+      }
+
+      return uniqueProjects.map(p => ({
         ...p,
         desc: p.description,
         team: { current: p.project_members?.length || 1, total: p.team_total || 5 },
