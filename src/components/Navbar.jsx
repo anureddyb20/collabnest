@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Rocket, LayoutGrid as Hub, Layout, User, Zap, LogOut, Hammer, Menu, X, Monitor, Smartphone, Filter, Users, Target, Briefcase, Bookmark, Bell } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Rocket, LayoutGrid as Hub, Layout, User, Zap, LogOut, Hammer, Menu, X, Monitor, Smartphone, Filter, Users, Target, Briefcase, Bookmark, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
@@ -8,9 +8,9 @@ import { supabase } from '../supabase';
 
 const Navbar = ({ user }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentUser = user || userService.getCurrentUser();
   const myWorkspaces = userService.getJoinedProblems();
-  const latestWorkspaceId = myWorkspaces.length > 0 ? myWorkspaces[myWorkspaces.length - 1].id : 1;
   const { isMobileView } = useView();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -47,7 +47,7 @@ const Navbar = ({ user }) => {
   const navLinks = [
     { path: '/hub', label: 'Problem Hub', icon: Hub },
     { path: '/builder', label: 'I Want to Build', icon: Hammer },
-    { path: `/workspace/${latestWorkspaceId}`, label: 'Workspace', icon: Layout },
+    { path: '/workspace', label: 'Workspace', icon: Layout },
     { path: '/profile', label: 'Portfolio', icon: User },
   ];
 
@@ -62,8 +62,18 @@ const Navbar = ({ user }) => {
       padding: '1rem 2rem'
     }}>
       <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'flex' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {location.pathname !== '/' && location.pathname !== '/hub' && location.pathname !== '/onboarding' && (
+            <button 
+              onClick={() => navigate(-1)} 
+              className="btn-ghost" 
+              style={{ padding: '8px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)' }}
+            >
+              <ArrowLeft size={18} />
+            </button>
+          )}
+          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'flex' }}>
             <defs>
               <linearGradient id="left-leg-grad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#8b5cf6" />
@@ -87,6 +97,7 @@ const Navbar = ({ user }) => {
             <span style={{ color: 'var(--primary)' }}>Collab</span><span style={{ color: 'var(--text-main)' }}>Nest</span>
           </span>
         </Link>
+        </div>
 
         {isMobileView ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

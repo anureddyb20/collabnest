@@ -45,13 +45,24 @@ const Workspace = () => {
   const currentUser = userService.getCurrentUser();
   
   // Get all user's workspaces to support dynamic switcher
-  const myWorkspaces = userService.getJoinedProblems();
+  const allWorkspaces = userService.getJoinedProblems();
+  
+  const isOwnerFn = (p) => {
+    if (!currentUser) return false;
+    return (
+      (p.author && userService.areEmailsSimilar(p.author, currentUser.email)) ||
+      (p.ownerEmail && userService.areEmailsSimilar(p.ownerEmail, currentUser.email)) ||
+      (p.ownerId && String(p.ownerId) === String(currentUser.id))
+    );
+  };
+  
+  const ownedWorkspaces = allWorkspaces.filter(isOwnerFn).sort((a, b) => Number(b.id) - Number(a.id));
+  const joinedWorkspaces = allWorkspaces.filter(p => !isOwnerFn(p)).sort((a, b) => Number(b.id) - Number(a.id));
+  const myWorkspaces = [...ownedWorkspaces, ...joinedWorkspaces];
+  
   if (selectedProblem && !myWorkspaces.some(w => String(w.id) === String(selectedProblem.id))) {
     myWorkspaces.push(selectedProblem);
   }
-  
-  // Sort user's workspaces in order of posting (newest first)
-  myWorkspaces.sort((a, b) => Number(b.id) - Number(a.id));
 
   const isOwner = currentUser && selectedProblem && (
     (selectedProblem.ownerEmail && String(selectedProblem.ownerEmail).toLowerCase() === String(currentUser.email).toLowerCase()) ||
@@ -766,6 +777,13 @@ const Workspace = () => {
                   <Briefcase size={14} /> Switch Project
                 </button>
               )}
+              <button 
+                onClick={() => navigate('/workspace')}
+                className="btn-ghost" 
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: '6px 12px', color: 'var(--text-muted)' }}
+              >
+                Dashboard
+              </button>
               <span className="badge badge-primary">{stages[stageIndex]}</span>
               {isOwner && (
                 <button 
@@ -2011,6 +2029,7 @@ const Workspace = () => {
                       <h4 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', paddingRight: '24px' }}>{w.title}</h4>
                       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                         <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{w.domain || 'Tech'}</span>
+                        {isOwnerFn(w) && <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>Owner</span>}
                         <span className="badge" style={{ background: 'rgba(255,255,255,0.1)', fontSize: '0.7rem' }}>{stages[w.stageIndex || 2]}</span>
                       </div>
                       

@@ -7,6 +7,7 @@ import Landing from './pages/Landing';
 import Onboarding from './pages/Onboarding';
 import Hub from './pages/Hub';
 import Workspace from './pages/Workspace';
+import WorkspaceDashboard from './pages/WorkspaceDashboard';
 import Profile from './pages/Profile';
 import BuilderHub from './pages/BuilderHub';
 import Navbar from './components/Navbar';
@@ -97,6 +98,7 @@ function App() {
             <Route path="/onboarding" element={<Onboarding setUser={setUser} />} />
             <Route path="/hub" element={<ProtectedRoute user={user}><Hub user={user} /></ProtectedRoute>} />
             <Route path="/builder" element={<ProtectedRoute user={user}><BuilderHub user={user} /></ProtectedRoute>} />
+            <Route path="/workspace" element={<ProtectedRoute user={user}><WorkspaceDashboard /></ProtectedRoute>} />
             <Route path="/workspace/:id" element={<ProtectedRoute user={user}><Workspace /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute user={user}><Profile /></ProtectedRoute>} />
             </Routes>
