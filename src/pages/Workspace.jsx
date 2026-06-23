@@ -1017,7 +1017,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
             </div>
           ) : (
             <>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '8px' }}>
                 <button 
                   onClick={() => setActiveTab('board')}
                   className={activeTab === 'board' ? 'btn-primary' : 'btn-outline'} 
