@@ -236,7 +236,9 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
 
   const isTeamMember = isOwner || 
     (currentUser?.joined && currentUser.joined.some(id => String(id) === String(selectedProblem.id))) ||
-    team.some(m => m.email && currentUser?.email && String(m.email).toLowerCase() === String(currentUser.email).toLowerCase());
+    team.some(m => (m.email && currentUser?.email && String(m.email).toLowerCase() === String(currentUser.email).toLowerCase()) || (m.user_id && currentUser?.id && String(m.user_id) === String(currentUser.id))) ||
+    (selectedProblem.teamMembers && selectedProblem.teamMembers.some(m => String(m.user_id) === String(currentUser?.id))) ||
+    (selectedProblem.applications && selectedProblem.applications.some(a => String(a.applicant_id) === String(currentUser?.id) && a.status === 'Accepted'));
 
   useEffect(() => {
     const refreshData = async () => {

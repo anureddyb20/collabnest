@@ -104,7 +104,7 @@ export const userService = {
         .from('projects')
         .select(`
           *,
-          project_members (*),
+          project_members (*, users (*)),
           project_applications (*, users (*))
         `)
         .order('created_at', { ascending: false });
@@ -123,7 +123,16 @@ export const userService = {
           ...p,
           desc: p.description, // remap description -> desc for frontend
           team: { current: p.project_members?.length || 1, total: p.team_total || 5 },
-          teamMembers: p.project_members || [],
+          teamMembers: (p.project_members || []).map(m => ({
+            ...m,
+            name: m.users?.name || 'Builder',
+            email: m.users?.email || '',
+            reputation: m.users?.reputation || 10,
+            skills: m.users?.skills || [],
+            role: m.role === 'owner' ? 'Owner' : 'Builder',
+            activity: 'High',
+            contributions: 0
+          })),
           applications: (p.project_applications || []).map(app => ({
             ...app,
             email: app.users?.email || app.email,
@@ -159,7 +168,7 @@ export const userService = {
           .from('projects')
           .select(`
             *,
-            project_members (*),
+            project_members (*, users (*)),
             project_applications (*, users (*))
           `)
           .order('created_at', { ascending: false });
@@ -416,7 +425,7 @@ export const userService = {
       const { data: projects, error } = await supabase.from('projects')
         .select(`
           *,
-          project_members (*),
+          project_members (*, users (*)),
           project_applications (*, users (*))
         `)
         .in('id', allIds)
@@ -437,7 +446,16 @@ export const userService = {
         ...p,
         desc: p.description,
         team: { current: p.project_members?.length || 1, total: p.team_total || 5 },
-        teamMembers: p.project_members || [],
+        teamMembers: (p.project_members || []).map(m => ({
+          ...m,
+          name: m.users?.name || 'Builder',
+          email: m.users?.email || '',
+          reputation: m.users?.reputation || 10,
+          skills: m.users?.skills || [],
+          role: m.role === 'owner' ? 'Owner' : 'Builder',
+          activity: 'High',
+          contributions: 0
+        })),
         applications: (p.project_applications || []).map(app => ({
           ...app,
           email: app.users?.email || app.email,
