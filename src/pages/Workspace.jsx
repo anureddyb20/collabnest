@@ -145,16 +145,14 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       hash = ((hash << 5) + hash) + lowerName.charCodeAt(i);
     }
     const colors = [
-      'linear-gradient(135deg, #6366f1, #a855f7)', // indigo-purple
-      'linear-gradient(135deg, #3b82f6, #06b6d4)', // blue-cyan
-      'linear-gradient(135deg, #ec4899, #f43f5e)', // pink-rose
-      'linear-gradient(135deg, #10b981, #3b82f6)', // emerald-blue
-      'linear-gradient(135deg, #f59e0b, #e11d48)', // amber-rose
-      'linear-gradient(135deg, #8b5cf6, #d946ef)', // violet-fuchsia
-      'linear-gradient(135deg, #14b8a6, #0f766e)', // teal-green
-      'linear-gradient(135deg, #f97316, #ea580c)', // orange-dark
-      'linear-gradient(135deg, #0ea5e9, #2563eb)', // sky-blue
-      'linear-gradient(135deg, #84cc16, #22c55e)', // lime-green
+      'linear-gradient(135deg, #4f46e5, #7c3aed)', // deep indigo to violet
+      'linear-gradient(135deg, #6366f1, #a855f7)', // indigo to purple
+      'linear-gradient(135deg, #3b82f6, #0ea5e9)', // blue to sky
+      'linear-gradient(135deg, #8b5cf6, #d946ef)', // violet to fuchsia
+      'linear-gradient(135deg, #0ea5e9, #06b6d4)', // sky to cyan
+      'linear-gradient(135deg, #2563eb, #4f46e5)', // deep blue to indigo
+      'linear-gradient(135deg, #7c3aed, #c026d3)', // violet to fuchsia
+      'linear-gradient(135deg, #0284c7, #2563eb)', // light blue to deep blue
     ];
     return colors[Math.abs(hash) % colors.length];
   };
