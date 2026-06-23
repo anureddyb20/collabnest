@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { problems } from '../data/problems';
 import { userService } from '../data/userService';
+import { analyticsService } from '../data/analyticsService';
 import { useView } from '../context/ViewContext';
 import { useNotification } from '../context/NotificationContext';
 import ConfirmModal from '../components/ConfirmModal';
@@ -226,6 +227,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
 
   // Member Profile overlay state
   const [selectedMemberProfile, setSelectedMemberProfile] = useState(null);
+  const [memberAnalytics, setMemberAnalytics] = useState(null);
 
   // New states for interactive graph, user contributions, and task assignees
   const [hoveredGraphPoint, setHoveredGraphPoint] = useState(null);
@@ -298,8 +300,22 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
         { text: "Alex Rivera joined the team as UI Designer", date: getDynamicEventDate(5) },
         { text: `${ownerName} created the project and posted requirements`, date: getDynamicEventDate(10) }
       ];
-      const initialLogs = latestProblem.contributionsLogs ? [...defaultLogs, ...latestProblem.contributionsLogs] : defaultLogs;
-      setContributionLogs(initialLogs);
+      
+      const isUUID = String(latestProblem.id).length > 20;
+      if (isUUID) {
+        const liveTimeline = await analyticsService.getProjectTimeline(latestProblem.id);
+        if (liveTimeline && liveTimeline.length > 0) {
+          setContributionLogs(liveTimeline.map(log => ({
+            text: log.description,
+            date: new Date(log.created_at).toLocaleDateString() + ' ' + new Date(log.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+          })));
+        } else {
+          setContributionLogs(latestProblem.contributionsLogs ? [...defaultLogs, ...latestProblem.contributionsLogs] : defaultLogs);
+        }
+      } else {
+        const initialLogs = latestProblem.contributionsLogs ? [...defaultLogs, ...latestProblem.contributionsLogs] : defaultLogs;
+        setContributionLogs(initialLogs);
+      }
 
       // Load stage index
       if (latestProblem.stageIndex !== undefined) {
@@ -310,7 +326,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
 
       // Load tasks
       let currentTasks = { todo: [], doing: [], done: [] };
-      const isUUID = String(latestProblem.id).length > 20;
+
 
       if (isUUID) {
         const sbTasks = await userService.getTasks(latestProblem.id);
@@ -440,8 +456,15 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     }
   }, [isTeamMember, activeTab]);
 
-  const handleMemberClick = (member) => {
+  const handleMemberClick = async (member) => {
     const lowerName = (member.name || '').toLowerCase();
+    
+    // Check for real analytics
+    setMemberAnalytics(null);
+    if (member.user_id && String(member.user_id).length > 20) {
+      const liveData = await analyticsService.getUserAnalytics(member.user_id);
+      if (liveData) setMemberAnalytics(liveData);
+    }
     let profileData = {};
     if (lowerName.includes('alex')) {
       profileData = {
@@ -738,6 +761,10 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
         id: taskId,
         status: toStatus
       });
+      if (toStatus === 'done' && currentUser) {
+        await analyticsService.awardXP(currentUser.id, 10, 'contribution');
+        await analyticsService.logActivity(selectedProblem.id, currentUser.id, 'task_completed', `${currentUser.name || 'A builder'} completed task: ${taskToMove.text || taskToMove}`);
+      }
     } else {
       userService.updateProblem(selectedProblem.id, { tasks: updatedTasks });
     }
@@ -919,6 +946,10 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
         sender_name: currentUser?.name || "You",
         message: msgText
       });
+      if (currentUser) {
+        await analyticsService.awardXP(currentUser.id, 2, 'collaboration');
+        await analyticsService.logActivity(selectedProblem.id, currentUser.id, 'message_sent', `${currentUser.name || 'A builder'} sent a message in team chat`);
+      }
     } else {
       localStorage.setItem(`collabnest_chats_${id}`, JSON.stringify(updatedChats));
     }
@@ -1669,6 +1700,10 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                                 uploaded_by: currentUser?.id,
                                 content: contentDataUrl
                               });
+                              if (currentUser) {
+                                await analyticsService.awardXP(currentUser.id, 15, 'contribution');
+                                await analyticsService.logActivity(selectedProblem.id, currentUser.id, 'doc_uploaded', `${currentUser.name || 'A builder'} uploaded document: ${newDoc.name}`);
+                              }
                             } else {
                               userService.updateProblem(selectedProblem.id, { docs: updatedDocs });
                             }
@@ -2059,19 +2094,25 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                 <h2 style={{ margin: '0 0 4px 0', fontSize: '1.6rem' }}>{selectedMemberProfile.name}</h2>
                 <p style={{ margin: 0, color: 'var(--text-muted)' }}>{selectedMemberProfile.role}</p>
                 <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '0.85rem' }}>
-                  <span><strong style={{ color: 'var(--primary)' }}>{selectedMemberProfile.reputation}</strong> XP</span>
-                  <span><strong style={{ color: 'var(--secondary)' }}>{selectedMemberProfile.consistency}</strong> Consistency</span>
+                  <div style={{ textAlign: 'center' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', display: 'block', textTransform: 'uppercase', letterSpacing: '1px' }}>Reputation</span>
+                    <span><strong style={{ color: 'var(--primary)' }}>{memberAnalytics ? memberAnalytics.reputation.total_xp : selectedMemberProfile.reputation}</strong> XP</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Consistency</span>
+                    <span style={{ color: 'var(--secondary)', fontWeight: 600 }}>{memberAnalytics ? memberAnalytics.reputation.consistency_score + '%' : (selectedMemberProfile.consistency || "98%")}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '0.95rem', color: 'var(--text-muted)' }}>
+              <h4 style={{ fontSize: '0.9rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Award size={16} color="var(--primary)" /> Reputation Badges
               </h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {selectedMemberProfile.badges.map(b => (
-                  <span key={b} className="badge badge-primary" style={{ fontSize: '0.7rem' }}>{b}</span>
+                {(memberAnalytics && memberAnalytics.badges.length > 0 ? memberAnalytics.badges : (selectedMemberProfile.badges || ["Top Contributor", "MVP Shipper"])).map((b, i) => (
+                  <span key={i} className="badge badge-primary">{b}</span>
                 ))}
               </div>
             </div>

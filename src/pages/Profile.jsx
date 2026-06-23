@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Award, Shield, Star, Share2, Download, Briefcase, Zap, ExternalLink } from 'lucide-react';
 import { userService } from '../data/userService';
+import { analyticsService } from '../data/analyticsService';
 import { Link } from 'react-router-dom';
 import { useView } from '../context/ViewContext';
 
@@ -9,6 +10,7 @@ const Profile = () => {
   const { isMobileView } = useView();
   const currentUser = userService.getCurrentUser();
   const [joinedProblems, setJoinedProblems] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState(null);
 
@@ -16,6 +18,12 @@ const Profile = () => {
     const fetchProfileData = async () => {
       const problems = await userService.getJoinedProblems();
       setJoinedProblems(problems);
+      
+      if (currentUser?.id && currentUser.id.length > 20) {
+        const data = await analyticsService.getUserAnalytics(currentUser.id);
+        if (data) setAnalytics(data);
+      }
+      
       setIsLoading(false);
     };
     fetchProfileData();
@@ -29,10 +37,10 @@ const Profile = () => {
   const user = {
     name: currentUser?.name || "Guest Builder",
     role: currentUser?.role === 'owner' ? "Visionary / Product Owner" : currentUser?.role === 'builder' ? "Full Stack Builder" : "Explorer",
-    reputation: (currentUser?.joined?.length || 0) * 10 + (currentUser?.reputation || 30),
-    consistency: "98%",
+    reputation: analytics ? analytics.reputation.total_xp : ((currentUser?.joined?.length || 0) * 10 + (currentUser?.reputation || 30)),
+    consistency: analytics ? `${analytics.reputation.consistency_score}%` : "98%",
     skills: currentUser?.skills && currentUser.skills.length > 0 ? currentUser.skills : ["React", "Node.js", "UI/UX", "Python"],
-    badges: currentUser?.role === 'owner' ? ["Top Visionary", "Community Lead"] : ["Top Collaborator", "Early Adopter", "MVP Shipper"],
+    badges: analytics && analytics.badges.length > 0 ? analytics.badges : (currentUser?.role === 'owner' ? ["Top Visionary", "Community Lead"] : ["Top Collaborator", "Early Adopter", "MVP Shipper"]),
     projects: joinedProblems.map(p => ({
       id: p.id,
       title: p.title,
