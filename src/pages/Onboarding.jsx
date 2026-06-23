@@ -321,6 +321,12 @@ const Onboarding = ({ setUser, user }) => {
             className="glass-panel"
             style={{ padding: '48px', maxWidth: '500px', width: '100%' }}
           >
+            <button 
+              onClick={() => navigate('/')}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '24px', padding: 0, fontSize: '0.9rem' }}
+            >
+              ← Back to Home
+            </button>
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
                 {isLoginMode ? 'Welcome Back' : 'Create Account'}
