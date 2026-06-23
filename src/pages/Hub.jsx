@@ -86,7 +86,7 @@ const Hub = ({ user: initialUser }) => {
       } else if (activeSidebar === 'Teams') {
         list = all.filter(p => p.teamMembers?.some(m => userService.areEmailsSimilar(m.email, userData?.email)) || userData.joined?.some(id => String(id) === String(p.id)));
       } else if (activeSidebar === 'Submissions') {
-        list = all.filter(p => userData.submissions?.some(id => String(id) === String(p.id)));
+        list = all.filter(p => p.applications?.some(a => String(a.applicant_id) === String(userData?.id)));
       } else if (activeSidebar === 'MyProblems') {
         list = all.filter(p => p.author && userData.email && userService.areEmailsSimilar(p.author, userData.email));
         list.sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime()); // Sort in order of posting (newest first)
@@ -462,7 +462,7 @@ const Hub = ({ user: initialUser }) => {
                         {(() => {
                           if (activeSidebar !== 'Problems' || isOwnerFn(p, userData)) return null;
                           const userApp = p.applications?.find(a => String(a.applicant_id) === String(userData?.id));
-                          const isPending = userApp?.status === 'Pending' || userData?.submissions?.some(id => String(id) === String(p.id));
+                          const isPending = userApp?.status === 'Pending';
                           const isAccepted = userApp?.status === 'Accepted' || userData?.joined?.some(id => String(id) === String(p.id));
                           
                           if (isAccepted) {

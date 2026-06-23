@@ -46,9 +46,8 @@ export default function BuilderHub({ user }) {
       setProblems(allProblems || []);
       
       const cur = userService.getCurrentUser() || user;
-      setCurrentUser(cur);
+      if (cur) setCurrentUser(cur);
       
-      if (cur?.submissions) setApplied(cur.submissions.map(String));
       if (cur) {
         setProfile(p => ({
           ...p,
@@ -88,6 +87,7 @@ export default function BuilderHub({ user }) {
     if (!applying) return;
     await userService.applyToJoin(applying.id, applicationData);
     setApplied(prev => [...prev, String(applying.id)]);
+    setProblems(await userService.getAllProblems());
     setApplying(null);
     setApplicationData({ motivation: '', portfolio: '', message: '' });
     setApplyMsg('');

@@ -347,17 +347,6 @@ export const userService = {
         status: 'Pending'
       });
 
-      if (!error) {
-        const current = userService.getCurrentUser();
-        if (current) {
-          current.submissions = current.submissions || [];
-          if (!current.submissions.includes(problemId)) {
-            current.submissions.push(problemId);
-            localStorage.setItem(SESSION_KEY, JSON.stringify(current));
-          }
-        }
-      }
-
       return !error;
     } catch (e) {
       console.error(e);
