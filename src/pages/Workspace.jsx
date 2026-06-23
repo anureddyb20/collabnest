@@ -1008,59 +1008,63 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
         </aside>
 
         {/* Main Content Area: Kanban / Communication */}
-        <div>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
-            <button 
-              onClick={() => setActiveTab('board')}
-              className={activeTab === 'board' ? 'btn-primary' : 'btn-outline'} 
-              style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-            >
-              <Layout size={16} /> Task Board
-            </button>
-            {isTeamMember && (
-              <button 
-                onClick={() => setActiveTab('chat')}
-                className={activeTab === 'chat' ? 'btn-primary' : 'btn-outline'} 
-                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-              >
-                <MessageSquare size={16} /> Team Chat
-              </button>
-            )}
-            <button 
-              onClick={() => setActiveTab('contributions')}
-              className={activeTab === 'contributions' ? 'btn-primary' : 'btn-outline'} 
-              style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-            >
-              <Activity size={16} /> Contributions
-            </button>
-            {isOwner && (
-              <button 
-                onClick={() => setActiveTab('applicants')}
-                className={activeTab === 'applicants' ? 'btn-primary' : 'btn-outline'} 
-                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-              >
-                <Users size={16} /> Applicants {localApplicants.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem', marginLeft: '4px' }}>{localApplicants.length}</span>}
-              </button>
-            )}
-            {isTeamMember && (
-              <button 
-                onClick={() => setActiveTab('docs')}
-                className={activeTab === 'docs' ? 'btn-primary' : 'btn-outline'} 
-                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-              >
-                <Files size={16} /> Docs & Files
-              </button>
-            )}
-            <button 
-              onClick={() => setActiveTab('graph')}
-              className={activeTab === 'graph' ? 'btn-primary' : 'btn-outline'} 
-              style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-            >
-              <Activity size={16} /> Progress Graph
-            </button>
-          </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {!isTeamMember ? (
+            <div className="glass-panel" style={{ padding: '60px 40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <AlertCircle size={48} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
+              <h3>Access Restricted</h3>
+              <p>You must be accepted into the team by the owner to access the workspace tabs.</p>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
+                <button 
+                  onClick={() => setActiveTab('board')}
+                  className={activeTab === 'board' ? 'btn-primary' : 'btn-outline'} 
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  <Layout size={16} /> Task Board
+                </button>
+                <button 
+                  onClick={() => setActiveTab('chat')}
+                  className={activeTab === 'chat' ? 'btn-primary' : 'btn-outline'} 
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  <MessageSquare size={16} /> Team Chat
+                </button>
+                <button 
+                  onClick={() => setActiveTab('contributions')}
+                  className={activeTab === 'contributions' ? 'btn-primary' : 'btn-outline'} 
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  <Activity size={16} /> Contributions
+                </button>
+                {isOwner && (
+                  <button 
+                    onClick={() => setActiveTab('applicants')}
+                    className={activeTab === 'applicants' ? 'btn-primary' : 'btn-outline'} 
+                    style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                  >
+                    <Users size={16} /> Applicants {localApplicants.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem', marginLeft: '4px' }}>{localApplicants.length}</span>}
+                  </button>
+                )}
+                <button 
+                  onClick={() => setActiveTab('docs')}
+                  className={activeTab === 'docs' ? 'btn-primary' : 'btn-outline'} 
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  <Files size={16} /> Docs & Files
+                </button>
+                <button 
+                  onClick={() => setActiveTab('graph')}
+                  className={activeTab === 'graph' ? 'btn-primary' : 'btn-outline'} 
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  <Activity size={16} /> Progress Graph
+                </button>
+              </div>
 
-          {activeTab === 'board' ? (
+              {activeTab === 'board' ? (
             <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
               {['todo', 'doing', 'done'].map(status => (
                 <div 
@@ -1733,6 +1737,8 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
               </div>
             </div>
           ) : null}
+            </>
+          )}
         </div>
       </div>
 
