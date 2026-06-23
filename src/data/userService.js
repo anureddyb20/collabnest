@@ -470,5 +470,90 @@ export const userService = {
   getSubmissions: async () => [],
   addNotification: () => {},
   getNotifications: () => [],
-  markNotificationsRead: () => {}
+  markNotificationsRead: () => {},
+
+  // Workspace Collaboration APIs
+  getTasks: async (projectId) => {
+    try {
+      const { data, error } = await supabase.from('workspace_tasks').select('*').eq('project_id', projectId).order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  },
+  saveTask: async (taskData) => {
+    try {
+      if (taskData.id) {
+        // Update
+        const { id, ...updateData } = taskData;
+        const { error } = await supabase.from('workspace_tasks').update(updateData).eq('id', id);
+        return !error;
+      } else {
+        // Insert
+        const { error } = await supabase.from('workspace_tasks').insert(taskData);
+        return !error;
+      }
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+  deleteTask: async (taskId) => {
+    try {
+      const { error } = await supabase.from('workspace_tasks').delete().eq('id', taskId);
+      return !error;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+  getChatMessages: async (projectId) => {
+    try {
+      const { data, error } = await supabase.from('workspace_chat_messages').select('*').eq('project_id', projectId).order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  },
+  sendChatMessage: async (messageData) => {
+    try {
+      const { error } = await supabase.from('workspace_chat_messages').insert(messageData);
+      return !error;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+  getDocuments: async (projectId) => {
+    try {
+      const { data, error } = await supabase.from('workspace_documents').select('*').eq('project_id', projectId).order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  },
+  uploadDocument: async (docData) => {
+    try {
+      const { error } = await supabase.from('workspace_documents').insert(docData);
+      return !error;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+  deleteDocument: async (docId) => {
+    try {
+      const { error } = await supabase.from('workspace_documents').delete().eq('id', docId);
+      return !error;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  }
 };

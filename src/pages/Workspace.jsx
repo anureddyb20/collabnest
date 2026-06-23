@@ -309,61 +309,112 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       }
 
       // Load tasks
-      let currentTasks;
-      if (latestProblem.tasks && latestProblem.tasks.todo && latestProblem.tasks.doing && latestProblem.tasks.done) {
-        currentTasks = latestProblem.tasks;
-      } else {
-        currentTasks = {
-          todo: [
-            { id: "def-todo-1", text: "Implement " + ((latestProblem.skills && latestProblem.skills[0]) || "Frontend"), assignee: "Alex", date: "Just now" },
-            { id: "def-todo-2", text: "Research " + latestProblem.domain + " market", assignee: ownerName, date: "Just now" },
-            ...(latestProblem.projectGoals ? [{ id: "def-todo-3", text: `Goal: ${latestProblem.projectGoals}`, assignee: ownerName, date: "Just now" }] : [])
-          ],
-          doing: [
-            { id: "def-doing-1", text: "Architecture Setup", assignee: ownerName, date: "Just now" }
-          ],
-          done: [
-            { id: "def-done-1", text: "Initial Ideation", assignee: "Alex", date: "Just now" },
-            ...(latestProblem.expectedOutcome ? [{ id: "def-done-2", text: `Define outcome: ${latestProblem.expectedOutcome}`, assignee: ownerName, date: "Just now" }] : [])
-          ]
-        };
-      }
+      let currentTasks = { todo: [], doing: [], done: [] };
+      const isUUID = String(latestProblem.id).length > 20;
 
+      if (isUUID) {
+        const sbTasks = await userService.getTasks(latestProblem.id);
+        if (sbTasks.length > 0) {
+          sbTasks.forEach(t => {
+            if (currentTasks[t.status]) {
+              currentTasks[t.status].push({
+                id: t.id,
+                text: t.title,
+                assignee: t.assigned_to_name || t.assigned_to || 'Builder',
+                date: new Date(t.created_at).toLocaleDateString()
+              });
+            }
+          });
+        }
+      }
+      
+      if (!isUUID || (currentTasks.todo.length === 0 && currentTasks.doing.length === 0 && currentTasks.done.length === 0)) {
+        if (latestProblem.tasks && latestProblem.tasks.todo && latestProblem.tasks.doing && latestProblem.tasks.done) {
+          currentTasks = latestProblem.tasks;
+        } else {
+          currentTasks = {
+            todo: [
+              { id: "def-todo-1", text: "Implement " + ((latestProblem.skills && latestProblem.skills[0]) || "Frontend"), assignee: "Alex", date: "Just now" },
+              { id: "def-todo-2", text: "Research " + latestProblem.domain + " market", assignee: ownerName, date: "Just now" },
+              ...(latestProblem.projectGoals ? [{ id: "def-todo-3", text: `Goal: ${latestProblem.projectGoals}`, assignee: ownerName, date: "Just now" }] : [])
+            ],
+            doing: [
+              { id: "def-doing-1", text: "Architecture Setup", assignee: ownerName, date: "Just now" }
+            ],
+            done: [
+              { id: "def-done-1", text: "Initial Ideation", assignee: "Alex", date: "Just now" },
+              ...(latestProblem.expectedOutcome ? [{ id: "def-done-2", text: `Define outcome: ${latestProblem.expectedOutcome}`, assignee: ownerName, date: "Just now" }] : [])
+            ]
+          };
+        }
+      }
       setTasks(currentTasks);
       
       // Load docs
-      if (latestProblem.docs) {
-        setDocsList(latestProblem.docs);
+      if (isUUID) {
+        const sbDocs = await userService.getDocuments(latestProblem.id);
+        if (sbDocs.length > 0) {
+          setDocsList(sbDocs.map(d => ({
+            id: d.id,
+            name: d.name,
+            type: d.type,
+            size: d.size + " Bytes",
+            uploader: d.uploaded_by_name || 'Builder',
+            date: new Date(d.created_at).toLocaleDateString(),
+            content: d.content
+          })));
+        } else if (latestProblem.docs) {
+          setDocsList(latestProblem.docs);
+        } else {
+          setDocsList([]);
+        }
       } else {
-        const safeTitle = (latestProblem.title || 'Project').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
-        const mainSkill = (latestProblem.skills && latestProblem.skills[0]) ? latestProblem.skills[0].replace(/[^a-zA-Z0-9]/g, '') : "Prototype";
-        const domainStr = latestProblem.domain ? latestProblem.domain.replace(/[^a-zA-Z0-9]/g, '') : "System";
-        
-        const defaultDocs = [
-          { name: `${domainStr}_Architecture_Design.pdf`, type: "PDF", size: "2.4 MB", uploader: ownerName, date: getDynamicEventDate(5) },
-          { name: `${safeTitle}_UI_Wireframes.fig`, type: "Figma", size: "12.8 MB", uploader: "Alex", date: getDynamicEventDate(2) },
-          { name: `${mainSkill}_Implementation_Plan.docx`, type: "Word", size: "1.1 MB", uploader: ownerName, date: getDynamicEventDate(10) }
-        ];
-        setDocsList(defaultDocs);
+        if (latestProblem.docs) {
+          setDocsList(latestProblem.docs);
+        } else {
+          const safeTitle = (latestProblem.title || 'Project').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+          const mainSkill = (latestProblem.skills && latestProblem.skills[0]) ? latestProblem.skills[0].replace(/[^a-zA-Z0-9]/g, '') : "Prototype";
+          const domainStr = latestProblem.domain ? latestProblem.domain.replace(/[^a-zA-Z0-9]/g, '') : "System";
+          const defaultDocs = [
+            { name: `${domainStr}_Architecture_Design.pdf`, type: "PDF", size: "2.4 MB", uploader: ownerName, date: getDynamicEventDate(5) },
+            { name: `${safeTitle}_UI_Wireframes.fig`, type: "Figma", size: "12.8 MB", uploader: "Alex", date: getDynamicEventDate(2) },
+            { name: `${mainSkill}_Implementation_Plan.docx`, type: "Word", size: "1.1 MB", uploader: ownerName, date: getDynamicEventDate(10) }
+          ];
+          setDocsList(defaultDocs);
+        }
       }
 
       // Load chats
-      const storedChats = getChatsWithFallback(latestProblem.id);
-      if (storedChats) {
-        let parsedChats = JSON.parse(storedChats);
-        if (Array.isArray(parsedChats)) {
-          parsedChats.forEach(c => {
-            if (c && typeof c.sender === 'object') c.sender = ownerName;
-          });
+      if (isUUID) {
+        const sbChats = await userService.getChatMessages(latestProblem.id);
+        if (sbChats.length > 0) {
+          setChatMessages(sbChats.map(c => ({
+            id: c.id,
+            sender: c.sender_name || 'Builder',
+            text: c.message,
+            time: new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          })));
+        } else {
+          setChatMessages([]);
         }
-        setChatMessages(parsedChats);
       } else {
-        const defaultChats = [
-          { sender: ownerName, text: `Hey team! Let's get started on the prototype for ${latestProblem.title}.`, time: "10:30 AM" },
-          { sender: "Alex", text: "Working on the design mockups now.", time: "10:32 AM" }
-        ];
-        setChatMessages(defaultChats);
-        localStorage.setItem(`collabnest_chats_${latestProblem.id}`, JSON.stringify(defaultChats));
+        const storedChats = getChatsWithFallback(latestProblem.id);
+        if (storedChats) {
+          let parsedChats = JSON.parse(storedChats);
+          if (Array.isArray(parsedChats)) {
+            parsedChats.forEach(c => {
+              if (c && typeof c.sender === 'object') c.sender = ownerName;
+            });
+          }
+          setChatMessages(parsedChats);
+        } else {
+          const defaultChats = [
+            { sender: ownerName, text: `Hey team! Let's get started on the prototype for ${latestProblem.title}.`, time: "10:30 AM" },
+            { sender: "Alex", text: "Working on the design mockups now.", time: "10:32 AM" }
+          ];
+          setChatMessages(defaultChats);
+          localStorage.setItem(`collabnest_chats_${latestProblem.id}`, JSON.stringify(defaultChats));
+        }
       }
     };
 
@@ -621,27 +672,45 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     return pts;
   };
 
-  const handleAddTask = (column) => {
+  const handleAddTask = async (column) => {
     if (!inlineTaskText.trim()) return;
     const assigneeName = taskAssignee || (team[0] ? team[0].name : 'Anu');
+    
+    // Optimistic UI update
+    const uiTaskId = Date.now().toString();
     const newTask = {
-      id: Date.now().toString(),
+      id: uiTaskId,
       text: inlineTaskText.trim(),
       assignee: assigneeName,
       date: 'Just now'
     };
+    
     const updatedTasks = {
       ...tasks,
       [column]: [...(tasks[column] || []), newTask]
     };
     setTasks(updatedTasks);
-    userService.updateProblem(selectedProblem.id, { tasks: updatedTasks });
+    
     setInlineTaskText('');
     setTaskAssignee('');
     setActiveInputColumn(null);
+
+    const isUUID = String(selectedProblem.id).length > 20;
+    if (isUUID) {
+      await userService.saveTask({
+        project_id: selectedProblem.id,
+        title: newTask.text,
+        status: column,
+        created_by: currentUser?.id,
+        assigned_to_name: assigneeName // Custom field to track name for now
+      });
+      // A refresh will be triggered by polling, or we could fetch directly.
+    } else {
+      userService.updateProblem(selectedProblem.id, { tasks: updatedTasks });
+    }
   };
 
-  const handleMoveTask = (taskTextOrObj, fromStatus, toStatus) => {
+  const handleMoveTask = async (taskTextOrObj, fromStatus, toStatus) => {
     const taskId = typeof taskTextOrObj === 'string' ? taskTextOrObj : taskTextOrObj.id;
     
     const taskToMove = (tasks[fromStatus] || []).find(t => {
@@ -662,10 +731,19 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       [toStatus]: toTasks
     };
     setTasks(updatedTasks);
-    userService.updateProblem(selectedProblem.id, { tasks: updatedTasks });
+    
+    const isUUID = String(selectedProblem.id).length > 20;
+    if (isUUID && taskId && taskId.length > 20) {
+      await userService.saveTask({
+        id: taskId,
+        status: toStatus
+      });
+    } else {
+      userService.updateProblem(selectedProblem.id, { tasks: updatedTasks });
+    }
   };
 
-  const handleDeleteTask = (taskTextOrObj, fromStatus) => {
+  const handleDeleteTask = async (taskTextOrObj, fromStatus) => {
     const taskId = typeof taskTextOrObj === 'string' ? taskTextOrObj : taskTextOrObj.id;
     const updatedTasks = {
       ...tasks,
@@ -675,7 +753,13 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       })
     };
     setTasks(updatedTasks);
-    userService.updateProblem(selectedProblem.id, { tasks: updatedTasks });
+
+    const isUUID = String(selectedProblem.id).length > 20;
+    if (isUUID && taskId && taskId.length > 20) {
+      await userService.deleteTask(taskId);
+    } else {
+      userService.updateProblem(selectedProblem.id, { tasks: updatedTasks });
+    }
   };
 
   const handleDragStart = (e, taskTextOrObj, fromStatus) => {
@@ -794,28 +878,50 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     setDocToDelete(docName);
   };
 
-  const confirmDeleteFile = () => {
+  const confirmDeleteFile = async () => {
     if (docToDelete) {
+      const docObj = docsList.find(d => d.name === docToDelete);
       const updatedDocs = docsList.filter(d => d.name !== docToDelete);
       setDocsList(updatedDocs);
-      userService.updateProblem(selectedProblem.id, { docs: updatedDocs });
+      
+      const isUUID = String(selectedProblem.id).length > 20;
+      if (isUUID && docObj && docObj.id) {
+        await userService.deleteDocument(docObj.id);
+      } else {
+        userService.updateProblem(selectedProblem.id, { docs: updatedDocs });
+      }
+      
       showNotification(`Deleted ${docToDelete}`, "success");
       setDocToDelete(null);
     }
   };
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
+    
+    const isUUID = String(selectedProblem.id).length > 20;
+    const msgText = chatInput.trim();
+    
     const newMessage = {
       sender: currentUser?.name || "You",
-      text: chatInput.trim(),
+      text: msgText,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     const updatedChats = [...chatMessages, newMessage];
     setChatMessages(updatedChats);
-    localStorage.setItem(`collabnest_chats_${id}`, JSON.stringify(updatedChats));
     setChatInput('');
+
+    if (isUUID) {
+      await userService.sendChatMessage({
+        project_id: selectedProblem.id,
+        sender_id: currentUser?.id,
+        sender_name: currentUser?.name || "You",
+        message: msgText
+      });
+    } else {
+      localStorage.setItem(`collabnest_chats_${id}`, JSON.stringify(updatedChats));
+    }
   };
 
   const handleInvite = (candidate) => {
@@ -1539,18 +1645,33 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                         onClick={() => {
                           if (!newDocName.trim()) return;
 
-                          const addDoc = (contentDataUrl = null) => {
+                          const addDoc = async (contentDataUrl = null) => {
                             const newDoc = {
                               name: newDocName.trim(),
                               type: newDocType,
-                              size: selectedFile ? formatBytes(selectedFile.size) : "1.2 MB",
+                              size: selectedFile ? selectedFile.size + " Bytes" : "1.2 MB",
                               uploader: currentUser?.name || "You",
                               date: "Just now",
                               content: contentDataUrl
                             };
+                            
+                            const isUUID = String(selectedProblem.id).length > 20;
+
                             const updatedDocs = [...docsList, newDoc];
                             setDocsList(updatedDocs);
-                            userService.updateProblem(selectedProblem.id, { docs: updatedDocs });
+                            
+                            if (isUUID) {
+                              await userService.uploadDocument({
+                                project_id: selectedProblem.id,
+                                name: newDoc.name,
+                                type: newDoc.type,
+                                size: selectedFile ? selectedFile.size : 1200000,
+                                uploaded_by: currentUser?.id,
+                                content: contentDataUrl
+                              });
+                            } else {
+                              userService.updateProblem(selectedProblem.id, { docs: updatedDocs });
+                            }
                             
                             setNewDocName('');
                             setSelectedFile(null);

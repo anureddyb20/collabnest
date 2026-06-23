@@ -92,3 +92,54 @@ CREATE TRIGGER projects_updated_at
 BEFORE UPDATE ON projects
 FOR EACH ROW
 EXECUTE PROCEDURE set_updated_at();
+
+-- 5. Workspace Tasks Table
+CREATE TABLE workspace_tasks (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  status TEXT DEFAULT 'todo',
+  priority TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 6. Workspace Chat Messages Table
+CREATE TABLE workspace_chat_messages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  sender_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  sender_name TEXT,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 7. Workspace Documents Table
+CREATE TABLE workspace_documents (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  uploaded_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  type TEXT,
+  size INTEGER,
+  content TEXT, -- Storing Base64 payload or raw text
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Workspace RLS Policies (Open for now to match current app design)
+ALTER TABLE workspace_tasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public tasks" ON workspace_tasks FOR ALL USING (true);
+
+ALTER TABLE workspace_chat_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public chat" ON workspace_chat_messages FOR ALL USING (true);
+
+ALTER TABLE workspace_documents ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public docs" ON workspace_documents FOR ALL USING (true);
+
+CREATE TRIGGER tasks_updated_at
+BEFORE UPDATE ON workspace_tasks
+FOR EACH ROW
+EXECUTE PROCEDURE set_updated_at();
