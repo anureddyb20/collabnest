@@ -459,30 +459,42 @@ const Hub = ({ user: initialUser }) => {
                       </div>
                       
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        {activeSidebar === 'Problems' && (!p.author || !userData.email || !userService.areEmailsSimilar(p.author, userData.email)) && !userData?.joined?.some(id => String(id) === String(p.id)) && (
-                          userData?.submissions?.some(id => String(id) === String(p.id)) ? (
-                            <span style={{ color: '#4ade80', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginRight: '8px' }}>
-                              ✓ Applied
-                            </span>
-                          ) : p.status !== 'available_to_claim' && (
-                            <button 
-                              className="btn-outline" 
-                              style={{ padding: '6px 14px', fontSize: '0.8rem', borderRadius: '8px' }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const session = userService.getCurrentUser();
-                                if (!session) {
-                                  showNotification('Please log in or create an account first!', 'warning');
-                                  navigate('/onboarding');
-                                  return;
-                                }
-                                setApplyingProblem(p);
-                              }}
-                            >
-                              Apply to Join
-                            </button>
-                          )
-                        )}
+                        {(() => {
+                          if (activeSidebar !== 'Problems' || isOwnerFn(p, userData)) return null;
+                          const userApp = p.applications?.find(a => String(a.applicant_id) === String(userData?.id));
+                          const isPending = userApp?.status === 'Pending' || userData?.submissions?.some(id => String(id) === String(p.id));
+                          const isAccepted = userApp?.status === 'Accepted' || userData?.joined?.some(id => String(id) === String(p.id));
+                          
+                          if (isAccepted) {
+                            return null;
+                          } else if (isPending) {
+                            return (
+                              <span style={{ color: '#f59e0b', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginRight: '8px', background: 'rgba(245, 158, 11, 0.1)', padding: '6px 12px', borderRadius: '8px' }}>
+                                ⏳ Pending
+                              </span>
+                            );
+                          } else if (p.status !== 'available_to_claim') {
+                            return (
+                              <button 
+                                className="btn-outline" 
+                                style={{ padding: '6px 14px', fontSize: '0.8rem', borderRadius: '8px' }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const session = userService.getCurrentUser();
+                                  if (!session) {
+                                    showNotification('Please log in or create an account first!', 'warning');
+                                    navigate('/onboarding');
+                                    return;
+                                  }
+                                  setApplyingProblem(p);
+                                }}
+                              >
+                                Apply to Join
+                              </button>
+                            );
+                          }
+                          return null;
+                        })()}
                         
                         {isOwnerFn(p, userData) ? (
                           <span style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 255, 255, 0.05)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)' }}>
@@ -499,7 +511,7 @@ const Hub = ({ user: initialUser }) => {
                           >
                             Claim Project
                           </button>
-                        ) : userData?.joined?.some(id => String(id) === String(p.id)) ? (
+                        ) : userData?.joined?.some(id => String(id) === String(p.id)) || p.applications?.some(a => String(a.applicant_id) === String(userData?.id) && a.status === 'Accepted') ? (
                           <span style={{ color: 'var(--secondary)', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <ChevronRight size={16} /> Joined
                           </span>

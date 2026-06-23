@@ -13,6 +13,7 @@ import BuilderHub from './pages/BuilderHub';
 import Navbar from './components/Navbar';
 import { userService } from './data/userService';
 import { useView } from './context/ViewContext';
+import { useNotification } from './context/NotificationContext';
 import { ErrorBoundary } from './ErrorBoundary';
 
 const ProtectedRoute = ({ user, children }) => {
@@ -27,6 +28,48 @@ function App() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const { isMobileView } = useView();
+  const { showNotification } = useNotification();
+
+  useEffect(() => {
+    if (!user || !user.id || !supabase) return;
+    
+    let intervalId;
+    
+    const checkNotifications = async () => {
+      try {
+        const { data: applications, error } = await supabase
+          .from('project_applications')
+          .select('id, project_id, status, projects(title)')
+          .eq('applicant_id', user.id)
+          .eq('status', 'Accepted');
+          
+        if (error) return;
+        
+        const notifiedStr = localStorage.getItem('collabnest_notified_apps');
+        const notified = notifiedStr ? JSON.parse(notifiedStr) : [];
+        let hasNew = false;
+        
+        applications.forEach(app => {
+          if (!notified.includes(app.id)) {
+            showNotification(`Your application to "${app.projects?.title || 'a project'}" has been Accepted!`, 'success', 8000);
+            notified.push(app.id);
+            hasNew = true;
+          }
+        });
+        
+        if (hasNew) {
+          localStorage.setItem('collabnest_notified_apps', JSON.stringify(notified));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    
+    checkNotifications();
+    intervalId = setInterval(checkNotifications, 10000);
+    
+    return () => clearInterval(intervalId);
+  }, [user, showNotification]);
 
   useEffect(() => {
     if (!supabase) {

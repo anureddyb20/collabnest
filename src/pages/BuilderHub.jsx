@@ -146,7 +146,10 @@ export default function BuilderHub({ user }) {
   const impactColor = { High: '#6366f1', Critical: '#ef4444', Medium: '#10b981', 'Life-changing': '#8b5cf6' };
 
   const card = (p) => {
-    const isApplied = applied.includes(String(p.id));
+    const userApp = p.applications?.find(a => String(a.applicant_id) === String(currentUser?.id));
+    const isPending = userApp?.status === 'Pending' || applied.includes(String(p.id));
+    const isAccepted = userApp?.status === 'Accepted';
+    const isJoined = currentUser?.joined?.some(id => String(id) === String(p.id)) || isAccepted;
     const matchingSkills = (p.skills || []).filter(s => profile.skills.includes(s));
     const missingSkills = (p.skills || []).filter(s => !profile.skills.includes(s));
     const spotsLeft = (p.team?.total || 5) - (p.team?.current || 1);
@@ -195,8 +198,10 @@ export default function BuilderHub({ user }) {
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 8, alignItems: 'center' }}>
-          {isApplied ? (
-            <span style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 10 }}>✓ Applied</span>
+          {isJoined ? (
+            <span style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 10 }}>✓ Joined</span>
+          ) : isPending ? (
+            <span style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 10 }}>⏳ Pending</span>
           ) : p.status === 'available_to_claim' ? (
             <button onClick={() => handleClaim(p.id)} style={{ background: 'linear-gradient(135deg, var(--primary), var(--secondary))', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               Claim Project
