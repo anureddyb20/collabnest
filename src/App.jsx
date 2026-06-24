@@ -84,20 +84,34 @@ function App() {
       return;
     }
 
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const localUser = userService.getCurrentUser() || userService.registerOrLogin({ email: session.user.email });
-        setUser(localUser);
-      } else {
-        const localUser = userService.getCurrentUser();
-        if (localUser) {
+    // Helper to sync user
+    const syncUser = async (session) => {
+      try {
+        if (session?.user) {
+          let localUser = userService.getCurrentUser();
+          if (!localUser || localUser.email !== session.user.email) {
+            const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+            localUser = await userService.registerOrLogin({ 
+              email: session.user.email,
+              name: name
+            });
+          }
           setUser(localUser);
         } else {
+          userService.logout(true); // pass true for localOnly to avoid infinite loop
           setUser(null);
         }
+      } catch (err) {
+        console.error("Sync user error:", err);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
+    };
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      syncUser(session);
     }).catch((error) => {
       console.error("Supabase session error:", error);
       setIsLoading(false);
@@ -105,18 +119,7 @@ function App() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        const localUser = userService.getCurrentUser() || userService.registerOrLogin({ email: session.user.email });
-        setUser(localUser);
-      } else {
-        const localUser = userService.getCurrentUser();
-        if (localUser) {
-          setUser(localUser);
-        } else {
-          setUser(null);
-        }
-      }
-      setIsLoading(false);
+      syncUser(session);
     });
 
     return () => subscription?.unsubscribe();

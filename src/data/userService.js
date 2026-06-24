@@ -63,10 +63,16 @@ export const userService = {
     }
   },
 
-  logout: () => {
+  logout: async (localOnly = false) => {
     localStorage.removeItem(SESSION_KEY);
     sessionStorage.removeItem(SESSION_KEY);
-    supabase.auth.signOut();
+    if (!localOnly) {
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.error("Logout error", e);
+      }
+    }
   },
 
   getUserNameByEmail: async (email) => {
