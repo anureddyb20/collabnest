@@ -176,6 +176,161 @@ class AnalyticsService {
   }
 
   /**
+   * Fetch REAL aggregated profile data dynamically from Supabase
+   */
+  async getRealUserProfileData(userId) {
+    if (!userId || userId.length < 20) return null;
+    try {
+      // 1. Fetch Projects Created
+      const { data: createdProjects } = await supabase
+        .from('projects')
+        .select('id, title, domain, created_at')
+        .eq('owner_id', userId);
+
+      // 2. Fetch Projects Joined
+      const { data: joinedProjects } = await supabase
+        .from('project_members')
+        .select('project_id, joined_at, projects(title, domain)')
+        .eq('user_id', userId);
+
+      // 3. Fetch Completed Tasks
+      const { data: completedTasks } = await supabase
+        .from('workspace_tasks')
+        .select('id, title, project_id, updated_at')
+        .eq('assigned_to', userId)
+        .eq('status', 'done');
+
+      // 4. Fetch Uploaded Docs
+      const { data: uploadedDocs } = await supabase
+        .from('workspace_documents')
+        .select('id, name, project_id, created_at')
+        .eq('uploaded_by', userId);
+
+      // --- Build Timeline ---
+      let timeline = [];
+      
+      if (createdProjects) {
+        createdProjects.forEach(p => {
+          timeline.push({
+            id: `cp_${p.id}`,
+            date: new Date(p.created_at),
+            description: `Created project "${p.title}"`,
+            type: 'project_created',
+            projectId: p.id,
+            projectTitle: p.title
+          });
+        });
+      }
+
+      if (joinedProjects) {
+        joinedProjects.forEach(pm => {
+          timeline.push({
+            id: `jp_${pm.project_id}`,
+            date: new Date(pm.joined_at),
+            description: `Joined project "${pm.projects?.title || 'Unknown'}"`,
+            type: 'project_joined',
+            projectId: pm.project_id,
+            projectTitle: pm.projects?.title
+          });
+        });
+      }
+
+      if (completedTasks) {
+        completedTasks.forEach(t => {
+          timeline.push({
+            id: `ct_${t.id}`,
+            date: new Date(t.updated_at),
+            description: `Completed task "${t.title}"`,
+            type: 'task_completed',
+            projectId: t.project_id
+          });
+        });
+      }
+
+      if (uploadedDocs) {
+        uploadedDocs.forEach(d => {
+          timeline.push({
+            id: `ud_${d.id}`,
+            date: new Date(d.created_at),
+            description: `Uploaded document "${d.name}"`,
+            type: 'doc_uploaded',
+            projectId: d.project_id
+          });
+        });
+      }
+
+      // Sort timeline descending
+      timeline.sort((a, b) => b.date - a.date);
+
+      // --- Compute Dynamic Stats & XP ---
+      const cpCount = createdProjects?.length || 0;
+      const jpCount = joinedProjects?.length || 0;
+      const ctCount = completedTasks?.length || 0;
+      const udCount = uploadedDocs?.length || 0;
+
+      const dynamicXp = (cpCount * 20) + (jpCount * 5) + (ctCount * 10) + (udCount * 5) + 30; // 30 is base XP
+      
+      // Compute Unique Collaborators Worked With
+      let uniqueCollaborators = 0;
+      if (joinedProjects && joinedProjects.length > 0) {
+        const projectIds = joinedProjects.map(p => p.project_id);
+        if (projectIds.length > 0) {
+          const { data: collabData } = await supabase
+            .from('project_members')
+            .select('user_id')
+            .in('project_id', projectIds);
+          if (collabData) {
+             const uniqueIds = new Set(collabData.map(c => c.user_id));
+             uniqueIds.delete(userId); // remove self
+             uniqueCollaborators = uniqueIds.size;
+          }
+        }
+      }
+
+      // --- Infer Skills ---
+      const inferredSkills = new Set();
+      
+      if (createdProjects) createdProjects.forEach(p => { if (p.domain) inferredSkills.add(p.domain); });
+      if (joinedProjects) joinedProjects.forEach(p => { if (p.projects?.domain) inferredSkills.add(p.projects.domain); });
+      
+      // Analyze task titles for heuristics
+      if (completedTasks) {
+         completedTasks.forEach(t => {
+            const lowerTitle = t.title.toLowerCase();
+            if (lowerTitle.includes('ui') || lowerTitle.includes('ux') || lowerTitle.includes('design')) inferredSkills.add('UI/UX');
+            if (lowerTitle.includes('api') || lowerTitle.includes('backend') || lowerTitle.includes('database')) inferredSkills.add('Backend Engineering');
+            if (lowerTitle.includes('react') || lowerTitle.includes('frontend')) inferredSkills.add('Frontend Development');
+            if (lowerTitle.includes('model') || lowerTitle.includes('ai') || lowerTitle.includes('ml')) inferredSkills.add('AI Systems');
+            if (lowerTitle.includes('contract') || lowerTitle.includes('web3') || lowerTitle.includes('crypto')) inferredSkills.add('Blockchain/Web3');
+         });
+      }
+
+      const skillsArray = Array.from(inferredSkills);
+      if (skillsArray.length === 0) {
+        skillsArray.push("General Builder");
+      }
+
+      return {
+        timeline,
+        stats: {
+          projectsCreated: cpCount,
+          projectsJoined: jpCount,
+          tasksCompleted: ctCount,
+          docsUploaded: udCount,
+          collaborators: uniqueCollaborators,
+          dynamicXp: dynamicXp,
+          consistencyScore: Math.min(100, 70 + (timeline.length * 2)) // Mock realistic consistency curve
+        },
+        inferredSkills: skillsArray
+      };
+
+    } catch (err) {
+      console.error("Error fetching real profile data:", err);
+      return null;
+    }
+  }
+
+  /**
    * Fetch live activity timeline for a project
    */
   async getProjectTimeline(projectId) {
