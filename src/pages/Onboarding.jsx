@@ -262,7 +262,14 @@ const Onboarding = ({ setUser, user }) => {
         console.log(`[Auth] OTP Verification successful! Session established.`);
         setSuccessMsg("Verification successful!");
         setShowOtp(false);
-        // App.jsx will automatically detect the new session and trigger the redirect via useEffect
+        
+        // Ensure local database is in sync before proceeding
+        const finalUser = await userService.registerOrLogin({ 
+          email: accountData.email, 
+          name: accountData.name 
+        });
+        setUser(finalUser);
+        setStep(1);
       }
     } catch (err) {
       console.error(`[Auth] Unexpected exception during verifyOtp:`, err);
