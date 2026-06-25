@@ -118,6 +118,51 @@ const Onboarding = ({ setUser, user }) => {
     }
   };
 
+  const handleEmailAuth = async (e) => {
+    e.preventDefault();
+    if (!accountData.email || !accountData.password || (!isLoginMode && !accountData.name)) {
+      setErrorMsg("Please fill in all required fields.");
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setErrorMsg('');
+      
+      let authResult;
+      if (isLoginMode) {
+        authResult = await supabase.auth.signInWithPassword({
+          email: accountData.email,
+          password: accountData.password,
+        });
+      } else {
+        authResult = await supabase.auth.signUp({
+          email: accountData.email,
+          password: accountData.password,
+          options: {
+            data: {
+              full_name: accountData.name,
+              name: accountData.name
+            }
+          }
+        });
+      }
+
+      if (authResult.error) throw authResult.error;
+      
+      const finalUser = await userService.registerOrLogin({ 
+        email: accountData.email, 
+        name: accountData.name || accountData.email.split('@')[0],
+      });
+      setUser(finalUser);
+      setStep(1);
+    } catch (error) {
+      setErrorMsg(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRoleSelect = async (selectedRole) => {
     setRole(selectedRole);
     // Immediately save role choice to session so navigating away works correctly
@@ -177,14 +222,14 @@ const Onboarding = ({ setUser, user }) => {
             </button>
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-                Sign In to CollabNest
+                {isLoginMode ? 'Sign In to CollabNest' : 'Create an Account'}
               </h2>
               <p style={{ color: 'var(--text-muted)' }}>
-                Join the community of visionaries and builders.
+                {isLoginMode ? 'Welcome back! Please enter your details.' : 'Join the community of visionaries and builders.'}
               </p>
             </div>
             
-            <form onSubmit={(e) => e.preventDefault()}>
+            <form onSubmit={handleEmailAuth}>
               {errorMsg && (
                 <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
                   <AlertCircle size={18} />
@@ -192,13 +237,77 @@ const Onboarding = ({ setUser, user }) => {
                 </div>
               )}
 
+              {!isLoginMode && (
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Full Name</label>
+                  <input 
+                    type="text" 
+                    required={!isLoginMode}
+                    value={accountData.name}
+                    onChange={(e) => setAccountData({...accountData, name: e.target.value})}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem' }}
+                    placeholder="John Doe"
+                  />
+                </div>
+              )}
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Email Address</label>
+                <input 
+                  type="email" 
+                  required
+                  value={accountData.email}
+                  onChange={(e) => setAccountData({...accountData, email: e.target.value})}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem' }}
+                  placeholder="john@example.com"
+                />
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Password</label>
+                <input 
+                  type="password" 
+                  required
+                  value={accountData.password}
+                  onChange={(e) => setAccountData({...accountData, password: e.target.value})}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem' }}
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <button 
+                type="submit"
+                disabled={loading}
+                className="btn-primary" 
+                style={{ width: '100%', justifyContent: 'center', padding: '14px', marginBottom: '24px', opacity: loading ? 0.7 : 1 }}
+              >
+                {loading ? <Loader2 className="animate-spin" size={20} /> : (isLoginMode ? 'Sign In' : 'Sign Up')}
+              </button>
+
+              <div style={{ textAlign: 'center', marginBottom: '24px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                {isLoginMode ? "Don't have an account? " : "Already have an account? "}
+                <button 
+                  type="button" 
+                  onClick={() => setIsLoginMode(!isLoginMode)}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: 0, fontWeight: 500 }}
+                >
+                  {isLoginMode ? 'Sign up' : 'Log in'}
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>OR</div>
+                <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
+              </div>
+
               <button
                 type="button"
                 onClick={handleGoogleLogin}
                 disabled={loading}
                 style={{ 
                   width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
-                  padding: '14px', marginBottom: '24px', background: 'white', color: '#333', 
+                  padding: '14px', background: 'white', color: '#333', 
                   borderRadius: '12px', border: '1px solid #ddd', fontSize: '1rem', fontWeight: 500,
                   cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: 'all 0.2s'
                 }}
