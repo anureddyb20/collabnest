@@ -1198,11 +1198,11 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
               </div>
 
               {activeTab === 'board' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
+            <div className={isMobileView ? "kanban-board" : ""} style={{ display: isMobileView ? 'flex' : 'grid', gridTemplateColumns: isMobileView ? 'none' : 'repeat(3, 1fr)', gap: '20px' }}>
               {['todo', 'doing', 'done'].map(status => (
                 <div 
                   key={status} 
-                  className="glass-card" 
+                  className={`glass-card ${isMobileView ? 'kanban-column' : ''}`} 
                   style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', minHeight: '150px' }}
                   onDragOver={isOwner ? handleDragOver : undefined}
                   onDrop={isOwner ? (e) => handleDrop(e, status) : undefined}
