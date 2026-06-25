@@ -166,6 +166,16 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     { name: "Alex", role: "UI Designer", activity: "High", contributions: 12 },
   ]);
 
+  // 3. Applicants State (load real applicants or mock one)
+  const [localApplicants, setLocalApplicants] = useState([]);
+
+  // 4. Tasks Board State
+  const [tasks, setTasks] = useState({
+    todo: [],
+    doing: [],
+    done: []
+  });
+  
   // Dynamic missing roles based on team, skills, and unassigned tasks
   const requiredSkills = selectedProblem.skills || [];
   let inferredMissingRoles = [...requiredSkills];
@@ -192,15 +202,6 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     });
   });
 
-  // 3. Applicants State (load real applicants or mock one)
-  const [localApplicants, setLocalApplicants] = useState([]);
-
-  // 4. Tasks Board State
-  const [tasks, setTasks] = useState({
-    todo: [],
-    doing: [],
-    done: []
-  });
   const [activeInputColumn, setActiveInputColumn] = useState(null);
   const [inlineTaskText, setInlineTaskText] = useState('');
 
