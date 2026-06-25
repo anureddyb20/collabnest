@@ -178,3 +178,55 @@ CREATE TRIGGER tasks_updated_at
 BEFORE UPDATE ON workspace_tasks
 FOR EACH ROW
 EXECUTE PROCEDURE set_updated_at();
+
+-- 8. Notifications Table
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  message TEXT NOT NULL,
+  read_status BOOLEAN DEFAULT false,
+  metadata JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their own notifications" ON notifications FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Users can insert notifications" ON notifications FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can update their own notifications" ON notifications FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Users can delete their own notifications" ON notifications FOR DELETE USING (user_id = auth.uid());
+
+-- 9. User Reputation Table
+CREATE TABLE user_reputation (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  total_xp INTEGER DEFAULT 30,
+  reputation_score INTEGER DEFAULT 30,
+  contribution_score INTEGER DEFAULT 0,
+  collaboration_score INTEGER DEFAULT 0,
+  consistency_score INTEGER DEFAULT 100,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE user_reputation ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public reputation viewable by everyone" ON user_reputation FOR SELECT USING (true);
+CREATE POLICY "Users can insert their own reputation" ON user_reputation FOR INSERT WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update their own reputation" ON user_reputation FOR UPDATE USING (user_id = auth.uid());
+
+CREATE TRIGGER reputation_updated_at
+BEFORE UPDATE ON user_reputation
+FOR EACH ROW
+EXECUTE PROCEDURE set_updated_at();
+
+-- 10. Achievement Badges Table
+CREATE TABLE achievement_badges (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  badge_name TEXT NOT NULL,
+  earned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, badge_name)
+);
+
+ALTER TABLE achievement_badges ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public badges viewable by everyone" ON achievement_badges FOR SELECT USING (true);
+CREATE POLICY "Users can insert their own badges" ON achievement_badges FOR INSERT WITH CHECK (user_id = auth.uid());

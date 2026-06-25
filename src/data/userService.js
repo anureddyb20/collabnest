@@ -213,7 +213,7 @@ export const userService = {
       return uniqueProjects.map(processProject);
     } catch (e) {
       console.error(e);
-      return problems;
+      return [];
     }
   },
 

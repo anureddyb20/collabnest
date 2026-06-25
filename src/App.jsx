@@ -9,6 +9,7 @@ import Hub from './pages/Hub';
 import Workspace from './pages/Workspace';
 import WorkspaceDashboard from './pages/WorkspaceDashboard';
 import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
 import BuilderHub from './pages/BuilderHub';
 import Navbar from './components/Navbar';
 import { userService } from './data/userService';
@@ -32,43 +33,44 @@ function App() {
 
   useEffect(() => {
     if (!user || !user.id || !supabase) return;
-    
-    let intervalId;
-    
-    const checkNotifications = async () => {
-      try {
-        const { data: applications, error } = await supabase
-          .from('project_applications')
-          .select('id, project_id, status, projects(title)')
-          .eq('applicant_id', user.id)
-          .eq('status', 'Accepted');
-          
-        if (error) return;
-        
-        const notifiedStr = localStorage.getItem('collabnest_notified_apps');
-        const notified = notifiedStr ? JSON.parse(notifiedStr) : [];
-        let hasNew = false;
-        
-        applications.forEach(app => {
-          if (!notified.includes(app.id)) {
-            showNotification(`Your application to "${app.projects?.title || 'a project'}" has been Accepted!`, 'success', 8000);
-            notified.push(app.id);
-            hasNew = true;
+
+    // Supabase Realtime Subscription for Global Notifications
+    const channel = supabase
+      .channel('global-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'project_applications',
+          filter: `applicant_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          if (payload.new.status === 'Accepted' && payload.old.status !== 'Accepted') {
+            // Fetch project title
+            const { data } = await supabase.from('projects').select('title').eq('id', payload.new.project_id).single();
+            const title = data?.title || 'a project';
+            showNotification(`Your application to "${title}" has been Accepted!`, 'success', 8000);
           }
-        });
-        
-        if (hasNew) {
-          localStorage.setItem('collabnest_notified_apps', JSON.stringify(notified));
         }
-      } catch (err) {
-        console.error(err);
-      }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+           showNotification(payload.new.message, payload.new.type || 'info', 8000);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
     };
-    
-    checkNotifications();
-    intervalId = setInterval(checkNotifications, 10000);
-    
-    return () => clearInterval(intervalId);
   }, [user, showNotification]);
 
   useEffect(() => {
@@ -150,6 +152,7 @@ function App() {
             <Routes>
             <Route path="/" element={<Landing user={user} />} />
             <Route path="/onboarding" element={<Onboarding setUser={setUser} />} />
+            <Route path="/u/:userId" element={<PublicProfile />} />
             <Route path="/hub" element={<ProtectedRoute user={user}><Hub user={user} /></ProtectedRoute>} />
             <Route path="/builder" element={<ProtectedRoute user={user}><BuilderHub user={user} /></ProtectedRoute>} />
             <Route path="/workspace" element={<ProtectedRoute user={user}><WorkspaceDashboard /></ProtectedRoute>} />

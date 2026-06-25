@@ -13,6 +13,7 @@ import { analyticsService } from '../data/analyticsService';
 import { useView } from '../context/ViewContext';
 import { useNotification } from '../context/NotificationContext';
 import ConfirmModal from '../components/ConfirmModal';
+import { supabase } from '../supabase';
 
 const getChatsWithFallback = (problemId) => {
   const newKey = `collabnest_chats_${problemId}`;
@@ -39,12 +40,8 @@ const Workspace = () => {
       const all = await userService.getAllProblems();
       let proj = all.find(p => String(p.id) === String(id));
       if (!proj) {
-        proj = problems.find(p => String(p.id) === String(id)) || problems[0];
-        const storageKey = `collabnest_local_project_${proj.id}`;
-        const localDataStr = localStorage.getItem(storageKey);
-        if (localDataStr) {
-          proj = { ...proj, ...JSON.parse(localDataStr) };
-        }
+        // If not found in DB, just leave it as null
+        proj = null;
       }
       const workspaces = await userService.getJoinedProblems();
       
@@ -169,23 +166,30 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     { name: "Alex", role: "UI Designer", activity: "High", contributions: 12 },
   ]);
 
-  // Dynamic missing roles based on team (matching by role or skills)
+  // Dynamic missing roles based on team, skills, and unassigned tasks
   const requiredSkills = selectedProblem.skills || [];
-  const missingRoles = requiredSkills.filter(skill => {
-    const skillLower = skill.toLowerCase();
-    const isCovered = team.some(member => {
-      const memberRoleLower = (member.role || '').toLowerCase();
-      // 1. Direct role match or partial containment (e.g., 'React Dev' matches 'React')
-      if (memberRoleLower.includes(skillLower) || skillLower.includes(memberRoleLower)) {
-        return true;
+  let inferredMissingRoles = [...requiredSkills];
+  
+  if (tasks && tasks.todo) {
+    tasks.todo.forEach(t => {
+      if (!t.assignee || t.assignee === 'Unassigned') {
+        const titleLower = t.title.toLowerCase();
+        if (titleLower.includes('api') || titleLower.includes('backend') || titleLower.includes('database') || titleLower.includes('server')) inferredMissingRoles.push('Backend Developer Needed');
+        if (titleLower.includes('ui') || titleLower.includes('design') || titleLower.includes('figma') || titleLower.includes('frontend')) inferredMissingRoles.push('UI/UX Designer Recommended');
+        if (titleLower.includes('ai') || titleLower.includes('model') || titleLower.includes('ml') || titleLower.includes('train')) inferredMissingRoles.push('AI Engineer Missing');
       }
-      // 2. Skill match in their skills array if they have one
-      if (member.skills && Array.isArray(member.skills)) {
-        return member.skills.some(s => (s || '').toLowerCase().includes(skillLower) || skillLower.includes((s || '').toLowerCase()));
-      }
-      return false;
     });
-    return !isCovered;
+  }
+  
+  const uniqueInferredRoles = [...new Set(inferredMissingRoles)];
+
+  const missingRoles = uniqueInferredRoles.filter(skill => {
+    const skillLower = skill.toLowerCase();
+    return !team.some(m => {
+      const roleStr = (m.role || '').toLowerCase();
+      const skillsArr = m.skills ? m.skills.map(s => s.toLowerCase()) : [];
+      return roleStr.includes(skillLower) || skillsArr.includes(skillLower) || skillLower.includes(roleStr);
+    });
   });
 
   // 3. Applicants State (load real applicants or mock one)
@@ -246,12 +250,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       const latestProblems = await userService.getAllProblems();
       let latestProblem = latestProblems.find(p => String(p.id) === String(id));
       if (!latestProblem) {
-        latestProblem = problems.find(p => String(p.id) === String(id)) || problems[0];
-        const storageKey = `collabnest_local_project_${latestProblem.id}`;
-        const localDataStr = localStorage.getItem(storageKey);
-        if (localDataStr) {
-          latestProblem = { ...latestProblem, ...JSON.parse(localDataStr) };
-        }
+        latestProblem = null;
       }
 
       // Load applicants
@@ -437,6 +436,41 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       setActiveTab('board');
     }
   }, [isTeamMember, activeTab]);
+
+  // Full Realtime Workspace Sync
+  useEffect(() => {
+    if (!id || !supabase) return;
+    
+    // Check if ID is a valid UUID (not a mock project ID like '1')
+    const isUUID = String(id).length > 20;
+    if (!isUUID) return; 
+
+    const channel = supabase
+      .channel(`workspace-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'projects',
+          filter: `id=eq.${id}`
+        },
+        (payload) => {
+          const newData = payload.new;
+          if (newData.tasks) setTasks(newData.tasks);
+          if (newData.chat) setChatMessages(newData.chat);
+          if (newData.docs) setDocsList(newData.docs);
+          
+          // Sync new team members or applicants if the backend stores them in JSON
+          if (newData.teamMembers) setTeam(newData.teamMembers);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id]);
 
   const handleMemberClick = async (member) => {
     const lowerName = (member.name || '').toLowerCase();

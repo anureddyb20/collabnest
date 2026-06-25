@@ -17,22 +17,76 @@ const Navbar = ({ user }) => {
   const [notifications, setNotifications] = useState([]);
 
   React.useEffect(() => {
-    if (currentUser) {
-      const fetchNotifs = () => setNotifications(userService.getNotifications() || []);
-      fetchNotifs();
-      // interval to poll localstorage for simplicity
-      const interval = setInterval(fetchNotifs, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [currentUser?.email]);
+    if (!currentUser?.id || !supabase) return;
+
+    const fetchNotifs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false })
+          .limit(20);
+          
+        // Safely ignore missing table errors (PGRST116) or just render empty if error
+        if (data && !error) {
+          setNotifications(data.map(n => ({
+            id: n.id,
+            message: n.message,
+            read: n.read_status,
+            date: new Date(n.created_at)
+          })));
+        }
+      } catch (err) {
+        console.error("Error fetching notifications:", err);
+      }
+    };
+    
+    fetchNotifs();
+
+    const channel = supabase
+      .channel('navbar-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${currentUser.id}`,
+        },
+        (payload) => {
+          setNotifications(prev => [{
+            id: payload.new.id,
+            message: payload.new.message,
+            read: payload.new.read_status,
+            date: new Date(payload.new.created_at)
+          }, ...prev].slice(0, 20));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser?.id]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const handleOpenNotifications = () => {
+  const handleOpenNotifications = async () => {
     setShowNotifications(!showNotifications);
     if (!showNotifications && unreadCount > 0) {
-      userService.markNotificationsRead();
-      setNotifications(userService.getNotifications() || []);
+      if (currentUser?.id && supabase) {
+        try {
+          await supabase
+            .from('notifications')
+            .update({ read_status: true })
+            .eq('user_id', currentUser.id)
+            .eq('read_status', false);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     }
   };
 

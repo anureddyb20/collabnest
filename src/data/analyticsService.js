@@ -98,48 +98,47 @@ class AnalyticsService {
   }
 
   /**
-   * Evaluate user activity and unlock badges if thresholds are met
+   * Evaluate user activity from real tables and unlock badges
    */
   async checkAndUnlockBadges(userId) {
     if (!userId || userId.length < 20) return;
     try {
-      // Fetch user's current badges
-      const { data: currentBadges, error: badgesError } = await supabase
+      // Fetch current badges
+      const { data: currentBadges } = await supabase
         .from('achievement_badges')
         .select('badge_name')
         .eq('user_id', userId);
         
-      if (badgesError) throw badgesError;
+      const badgeNames = currentBadges ? currentBadges.map(b => b.badge_name) : [];
       
-      const badgeNames = currentBadges.map(b => b.badge_name);
-      
-      // Fetch activity logs to count actions
-      const { data: logs, error: logsError } = await supabase
-        .from('user_activity_logs')
-        .select('action_type')
-        .eq('user_id', userId);
-        
-      if (logsError) throw logsError;
-
-      const tasksCompleted = logs.filter(l => l.action_type === 'task_completed').length;
-      const docsUploaded = logs.filter(l => l.action_type === 'doc_uploaded').length;
-      const messagesSent = logs.filter(l => l.action_type === 'message_sent').length;
+      // Fetch real stats
+      const { count: projectsCreated } = await supabase.from('projects').select('*', { count: 'exact', head: true }).eq('owner_id', userId);
+      const { count: tasksCompleted } = await supabase.from('workspace_tasks').select('*', { count: 'exact', head: true }).eq('assigned_to', userId).eq('status', 'done');
+      const { count: docsUploaded } = await supabase.from('workspace_documents').select('*', { count: 'exact', head: true }).eq('uploaded_by', userId);
+      const { count: teamMemberships } = await supabase.from('project_members').select('*', { count: 'exact', head: true }).eq('user_id', userId);
 
       const newBadgesToUnlock = [];
 
-      // Logic Rules
-      if (tasksCompleted >= 1 && !badgeNames.includes('First Task')) newBadgesToUnlock.push('First Task');
-      if (tasksCompleted >= 5 && !badgeNames.includes('Task Master')) newBadgesToUnlock.push('Task Master');
-      if (docsUploaded >= 1 && !badgeNames.includes('Knowledge Sharer')) newBadgesToUnlock.push('Knowledge Sharer');
-      if (messagesSent >= 10 && !badgeNames.includes('Collaboration Expert')) newBadgesToUnlock.push('Collaboration Expert');
+      if (projectsCreated >= 1 && !badgeNames.includes('First Project Created')) newBadgesToUnlock.push('First Project Created');
+      if (tasksCompleted >= 10 && !badgeNames.includes('Completed 10 Tasks')) newBadgesToUnlock.push('Completed 10 Tasks');
+      if (teamMemberships >= 5 && !badgeNames.includes('Team Builder')) newBadgesToUnlock.push('Team Builder');
+      if (docsUploaded >= 1 && !badgeNames.includes('Uploaded First Document')) newBadgesToUnlock.push('Uploaded First Document');
+      if ((tasksCompleted > 0 || projectsCreated > 0) && !badgeNames.includes('MVP Contributor')) newBadgesToUnlock.push('MVP Contributor');
 
       if (newBadgesToUnlock.length > 0) {
         const inserts = newBadgesToUnlock.map(badge => ({
           user_id: userId,
           badge_name: badge
         }));
-        
         await supabase.from('achievement_badges').insert(inserts);
+        
+        // Push Realtime Notifications
+        const notifInserts = newBadgesToUnlock.map(badge => ({
+          user_id: userId,
+          type: 'achievement',
+          message: `Achievement Unlocked: ${badge}!`
+        }));
+        await supabase.from('notifications').insert(notifInserts);
       }
     } catch (err) {
       console.error('Error unlocking badges:', err.message);
