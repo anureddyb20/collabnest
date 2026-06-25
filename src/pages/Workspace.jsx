@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Layout, CheckSquare, MessageSquare, Files, Settings, 
   AlertCircle, Users, Activity, Flag, ChevronRight, Plus, CheckCircle, XCircle,
-  Star, Award, Briefcase
+  Star, Award, Briefcase, Lock
 } from 'lucide-react';
 import { problems } from '../data/problems';
 import { userService } from '../data/userService';
@@ -1147,10 +1147,36 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
         {/* Main Content Area: Kanban / Communication */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {!isTeamMember ? (
-            <div className="glass-panel" style={{ padding: '60px 40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <AlertCircle size={48} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
-              <h3>Access Restricted</h3>
-              <p>You must be accepted into the team by the owner to access the workspace tabs.</p>
+            <div className="glass-panel" style={{ position: 'relative', overflow: 'hidden', padding: 0, minHeight: '400px' }}>
+              {/* Blurred Mock Content */}
+              <div style={{ filter: 'blur(8px)', opacity: 0.4, padding: '24px', pointerEvents: 'none', userSelect: 'none' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                  <div style={{ width: '120px', height: '36px', background: 'var(--bg-surface)', borderRadius: '8px' }}></div>
+                  <div style={{ width: '120px', height: '36px', background: 'var(--bg-surface)', borderRadius: '8px' }}></div>
+                  <div style={{ width: '120px', height: '36px', background: 'var(--bg-surface)', borderRadius: '8px' }}></div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                  <div style={{ height: '300px', background: 'var(--bg-surface)', borderRadius: '12px' }}></div>
+                  <div style={{ height: '300px', background: 'var(--bg-surface)', borderRadius: '12px' }}></div>
+                  <div style={{ height: '300px', background: 'var(--bg-surface)', borderRadius: '12px' }}></div>
+                </div>
+              </div>
+              
+              {/* Lock Overlay */}
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.9))', padding: '40px', textAlign: 'center', zIndex: 10 }}>
+                <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', border: '1px solid rgba(255, 255, 255, 0.1)', boxShadow: '0 0 40px rgba(139, 92, 246, 0.2)' }}>
+                  <Lock size={36} color="var(--primary)" />
+                </div>
+                <h3 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '12px', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Project is Protected</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1rem', maxWidth: '400px', marginBottom: '32px', lineHeight: 1.6 }}>Full project details, chat, tasks, and documents are available only to approved collaborators.</p>
+                <button 
+                  onClick={() => setShowApplyModal(true)}
+                  className="btn-primary" 
+                  style={{ padding: '14px 32px', fontSize: '1rem', fontWeight: 600, borderRadius: '12px', boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4)' }}
+                >
+                  Apply to Join
+                </button>
+              </div>
             </div>
           ) : (
             <>

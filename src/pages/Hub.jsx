@@ -24,7 +24,7 @@ const Hub = ({ user: initialUser }) => {
   const [showPostModal, setShowPostModal] = useState(false);
   const [newProblem, setNewProblem] = useState({ 
     title: '', domain: 'Sustainability', difficulty: 'Medium', desc: '', skills: [],
-    expectedOutcome: '', projectGoals: '', teamSize: 5
+    expectedOutcome: '', projectGoals: '', teamSize: 5, visibility: 'preview'
   });
   const [applyingProblem, setApplyingProblem] = useState(null);
   const [applicationData, setApplicationData] = useState({ motivation: '', portfolio: '', message: '' });
@@ -73,7 +73,7 @@ const Hub = ({ user: initialUser }) => {
       const all = await userService.getAllProblems();
 
       if (activeSidebar === 'Problems') {
-        list = [...all];
+        list = all.filter(p => p.visibility !== 'private' || isProblemMine(p, userData) || isOwnerFn(p, userData));
         if (userData && userData.email) {
           list.sort((a, b) => {
             const aIsMine = isProblemMine(a, userData);
@@ -201,7 +201,7 @@ const Hub = ({ user: initialUser }) => {
     setDisplayProblems(await userService.getAllProblems());
     setNewProblem({ 
       title: '', domain: 'Sustainability', difficulty: 'Medium', desc: '', skills: [],
-      expectedOutcome: '', projectGoals: '', teamSize: 5
+      expectedOutcome: '', projectGoals: '', teamSize: 5, visibility: 'preview'
     });
   };
 
@@ -629,7 +629,7 @@ const Hub = ({ user: initialUser }) => {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr', gap: isMobileView ? '12px' : '20px', marginBottom: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr 1fr', gap: isMobileView ? '12px' : '20px', marginBottom: '20px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Domain / Category</label>
                   <select 
@@ -648,6 +648,18 @@ const Hub = ({ user: initialUser }) => {
                     className="custom-select"
                   >
                     {['Beginner', 'Intermediate', 'Advanced', 'Expert'].map(d => <option key={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Visibility</label>
+                  <select 
+                    value={newProblem.visibility}
+                    onChange={(e) => setNewProblem({...newProblem, visibility: e.target.value})}
+                    className="custom-select"
+                  >
+                    <option value="preview">Preview (Public)</option>
+                    <option value="team-only">Team Only</option>
+                    <option value="private">Private (Hidden)</option>
                   </select>
                 </div>
               </div>

@@ -27,6 +27,7 @@ CREATE TABLE projects (
   expected_outcome TEXT,
   project_goals TEXT,
   team_total INTEGER DEFAULT 5,
+  visibility TEXT DEFAULT 'preview',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -64,7 +65,12 @@ CREATE POLICY "Users can insert their own profile." ON users FOR INSERT WITH CHE
 CREATE POLICY "Users can update own profile." ON users FOR UPDATE USING (true);
 
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Projects are viewable by everyone." ON projects FOR SELECT USING (true);
+CREATE POLICY "Projects select policy" ON projects FOR SELECT USING (
+  visibility = 'preview' OR
+  owner_id = auth.uid() OR
+  id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid()) OR
+  id IN (SELECT project_id FROM project_applications WHERE applicant_id = auth.uid())
+);
 CREATE POLICY "Anyone can create a project." ON projects FOR INSERT WITH CHECK (true);
 CREATE POLICY "Anyone can update a project." ON projects FOR UPDATE USING (true);
 CREATE POLICY "Anyone can delete a project." ON projects FOR DELETE USING (true);
@@ -129,15 +135,44 @@ CREATE TABLE workspace_documents (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Workspace RLS Policies (Open for now to match current app design)
+-- Workspace RLS Policies (Restricted to team members only)
 ALTER TABLE workspace_tasks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public tasks" ON workspace_tasks FOR ALL USING (true);
+CREATE POLICY "Tasks viewable by members" ON workspace_tasks FOR SELECT USING (
+  project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid()) OR
+  project_id IN (SELECT id FROM projects WHERE owner_id = auth.uid())
+);
+CREATE POLICY "Tasks insert by members" ON workspace_tasks FOR INSERT WITH CHECK (
+  project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid()) OR
+  project_id IN (SELECT id FROM projects WHERE owner_id = auth.uid())
+);
+CREATE POLICY "Tasks update by members" ON workspace_tasks FOR UPDATE USING (
+  project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid()) OR
+  project_id IN (SELECT id FROM projects WHERE owner_id = auth.uid())
+);
+CREATE POLICY "Tasks delete by members" ON workspace_tasks FOR DELETE USING (
+  project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid()) OR
+  project_id IN (SELECT id FROM projects WHERE owner_id = auth.uid())
+);
 
 ALTER TABLE workspace_chat_messages ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public chat" ON workspace_chat_messages FOR ALL USING (true);
+CREATE POLICY "Chat viewable by members" ON workspace_chat_messages FOR SELECT USING (
+  project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid()) OR
+  project_id IN (SELECT id FROM projects WHERE owner_id = auth.uid())
+);
+CREATE POLICY "Chat insert by members" ON workspace_chat_messages FOR INSERT WITH CHECK (
+  project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid()) OR
+  project_id IN (SELECT id FROM projects WHERE owner_id = auth.uid())
+);
 
 ALTER TABLE workspace_documents ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public docs" ON workspace_documents FOR ALL USING (true);
+CREATE POLICY "Docs viewable by members" ON workspace_documents FOR SELECT USING (
+  project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid()) OR
+  project_id IN (SELECT id FROM projects WHERE owner_id = auth.uid())
+);
+CREATE POLICY "Docs insert by members" ON workspace_documents FOR INSERT WITH CHECK (
+  project_id IN (SELECT project_id FROM project_members WHERE user_id = auth.uid()) OR
+  project_id IN (SELECT id FROM projects WHERE owner_id = auth.uid())
+);
 
 CREATE TRIGGER tasks_updated_at
 BEFORE UPDATE ON workspace_tasks
