@@ -43,13 +43,13 @@ export const userService = {
 
       // Fetch to ensure we get the ID if it was ignored
       const { data: userRecord } = await supabase.from('users').select('*').eq('email', email).single();
-      const finalUser = userRecord || data || { email, role: userData.role || 'builder' };
+      const finalUser = userRecord || data || { email, name, role: userData.role || 'builder' };
 
       // Set session locally
       const sessionData = { 
         id: finalUser.id,
         email: finalUser.email, 
-        name: finalUser.name, 
+        name: finalUser.name || name, 
         role: finalUser.role 
       };
       localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
@@ -57,7 +57,9 @@ export const userService = {
       return sessionData;
     } catch (e) {
       console.error(e);
-      const sessionData = { email: userData.email.toLowerCase().trim(), role: userData.role || 'builder' };
+      const email = userData.email.toLowerCase().trim();
+      let name = userData.name ? userData.name.trim() : email.split('@')[0];
+      const sessionData = { email: email, name: name, role: userData.role || 'builder' };
       localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
       return sessionData;
     }
