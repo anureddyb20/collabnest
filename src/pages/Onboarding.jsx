@@ -124,6 +124,11 @@ const Onboarding = ({ setUser, user }) => {
       setErrorMsg("Please fill in all required fields.");
       return;
     }
+
+    if (!accountData.email.toLowerCase().endsWith('@vvce.ac.in')) {
+      setErrorMsg("Only VVCE college accounts are allowed.");
+      return;
+    }
     
     try {
       setLoading(true);

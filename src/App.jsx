@@ -88,11 +88,22 @@ function App() {
     const syncUser = async (session) => {
       try {
         if (session?.user) {
+          const email = session.user.email;
+          if (!email || !email.toLowerCase().endsWith('@vvce.ac.in')) {
+            await supabase.auth.signOut();
+            userService.logout(true);
+            setUser(null);
+            setTimeout(() => {
+              showNotification("Only VVCE college accounts are allowed.", "error", 8000);
+            }, 500);
+            return;
+          }
+
           let localUser = userService.getCurrentUser();
-          if (!localUser || localUser.email !== session.user.email) {
+          if (!localUser || localUser.email !== email) {
             const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
             localUser = await userService.registerOrLogin({ 
-              email: session.user.email,
+              email: email,
               name: name
             });
           }
