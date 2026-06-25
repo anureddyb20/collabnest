@@ -101,29 +101,14 @@ const Onboarding = ({ setUser, user }) => {
     return () => clearInterval(timer);
   }, [showOtp]);
 
-  const validatePassword = (password) => {
-    const minLength = 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
-    if (password.length < minLength) return "Password must be at least 8 characters.";
-    if (!hasUpperCase) return "Password must contain an uppercase letter.";
-    if (!hasLowerCase) return "Password must contain a lowercase letter.";
-    if (!hasNumbers) return "Password must contain a number.";
-    if (!hasSpecialChar) return "Password must contain a special character.";
-    return null;
-  };
-
-  const handleGoogleLogin = async () => {
+    const handleGoogleLogin = async () => {
     try {
       setLoading(true);
       setErrorMsg('');
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/hub'
+          redirectTo: window.location.origin + '/onboarding'
         }
       });
       if (error) throw error;
@@ -133,203 +118,11 @@ const Onboarding = ({ setUser, user }) => {
     }
   };
 
-  const handleAccountSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
-    
-    if (!isLoginMode && accountData.password) {
-      const pwdError = validatePassword(accountData.password);
-      if (pwdError) {
-        setErrorMsg(pwdError);
-        return;
-      }
-    }
-
-    setLoading(true);
-    const cleanEmail = accountData.email.toLowerCase().trim();
-
-    try {
-      if (isLoginMode) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password: accountData.password,
-        });
-
-        if (error) throw error;
-        setLoading(false);
-        setStep(1);
-      } else {
-        const { data, error } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password: accountData.password,
-          options: {
-            data: {
-              name: accountData.name,
-            }
-          }
-        });
-
-        if (error) throw error;
-
-        if (data.user && !data.session) {
-          setSuccessMsg("Verification sent! Please check your email or enter the OTP.");
-          setShowOtp(true);
-          setOtpCountdown(60);
-          setOtpValues(['', '', '', '', '', '']);
-        } else if (data.session) {
-          setLoading(false);
-          setStep(1);
-        }
-      }
-    } catch (error) {
-      console.error("[Auth Error]", error);
-      setErrorMsg(error.message || "An error occurred during authentication.");
-    } finally {
-      // If we are showing OTP, we don't want to clear loading state just yet
-      setLoading(false);
-    }
-  };
-
-  const handleOtpChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return;
-    const newOtp = [...otpValues];
-    newOtp[index] = value;
-    setOtpValues(newOtp);
-
-    // Auto-focus next
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      if (nextInput) nextInput.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !otpValues[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`);
-      if (prevInput) prevInput.focus();
-    }
-  };
-
-  const handleOtpPaste = (e) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (pastedData) {
-      const newOtp = [...otpValues];
-      for (let i = 0; i < pastedData.length; i++) {
-        newOtp[i] = pastedData[i];
-      }
-      setOtpValues(newOtp);
-      const focusIndex = Math.min(pastedData.length, 5);
-      const focusInput = document.getElementById(`otp-${focusIndex}`);
-      if (focusInput) focusInput.focus();
-    }
-  };
-
-  const verifyOtpSubmit = async (e) => {
-    if (e) e.preventDefault();
-    const token = otpValues.join('');
-    if (token.length !== 6) {
-      setErrorMsg("Please enter a valid 6-digit OTP.");
-      return;
-    }
-    setLoading(true);
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    const isDev = import.meta.env.DEV;
-    const type = isLoginMode ? 'email' : 'signup';
-    console.log(`[Auth] Attempting to verify OTP for ${accountData.email} with type: ${type}`);
-
-
-
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email: accountData.email,
-        token,
-        type
-      });
-      
-      console.log(`[Auth] verifyOtp response:`, { data, error });
-
-      if (error) {
-        console.error(`[Auth] verifyOtp error:`, error.message);
-        setErrorMsg(isDev ? `[Dev Error] ${error.message}` : error.message);
-      } else if (!data?.session) {
-        console.error(`[Auth] verifyOtp silent failure: No session established`);
-        setErrorMsg("Failed to verify OTP. Please try again.");
-      } else {
-        console.log(`[Auth] OTP Verification successful! Session established.`);
-        setSuccessMsg("Verification successful!");
-        setShowOtp(false);
-        
-        // Ensure local database is in sync before proceeding
-        const finalUser = await userService.registerOrLogin({ 
-          email: accountData.email, 
-          name: accountData.name 
-        });
-        setUser(finalUser);
-        setStep(1);
-      }
-    } catch (err) {
-      console.error(`[Auth] Unexpected exception during verifyOtp:`, err);
-      setErrorMsg("A network or configuration error occurred during verification.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resendVerification = async () => {
-    if (otpCountdown > 0) return;
-    setLoading(true);
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    const isDev = import.meta.env.DEV;
-    console.log(`[Auth] Attempting to resend verification to ${accountData.email}`);
-
-
-
-    try {
-      let response;
-      if (!isLoginMode) {
-        console.log(`[Auth] Calling resend for signup...`);
-        response = await supabase.auth.resend({
-          type: 'signup',
-          email: accountData.email,
-        });
-      } else {
-        console.log(`[Auth] Calling signInWithOtp for login...`);
-        response = await supabase.auth.signInWithOtp({
-          email: accountData.email,
-        });
-      }
-      
-      console.log(`[Auth] Resend response:`, response);
-      
-      if (response.error) {
-        console.error(`[Auth] Resend error:`, response.error.message);
-        setErrorMsg(isDev ? `[Dev Error] ${response.error.message}` : response.error.message);
-      } else {
-        console.log(`[Auth] Resend successful`);
-        setSuccessMsg("A new OTP has been sent to your email.");
-        setOtpCountdown(60);
-        setOtpValues(['', '', '', '', '', '']);
-        const firstInput = document.getElementById('otp-0');
-        if (firstInput) firstInput.focus();
-      }
-    } catch (err) {
-      console.error(`[Auth] Unexpected exception during resend:`, err);
-      setErrorMsg("A network or configuration error occurred during resend.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleRoleSelect = async (selectedRole) => {
     setRole(selectedRole);
     // Immediately save role choice to session so navigating away works correctly
-    const finalUser = await userService.registerOrLogin({ ...accountData, role: selectedRole });
+    const session = userService.getCurrentUser() || {};
+    const finalUser = await userService.registerOrLogin({ email: session.email, name: session.name, role: selectedRole });
     setUser(finalUser);
     
     if (selectedRole === 'owner') {
@@ -384,205 +177,45 @@ const Onboarding = ({ setUser, user }) => {
             </button>
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-                {isLoginMode ? 'Welcome Back' : 'Create Account'}
+                Sign In to CollabNest
               </h2>
               <p style={{ color: 'var(--text-muted)' }}>
-                {isLoginMode ? 'Sign in to access your projects and teams.' : 'Join the community of visionaries and builders.'}
+                Join the community of visionaries and builders.
               </p>
             </div>
             
-            {showOtp ? (
-              <form onSubmit={verifyOtpSubmit}>
-                {errorMsg && (
-                  <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-                    <AlertCircle size={18} />
-                    {errorMsg}
-                  </div>
-                )}
-                {successMsg && (
-                  <div style={{ padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-                    <CheckCircle2 size={18} />
-                    {successMsg}
-                  </div>
-                )}
-                
-                <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-                  <p style={{ color: 'var(--text-main)', marginBottom: '8px' }}>
-                    Sent to <strong>{accountData.email}</strong>
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => { setShowOtp(false); setErrorMsg(''); setSuccessMsg(''); }}
-                    style={{ background: 'none', border: 'none', color: 'var(--primary)', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.9rem' }}
-                  >
-                    Change Email
-                  </button>
+            <form onSubmit={(e) => e.preventDefault()}>
+              {errorMsg && (
+                <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                  <AlertCircle size={18} />
+                  {errorMsg}
                 </div>
+              )}
 
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '32px' }} onPaste={handleOtpPaste}>
-                  {otpValues.map((digit, index) => (
-                    <input
-                      key={index}
-                      id={`otp-${index}`}
-                      type="text"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleOtpChange(index, e.target.value)}
-                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                      disabled={loading}
-                      style={{
-                        width: '48px', height: '56px', fontSize: '1.5rem', textAlign: 'center',
-                        background: 'rgba(255,255,255,0.05)', border: `1px solid ${errorMsg ? '#ef4444' : 'var(--border)'}`,
-                        borderRadius: '12px', color: 'white', outline: 'none',
-                        transition: 'border-color 0.2s ease'
-                      }}
-                      onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                      onBlur={(e) => e.target.style.borderColor = errorMsg ? '#ef4444' : 'var(--border)'}
-                    />
-                  ))}
-                </div>
-
-                <button 
-                  type="submit"
-                  className="btn-primary" 
-                  disabled={loading || otpValues.join('').length !== 6}
-                  style={{ width: '100%', justifyContent: 'center', padding: '16px', marginBottom: '16px', opacity: (loading || otpValues.join('').length !== 6) ? 0.7 : 1 }}
-                >
-                  {loading ? <Loader2 className="animate-spin" size={20} /> : 'Verify Account'}
-                  {!loading && <CheckCircle2 size={20} />}
-                </button>
-
-                <div style={{ textAlign: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={resendVerification}
-                    disabled={loading || otpCountdown > 0}
-                    style={{ 
-                      background: 'none', border: 'none', color: otpCountdown > 0 ? 'var(--text-muted)' : 'var(--primary)', 
-                      cursor: (loading || otpCountdown > 0) ? 'not-allowed' : 'pointer', fontSize: '0.9rem', fontWeight: 500
-                    }}
-                  >
-                    {otpCountdown > 0 ? `Resend OTP in ${otpCountdown}s` : "Didn't receive code? Resend OTP"}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleAccountSubmit}>
-                {errorMsg && (
-                  <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#ef4444', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-                    <AlertCircle size={18} />
-                    {errorMsg}
-                  </div>
-                )}
-                {successMsg && (
-                  <div style={{ padding: '12px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', color: '#22c55e', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
-                    <CheckCircle2 size={18} />
-                    {successMsg}
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  disabled={loading}
-                  style={{ 
-                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
-                    padding: '14px', marginBottom: '24px', background: 'white', color: '#333', 
-                    borderRadius: '12px', border: '1px solid #ddd', fontSize: '1rem', fontWeight: 500,
-                    cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: 'all 0.2s'
-                  }}
-                  onMouseOver={(e) => !loading && (e.currentTarget.style.background = '#f5f5f5')}
-                  onMouseOut={(e) => e.currentTarget.style.background = 'white'}
-                >
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                style={{ 
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                  padding: '14px', marginBottom: '24px', background: 'white', color: '#333', 
+                  borderRadius: '12px', border: '1px solid #ddd', fontSize: '1rem', fontWeight: 500,
+                  cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => !loading && (e.currentTarget.style.background = '#f5f5f5')}
+                onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+              >
+                {loading ? <Loader2 className="animate-spin" size={20} /> : (
                   <svg width="20" height="20" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
-                  Continue with Google
-                </button>
-
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px', opacity: 0.6 }}>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
-                  <span style={{ padding: '0 12px', fontSize: '0.85rem' }}>or continue with email</span>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
-                </div>
-
-                {!isLoginMode && (
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Full Name</label>
-                    <input 
-                      type="text" 
-                      required={!isLoginMode}
-                      value={accountData.name}
-                      onChange={(e) => setAccountData({...accountData, name: e.target.value})}
-                      placeholder="John Doe"
-                      disabled={loading}
-                      style={{ 
-                        width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
-                        borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem'
-                      }}
-                    />
-                  </div>
                 )}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Email Address</label>
-                  <input 
-                    type="email" 
-                    required
-                    value={accountData.email}
-                    onChange={(e) => setAccountData({...accountData, email: e.target.value})}
-                    placeholder="john@example.com"
-                    disabled={loading}
-                    style={{ 
-                      width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
-                      borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem'
-                    }}
-                  />
-                </div>
-                <div style={{ marginBottom: '32px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Password</label>
-                  <input 
-                    type="password" 
-                    required
-                    value={accountData.password}
-                    onChange={(e) => setAccountData({...accountData, password: e.target.value})}
-                    placeholder="••••••••"
-                    disabled={loading}
-                    style={{ 
-                      width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)',
-                      borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem'
-                    }}
-                  />
-                </div>
-                
-                <button 
-                  type="submit"
-                  className="btn-primary" 
-                  disabled={loading}
-                  style={{ width: '100%', justifyContent: 'center', padding: '16px', marginBottom: '16px', opacity: loading ? 0.7 : 1 }}
-                >
-                  {loading ? <Loader2 className="animate-spin" size={20} /> : (isLoginMode ? 'Log In' : 'Create Account')}
-                  {!loading && <ChevronRight size={20} />}
-                </button>
-
-                <div style={{ textAlign: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={() => { setIsLoginMode(!isLoginMode); setErrorMsg(''); setSuccessMsg(''); }}
-                    disabled={loading}
-                    style={{ 
-                      background: 'none', border: 'none', color: 'var(--primary)', 
-                      cursor: loading ? 'not-allowed' : 'pointer', textDecoration: 'underline', fontSize: '0.9rem',
-                      fontWeight: 500
-                    }}
-                  >
-                    {isLoginMode ? "Don't have an account? Sign Up" : "Already have an account? Log In"}
-                  </button>
-                </div>
-              </form>
-            )}
+                Continue with Google
+              </button>
+            </form>
           </motion.div>
         ) : step === 1 ? (
           <motion.div 
@@ -594,7 +227,7 @@ const Onboarding = ({ setUser, user }) => {
             className="glass-panel"
             style={{ padding: '48px', maxWidth: '800px', width: '100%', textAlign: 'center' }}
           >
-            <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Welcome, {accountData.name.split(' ')[0]}!</h2>
+            <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Welcome, {(userService.getCurrentUser()?.name || 'Builder').split(' ')[0]}!</h2>
             <p style={{ color: 'var(--text-muted)', marginBottom: '3rem' }}>Choose your path to get started.</p>
             
             <div className="onboarding-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', maxWidth: '900px', margin: '0 auto' }}>
@@ -870,7 +503,8 @@ const Onboarding = ({ setUser, user }) => {
             <form onSubmit={async (e) => {
               e.preventDefault();
               // Register user first
-              const finalUser = await userService.registerOrLogin({ ...accountData, role: 'owner' });
+              const session = userService.getCurrentUser() || {};
+              const finalUser = await userService.registerOrLogin({ email: session.email, name: session.name, role: 'owner' });
               setUser(finalUser);
               
               // Post idea
