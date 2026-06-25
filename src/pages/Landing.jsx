@@ -26,8 +26,8 @@ const Landing = ({ user }) => {
             <span className="badge badge-primary" style={{ marginBottom: '1.5rem' }}>
               Solving the execution gap
             </span>
-            <h1 style={{ fontSize: '4rem', lineHeight: 1.1, marginBottom: '1.5rem' }}>
-              Where <span className="accent-gradient">Visionaries</span> find<br />
+            <h1 style={{ fontSize: '4rem', lineHeight: 1.1, marginBottom: '1.5rem', wordBreak: 'break-word' }}>
+              Where <span className="accent-gradient">Visionaries</span> find
               the <span className="accent-gradient">Builders</span> they need.
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '1.25rem', maxWidth: '700px', margin: '0 auto 2.5rem' }}>
@@ -64,6 +64,7 @@ const Landing = ({ user }) => {
           <motion.div 
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
+            className="landing-stats-mobile"
             style={{ marginTop: '60px', display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}
           >
             <div style={{ textAlign: 'center' }}>

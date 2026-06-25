@@ -427,11 +427,22 @@ h1, h2, h3, h4 {
     justify-content: center;
   }
 
-  /* Safe inputs */
-  input, select, textarea {
-    font-size: 16px !important; /* Prevents iOS auto-zoom */
-    padding: 14px 16px !important;
-    border-radius: 12px !important;
+  /* Fix forms for touch */
+  input, 
+  select, 
+  textarea {
+    font-size: 16px !important; /* Slightly smaller but readable, prevents zoom */
+    height: auto !important;
+  }
+
+  .onboarding-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .landing-stats-mobile {
+    flex-direction: column !important;
+    gap: 30px !important;
+    align-items: center !important;
   }
 
   /* Remove hover effects on mobile */

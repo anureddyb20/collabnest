@@ -101,7 +101,10 @@ function App() {
             return;
           }
 
-          const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+          let name = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+          if (!name || name.toLowerCase() === 'user' || name === email) {
+            name = email.split('@')[0].toUpperCase();
+          }
           let localUser = await userService.registerOrLogin({ 
             email: email,
             name: name
