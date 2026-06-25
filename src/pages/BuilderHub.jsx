@@ -234,7 +234,7 @@ export default function BuilderHub({ user }) {
             <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, color: 'white', flexShrink: 0 }}>
               {(currentUser.name || 'U')[0].toUpperCase()}
             </div>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0' }}>{currentUser.name}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)' }}>{currentUser.name}</span>
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{currentUser.email}</span>
             <span style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 700, marginLeft: 4 }}>{(currentUser.joined?.length || 0) * 10 + (currentUser.reputation || 0)} XP</span>
           </div>
