@@ -19,21 +19,25 @@ const PublicProfile = () => {
 
   useEffect(() => {
     const fetchProfileData = async () => {
-      const problems = await userService.getJoinedProblems();
-      setJoinedProblems(problems);
-      
-      if (currentUser?.id && currentUser.id.length > 20) {
-        const legacyAnalytics = await analyticsService.getUserAnalytics(currentUser.id);
-        const realData = await analyticsService.getRealUserProfileData(currentUser.id);
+      if (userId && userId.length > 20) {
+        // Fetch basic user details
+        const { data: userData } = await supabase.from('users').select('name, email').eq('id', userId).single();
+        if (userData) {
+          setPublicUser({ name: userData.name, email: userData.email, role: 'Builder' });
+        } else {
+          setPublicUser({ name: 'Unknown User', role: 'Builder' });
+        }
+        
+        const legacyAnalytics = await analyticsService.getUserAnalytics(userId);
+        const realData = await analyticsService.getRealUserProfileData(userId);
         
         if (legacyAnalytics) setAnalytics(legacyAnalytics);
         if (realData) setRealProfile(realData);
       }
-      
       setIsLoading(false);
     };
     fetchProfileData();
-  }, []);
+  }, [userId]);
 
   const showToast = (message) => {
     setToast(message);
@@ -41,13 +45,19 @@ const PublicProfile = () => {
   };
 
   const user = {
-    name: publicUser?.name || "Guest Builder",
-    role: publicUser?.role || "Builder",
-    reputation: realProfile ? realProfile.stats.dynamicXp : 0,
-    consistency: realProfile ? `${realProfile.stats.consistencyScore}%` : "0%",
-    skills: realProfile ? realProfile.inferredSkills : [],
-    badges: [],
-    projects: []
+    name: currentUser?.name || "Guest Builder",
+    role: currentUser?.role === 'owner' ? "Visionary / Product Owner" : currentUser?.role === 'builder' ? "Full Stack Builder" : "Explorer",
+    reputation: realProfile ? realProfile.stats.dynamicXp : (analytics ? analytics.reputation.total_xp : ((currentUser?.joined?.length || 0) * 10 + (currentUser?.reputation || 30))),
+    consistency: realProfile ? `${realProfile.stats.consistencyScore}%` : "98%",
+    skills: realProfile ? realProfile.inferredSkills : (currentUser?.skills && currentUser.skills.length > 0 ? currentUser.skills : ["React", "Node.js", "UI/UX", "Python"]),
+    badges: analytics && analytics.badges.length > 0 ? analytics.badges : (currentUser?.role === 'owner' ? ["Top Visionary", "Community Lead"] : ["Top Collaborator", "Early Adopter", "MVP Shipper"]),
+    projects: joinedProblems.map(p => ({
+      id: p.id,
+      title: p.title,
+      role: p.author && currentUser?.email && userService.areEmailsSimilar(p.author, currentUser.email) ? "Owner / Author" : "Contributor",
+      status: p.status || "In Progress",
+      impact: p.impact || "High"
+    }))
   };
 
   const handleSharePortfolio = () => {
