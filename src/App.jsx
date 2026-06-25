@@ -99,14 +99,11 @@ function App() {
             return;
           }
 
-          let localUser = userService.getCurrentUser();
-          if (!localUser || localUser.email !== email) {
-            const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
-            localUser = await userService.registerOrLogin({ 
-              email: email,
-              name: name
-            });
-          }
+          const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+          let localUser = await userService.registerOrLogin({ 
+            email: email,
+            name: name
+          });
           setUser(localUser);
         } else {
           userService.logout(true); // pass true for localOnly to avoid infinite loop

@@ -43,7 +43,16 @@ export const userService = {
 
       // Fetch to ensure we get the ID if it was ignored
       const { data: userRecord } = await supabase.from('users').select('*').eq('email', email).single();
-      const finalUser = userRecord || data || { email, name, role: userData.role || 'builder' };
+      let finalUser = userRecord || data || { email, name, role: userData.role || 'builder' };
+
+      // If the existing name in the DB is just the email prefix, and we have a better name now, update it
+      const emailPrefix = email.split('@')[0];
+      if (userRecord && userRecord.name === emailPrefix && name && name !== emailPrefix) {
+        const { data: updatedUser } = await supabase.from('users').update({ name: name }).eq('email', email).select().single();
+        if (updatedUser) {
+          finalUser = updatedUser;
+        }
+      }
 
       // Set session locally
       const sessionData = { 
