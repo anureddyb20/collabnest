@@ -2,9 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Code, Lightbulb, Users, Shield, BarChart, Award } from 'lucide-react';
+import { useView } from '../context/ViewContext';
 
 const Landing = ({ user }) => {
   const navigate = useNavigate();
+  const { isMobileView } = useView();
 
   const features = [
     { icon: Lightbulb, title: "Problem-First Approach", desc: "Start with meaningful problems, then build the team." },
@@ -23,10 +25,10 @@ const Landing = ({ user }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <span className="badge badge-primary" style={{ marginBottom: '1.5rem' }}>
+            <span className="badge badge-primary" style={{ display: 'inline-block', marginBottom: isMobileView ? '2rem' : '1.5rem', marginTop: isMobileView ? '2rem' : '0' }}>
               Solving the execution gap
             </span>
-            <h1 style={{ fontSize: '4rem', lineHeight: 1.1, marginBottom: '1.5rem', wordBreak: 'break-word' }}>
+            <h1 style={{ fontSize: isMobileView ? '2.5rem' : '4rem', lineHeight: 1.1, marginBottom: '1.5rem', wordBreak: 'break-word' }}>
               Where <span className="accent-gradient">Visionaries</span> find
               the <span className="accent-gradient">Builders</span> they need.
             </h1>
@@ -65,19 +67,19 @@ const Landing = ({ user }) => {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             className="landing-stats-mobile"
-            style={{ marginTop: '60px', display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap' }}
+            style={{ marginTop: '60px', display: 'flex', justifyContent: isMobileView ? 'space-around' : 'center', gap: isMobileView ? '10px' : '40px', flexWrap: 'wrap' }}
           >
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 700 }}>250+</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Active Problems</div>
+            <div style={{ textAlign: 'center', flex: isMobileView ? '1 1 30%' : 'initial' }}>
+              <div style={{ fontSize: isMobileView ? '1.5rem' : '2rem', fontWeight: 700 }}>250+</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: isMobileView ? '0.75rem' : '0.9rem' }}>Active Problems</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 700 }}>1.2k</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Builders joined</div>
+            <div style={{ textAlign: 'center', flex: isMobileView ? '1 1 30%' : 'initial' }}>
+              <div style={{ fontSize: isMobileView ? '1.5rem' : '2rem', fontWeight: 700 }}>1.2k</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: isMobileView ? '0.75rem' : '0.9rem' }}>Builders joined</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 700 }}>45</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>MVPs Shipped</div>
+            <div style={{ textAlign: 'center', flex: isMobileView ? '1 1 30%' : 'initial' }}>
+              <div style={{ fontSize: isMobileView ? '1.5rem' : '2rem', fontWeight: 700 }}>45</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: isMobileView ? '0.75rem' : '0.9rem' }}>MVPs Shipped</div>
             </div>
           </motion.div>
         </div>

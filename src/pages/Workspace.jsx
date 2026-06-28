@@ -1198,7 +1198,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
               </div>
 
               {activeTab === 'board' ? (
-            <div className={isMobileView ? "kanban-board" : ""} style={{ display: isMobileView ? 'flex' : 'grid', gridTemplateColumns: isMobileView ? 'none' : 'repeat(3, 1fr)', gap: '20px' }}>
+            <div className={isMobileView ? "kanban-board" : ""} style={{ display: isMobileView ? 'flex' : 'grid', flexDirection: isMobileView ? 'column' : 'row', gridTemplateColumns: isMobileView ? 'none' : 'repeat(3, 1fr)', gap: '20px' }}>
               {['todo', 'doing', 'done'].map(status => (
                 <div 
                   key={status} 
@@ -1564,7 +1564,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
           ) : activeTab === 'docs' ? (
             isTeamMember ? (
             <div className="glass-panel" style={{ padding: '24px', position: 'relative', minHeight: '400px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobileView ? 'flex-start' : 'center', gap: isMobileView ? '12px' : '0', marginBottom: '24px' }}>
                 <h3 style={{ margin: 0 }}>Project Docs & Assets</h3>
                 <button 
                   onClick={() => {

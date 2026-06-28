@@ -38,8 +38,10 @@ const Profile = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const userName = currentUser?.name || (currentUser?.email ? currentUser.email.split('@')[0] : "Guest Builder");
+
   const user = {
-    name: currentUser?.name || "Guest Builder",
+    name: userName,
     role: currentUser?.role === 'owner' ? "Visionary / Product Owner" : currentUser?.role === 'builder' ? "Full Stack Builder" : "Explorer",
     reputation: realProfile ? realProfile.stats.dynamicXp : (analytics ? analytics.reputation.total_xp : ((currentUser?.joined?.length || 0) * 10 + (currentUser?.reputation || 30))),
     consistency: realProfile ? `${realProfile.stats.consistencyScore}%` : "98%",
