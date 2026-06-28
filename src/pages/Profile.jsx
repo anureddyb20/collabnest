@@ -6,6 +6,9 @@ import { analyticsService } from '../data/analyticsService';
 import { Link } from 'react-router-dom';
 import { useView } from '../context/ViewContext';
 
+const DOMAINS = ['All', 'AI/ML', 'FinTech', 'HealthTech', 'Sustainability', 'Education'];
+const SKILL_OPTIONS = ['React', 'Python', 'Node.js', 'Machine Learning', 'UX Design', 'Blockchain', 'Mobile', 'IoT', 'NLP', 'TypeScript', 'Data Science', 'DevOps'];
+
 const Profile = () => {
   const { isMobileView } = useView();
   const currentUser = userService.getCurrentUser();
@@ -14,6 +17,13 @@ const Profile = () => {
   const [realProfile, setRealProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [profile, setProfile] = useState({
+    skills: currentUser?.skills || [],
+    domains: currentUser?.domains || [],
+    experience: currentUser?.experience || 'Entry Level',
+    availability: currentUser?.commitment || '5-10 hrs/week'
+  });
+  const [profileSaved, setProfileSaved] = useState(false);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -38,6 +48,30 @@ const Profile = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const addSkill = (skill) => {
+    if (!profile.skills.includes(skill)) {
+      setProfile(p => ({ ...p, skills: [...p.skills, skill] }));
+    }
+  };
+
+  const removeSkill = (skill) => {
+    setProfile(p => ({ ...p, skills: p.skills.filter(s => s !== skill) }));
+  };
+
+  const saveProfile = async () => {
+    if (currentUser) {
+      await userService.updateProfile(currentUser.email, {
+        skills: profile.skills,
+        experience: profile.experience,
+        commitment: profile.availability,
+        domains: profile.domains
+      });
+    }
+    setProfileSaved(true);
+    showToast("Builder preferences saved successfully!");
+    setTimeout(() => setProfileSaved(false), 2000);
+  };
+
   const userName = currentUser?.name && currentUser.name.toLowerCase() !== 'guest builder' ? currentUser.name : (currentUser?.email ? currentUser.email.split('@')[0] : "Guest Builder");
 
   const user = {
@@ -45,7 +79,7 @@ const Profile = () => {
     role: currentUser?.role === 'owner' ? "Visionary / Product Owner" : currentUser?.role === 'builder' ? "Full Stack Builder" : "Explorer",
     reputation: realProfile ? realProfile.stats.dynamicXp : (analytics ? analytics.reputation.total_xp : ((currentUser?.joined?.length || 0) * 10 + (currentUser?.reputation || 30))),
     consistency: realProfile ? `${realProfile.stats.consistencyScore}%` : "98%",
-    skills: realProfile ? realProfile.inferredSkills : (currentUser?.skills && currentUser.skills.length > 0 ? currentUser.skills : ["React", "Node.js", "UI/UX", "Python"]),
+    skills: realProfile ? realProfile.inferredSkills : (profile.skills.length > 0 ? profile.skills : ["React", "Node.js", "UI/UX", "Python"]),
     badges: analytics && analytics.badges.length > 0 ? analytics.badges : (currentUser?.role === 'owner' ? ["Top Visionary", "Community Lead"] : ["Top Collaborator", "Early Adopter", "MVP Shipper"]),
     projects: joinedProblems.map(p => ({
       id: p.id,
@@ -308,6 +342,61 @@ Generated via CollabNest Hub on ${new Date().toLocaleDateString()}
         {/* Portfolio Content */}
         <div>
           {renderHeatmap()}
+
+          <section style={{ marginBottom: '40px' }}>
+            <h2 style={{ fontSize: '1.8rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Shield size={24} color="var(--primary)" />
+              Expertise & Tech Stack
+            </h2>
+            <div className="glass-card" style={{ padding: '32px' }}>
+              <div style={{ marginBottom: 24 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 10 }}>Your Preferred Skills (Collaboration Strengths)</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                  {profile.skills.map(s => (
+                    <span key={s} style={{ background: 'rgba(99,102,241,0.2)', color: '#818cf8', fontSize: 12, padding: '4px 12px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {s} <span onClick={() => removeSkill(s)} style={{ cursor: 'pointer', opacity: 0.7 }}>×</span>
+                    </span>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {SKILL_OPTIONS.filter(s => !profile.skills.includes(s)).map(s => (
+                    <span key={s} onClick={() => addSkill(s)} style={{ background: 'var(--bg-main)', color: 'var(--text-secondary)', fontSize: 12, padding: '4px 12px', borderRadius: 20, border: '1px solid var(--border)', cursor: 'pointer' }}>+ {s}</span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 24 }}>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Experience Level</label>
+                  <select value={profile.experience} onChange={e => setProfile(p => ({ ...p, experience: e.target.value }))} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', color: 'var(--text-primary)', fontSize: 13 }}>
+                    {['Entry Level', 'Mid Level', 'Senior', 'Expert'].map(e => <option key={e}>{e}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Availability</label>
+                  <select value={profile.availability} onChange={e => setProfile(p => ({ ...p, availability: e.target.value }))} style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', color: 'var(--text-primary)', fontSize: 13 }}>
+                    {['Less than 5 hrs/week', '5-10 hrs/week', '10-20 hrs/week', 'Full-time'].map(a => <option key={a}>{a}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Domains of Interest</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {DOMAINS.filter(d => d !== 'All').map(d => (
+                    <span key={d} onClick={() => setProfile(p => ({ ...p, domains: p.domains.includes(d) ? p.domains.filter(x => x !== d) : [...p.domains, d] }))}
+                      style={{ background: profile.domains.includes(d) ? 'var(--primary)' : 'var(--bg-main)', color: profile.domains.includes(d) ? '#fff' : 'var(--text-secondary)', fontSize: 12, padding: '6px 14px', borderRadius: 20, border: '1px solid var(--border)', cursor: 'pointer', transition: 'all 0.2s' }}>
+                      {d}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <button onClick={saveProfile} style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                {profileSaved ? '✓ Saved!' : 'Save Preferences'}
+              </button>
+            </div>
+          </section>
 
           <section style={{ marginBottom: '40px' }}>
             <h2 style={{ fontSize: '1.8rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>

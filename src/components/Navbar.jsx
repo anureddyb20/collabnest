@@ -100,7 +100,6 @@ const Navbar = ({ user }) => {
 
   const navLinks = [
     { path: '/hub', label: 'Problem Hub', icon: Hub },
-    { path: '/builder', label: 'I Want to Build', icon: Hammer },
     { path: '/workspace', label: 'Workspace', icon: Layout },
     { path: '/profile', label: 'Portfolio', icon: User },
   ];
