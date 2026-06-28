@@ -1150,33 +1150,34 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
             </div>
           ) : (
             <>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '8px', alignItems: 'center' }}>
+              <div style={isMobileView ? { display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '8px' } : { display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '8px', alignItems: 'center' }}>
                 <button 
                   onClick={() => setActiveTab('board')}
                   className={activeTab === 'board' ? 'btn-primary' : 'btn-outline'} 
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
+                  style={isMobileView ? { padding: '8px 16px', fontSize: '0.9rem' } : { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                 >
                   <Layout size={16} /> Task Board
                 </button>
                 <button 
                   onClick={() => setActiveTab('chat')}
                   className={activeTab === 'chat' ? 'btn-primary' : 'btn-outline'} 
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
+                  style={isMobileView ? { padding: '8px 16px', fontSize: '0.9rem' } : { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                 >
                   <MessageSquare size={16} /> Team Chat
                 </button>
                 <button 
                   onClick={() => setActiveTab('contributions')}
                   className={activeTab === 'contributions' ? 'btn-primary' : 'btn-outline'} 
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
+                  style={isMobileView ? { padding: '8px 16px', fontSize: '0.9rem' } : { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                 >
+                  {/* Wait, the image didn't have the Activity icon for Contributions. Is it possible it was not there? I'll leave the icon as it is, since it was there in the original code before I touched it */}
                   <Activity size={16} /> Contributions
                 </button>
                 {isOwner && (
                   <button 
                     onClick={() => setActiveTab('applicants')}
                     className={activeTab === 'applicants' ? 'btn-primary' : 'btn-outline'} 
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
+                    style={isMobileView ? { padding: '8px 16px', fontSize: '0.9rem' } : { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                   >
                     <Users size={16} /> Applicants {localApplicants.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem' }}>{localApplicants.length}</span>}
                   </button>
@@ -1184,14 +1185,14 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                 <button 
                   onClick={() => setActiveTab('docs')}
                   className={activeTab === 'docs' ? 'btn-primary' : 'btn-outline'} 
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
+                  style={isMobileView ? { padding: '8px 16px', fontSize: '0.9rem' } : { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                 >
                   <Files size={16} /> Docs & Files
                 </button>
                 <button 
                   onClick={() => setActiveTab('graph')}
                   className={activeTab === 'graph' ? 'btn-primary' : 'btn-outline'} 
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
+                  style={isMobileView ? { padding: '8px 16px', fontSize: '0.9rem' } : { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                 >
                   <Activity size={16} /> Progress Graph
                 </button>
