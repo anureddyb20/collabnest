@@ -1384,8 +1384,9 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
               </div>
               <form onSubmit={handleSendMessage} style={isMobileView ? { padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', width: '100%', boxSizing: 'border-box', alignItems: 'center', background: 'var(--bg-surface)' } : { padding: '20px', borderTop: '1px solid var(--border)', display: 'flex', gap: '10px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
                 {isMobileView ? (
-                  <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'flex-end', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '24px', padding: '8px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                  <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'flex-end', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '24px', padding: '0', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
                     <textarea 
+                      className="mobile-chat-textarea"
                       value={chatInput}
                       onChange={(e) => {
                         setChatInput(e.target.value);
@@ -1401,9 +1402,9 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                       placeholder="Type a message to your team..."
                       rows={1}
                       style={{ 
-                        flex: 1, minWidth: '0', background: 'transparent', border: 'none',
-                        color: 'var(--text-main)', fontSize: '16px', outline: 'none', resize: 'none',
-                        padding: '4px 32px 4px 0', fontFamily: 'inherit', lineHeight: '1.4',
+                        flex: 1, minWidth: '0',
+                        color: 'var(--text-main)', fontSize: '16px', resize: 'none',
+                        fontFamily: 'inherit', lineHeight: '1.4',
                         maxHeight: '120px', overflowY: 'auto'
                       }}
                     />
@@ -1411,14 +1412,14 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                       type="submit" 
                       disabled={!chatInput.trim()}
                       style={{ 
-                        position: 'absolute', right: '8px', bottom: '8px', width: '32px', height: '32px',
+                        position: 'absolute', right: '6px', bottom: '6px', width: '36px', height: '36px',
                         background: chatInput.trim() ? 'var(--primary)' : 'rgba(108, 99, 255, 0.1)',
                         color: chatInput.trim() ? 'white' : 'var(--text-muted)',
                         border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: chatInput.trim() ? 'pointer' : 'default', transition: 'all 0.2s', padding: 0
+                        cursor: chatInput.trim() ? 'pointer' : 'default', transition: 'all 0.2s', padding: 0, zIndex: 2
                       }}
                     >
-                      <Send size={16} style={{ transform: chatInput.trim() ? 'translateX(-1px) translateY(1px)' : 'none' }} />
+                      <Send size={18} style={{ transform: chatInput.trim() ? 'translateX(-1px) translateY(1px)' : 'translateX(-1px)' }} />
                     </button>
                   </div>
                 ) : (
