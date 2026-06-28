@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Layout, CheckSquare, MessageSquare, Files, Settings, 
   AlertCircle, Users, Activity, Flag, ChevronRight, Plus, CheckCircle, XCircle,
-  Star, Award, Briefcase, Lock
+  Star, Award, Briefcase, Lock, Send
 } from 'lucide-react';
 import { problems } from '../data/problems';
 import { userService } from '../data/userService';
@@ -909,6 +909,13 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     setChatMessages(updatedChats);
     setChatInput('');
 
+    setTimeout(() => {
+      if (isMobileView) {
+        const container = document.getElementById('chat-messages-container');
+        if (container) container.scrollTop = container.scrollHeight;
+      }
+    }, 100);
+
     if (isUUID) {
       await userService.sendChatMessage({
         project_id: selectedProblem.id,
@@ -1343,7 +1350,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
           ) : activeTab === 'chat' ? (
             isTeamMember ? (
             <div className="glass-panel" style={{ height: '500px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-              <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div id="chat-messages-container" style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {chatMessages.length === 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', opacity: 0.7, padding: '40px' }}>
                     <MessageSquare size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
@@ -1375,18 +1382,60 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                   })
                 )}
               </div>
-              <form onSubmit={handleSendMessage} style={{ padding: isMobileView ? '12px' : '20px', borderTop: '1px solid var(--border)', display: 'flex', gap: '10px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
-                <input 
-                  type="text" 
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Type a message..."
-                  style={{ 
-                    flex: 1, width: '100%', minWidth: '0', background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    borderRadius: '12px', padding: '12px', color: 'var(--text-main)', fontSize: '16px'
-                  }}
-                />
-                <button type="submit" className="btn-primary" style={{ padding: isMobileView ? '12px 16px' : '0 24px', height: '100%', flexShrink: 0 }}>Send</button>
+              <form onSubmit={handleSendMessage} style={isMobileView ? { padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', width: '100%', boxSizing: 'border-box', alignItems: 'center', background: 'var(--bg-surface)' } : { padding: '20px', borderTop: '1px solid var(--border)', display: 'flex', gap: '10px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
+                {isMobileView ? (
+                  <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'flex-end', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '24px', padding: '8px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                    <textarea 
+                      value={chatInput}
+                      onChange={(e) => {
+                        setChatInput(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = (e.target.scrollHeight < 120 ? e.target.scrollHeight : 120) + 'px';
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          if (chatInput.trim()) handleSendMessage(e);
+                        }
+                      }}
+                      placeholder="Type a message to your team..."
+                      rows={1}
+                      style={{ 
+                        flex: 1, minWidth: '0', background: 'transparent', border: 'none',
+                        color: 'var(--text-main)', fontSize: '16px', outline: 'none', resize: 'none',
+                        padding: '4px 32px 4px 0', fontFamily: 'inherit', lineHeight: '1.4',
+                        maxHeight: '120px', overflowY: 'auto'
+                      }}
+                    />
+                    <button 
+                      type="submit" 
+                      disabled={!chatInput.trim()}
+                      style={{ 
+                        position: 'absolute', right: '8px', bottom: '8px', width: '32px', height: '32px',
+                        background: chatInput.trim() ? 'var(--primary)' : 'rgba(108, 99, 255, 0.1)',
+                        color: chatInput.trim() ? 'white' : 'var(--text-muted)',
+                        border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: chatInput.trim() ? 'pointer' : 'default', transition: 'all 0.2s', padding: 0
+                      }}
+                    >
+                      <Send size={16} style={{ transform: chatInput.trim() ? 'translateX(-1px) translateY(1px)' : 'none' }} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input 
+                      type="text" 
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Type a message..."
+                      style={{ 
+                        flex: 1, width: '100%', minWidth: '0', background: 'var(--bg-card)', border: '1px solid var(--border)',
+                        borderRadius: '12px', padding: '12px', color: 'var(--text-main)', fontSize: '16px'
+                      }}
+                    />
+                    <button type="submit" className="btn-primary" style={{ padding: '0 24px', height: '100%', flexShrink: 0 }}>Send</button>
+                  </>
+                )}
               </form>
             </div>
             ) : (
