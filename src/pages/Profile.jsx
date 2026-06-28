@@ -38,7 +38,7 @@ const Profile = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const userName = currentUser?.name || (currentUser?.email ? currentUser.email.split('@')[0] : "Guest Builder");
+  const userName = currentUser?.name && currentUser.name.toLowerCase() !== 'guest builder' ? currentUser.name : (currentUser?.email ? currentUser.email.split('@')[0] : "Guest Builder");
 
   const user = {
     name: userName,

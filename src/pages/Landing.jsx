@@ -18,7 +18,7 @@ const Landing = ({ user }) => {
   return (
     <div className="landing-page" style={{ background: 'var(--bg-main)', color: 'var(--text-main)', minHeight: '100vh', overflowX: 'hidden' }}>
       {/* Hero Section */}
-      <section style={{ padding: '80px 0', textAlign: 'center' }}>
+      <section style={{ padding: isMobileView ? '40px 0' : '80px 0', textAlign: 'center' }}>
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -67,7 +67,7 @@ const Landing = ({ user }) => {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             className="landing-stats-mobile"
-            style={{ marginTop: '60px', display: 'flex', justifyContent: isMobileView ? 'space-around' : 'center', gap: isMobileView ? '10px' : '40px', flexWrap: 'wrap' }}
+            style={{ marginTop: isMobileView ? '40px' : '60px', display: 'flex', justifyContent: isMobileView ? 'space-around' : 'center', gap: isMobileView ? '10px' : '40px', flexWrap: 'wrap' }}
           >
             <div style={{ textAlign: 'center', flex: isMobileView ? '1 1 30%' : 'initial' }}>
               <div style={{ fontSize: isMobileView ? '1.5rem' : '2rem', fontWeight: 700 }}>250+</div>
@@ -86,7 +86,7 @@ const Landing = ({ user }) => {
       </section>
 
       {/* Features Grid */}
-      <section style={{ padding: '100px 0', background: 'rgba(255,255,255,0.02)' }}>
+      <section style={{ padding: isMobileView ? '60px 0' : '100px 0', background: 'rgba(255,255,255,0.02)' }}>
         <div className="container">
           <div className="grid-auto">
             {features.map((f, i) => (
@@ -96,7 +96,7 @@ const Landing = ({ user }) => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 className="glass-card"
-                style={{ padding: '32px' }}
+                style={{ padding: isMobileView ? '24px' : '32px' }}
               >
                 <div style={{ 
                   width: '48px', height: '48px', 
@@ -116,11 +116,11 @@ const Landing = ({ user }) => {
 
       {/* Footer */}
       <footer style={{ 
-        padding: '60px 0 40px', 
+        padding: isMobileView ? '40px 0 30px' : '60px 0 40px', 
         borderTop: '1px solid var(--border)', 
         background: 'rgba(255, 255, 255, 0.4)',
         textAlign: 'center',
-        marginTop: '60px'
+        marginTop: isMobileView ? '40px' : '60px'
       }}>
         <div className="container" style={{ 
           display: 'flex', 

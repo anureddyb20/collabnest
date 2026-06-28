@@ -103,7 +103,7 @@ function App() {
 
           let name = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
           if (!name || name.toLowerCase() === 'user' || name === email) {
-            name = email.split('@')[0].toUpperCase();
+            name = email.split('@')[0];
           }
           let localUser = await userService.registerOrLogin({ 
             email: email,

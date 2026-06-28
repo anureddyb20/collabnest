@@ -44,13 +44,15 @@ const PublicProfile = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const currentUser = userService.getCurrentUser();
+
   const user = {
-    name: currentUser?.name || "Guest Builder",
-    role: currentUser?.role === 'owner' ? "Visionary / Product Owner" : currentUser?.role === 'builder' ? "Full Stack Builder" : "Explorer",
-    reputation: realProfile ? realProfile.stats.dynamicXp : (analytics ? analytics.reputation.total_xp : ((currentUser?.joined?.length || 0) * 10 + (currentUser?.reputation || 30))),
+    name: publicUser?.name && publicUser.name !== 'Guest Builder' ? publicUser.name : (publicUser?.email ? publicUser.email.split('@')[0] : "Guest Builder"),
+    role: publicUser?.role === 'owner' ? "Visionary / Product Owner" : publicUser?.role === 'builder' ? "Full Stack Builder" : "Explorer",
+    reputation: realProfile ? realProfile.stats.dynamicXp : (analytics ? analytics.reputation.total_xp : ((publicUser?.joined?.length || 0) * 10 + (publicUser?.reputation || 30))),
     consistency: realProfile ? `${realProfile.stats.consistencyScore}%` : "98%",
-    skills: realProfile ? realProfile.inferredSkills : (currentUser?.skills && currentUser.skills.length > 0 ? currentUser.skills : ["React", "Node.js", "UI/UX", "Python"]),
-    badges: analytics && analytics.badges.length > 0 ? analytics.badges : (currentUser?.role === 'owner' ? ["Top Visionary", "Community Lead"] : ["Top Collaborator", "Early Adopter", "MVP Shipper"]),
+    skills: realProfile ? realProfile.inferredSkills : (publicUser?.skills && publicUser.skills.length > 0 ? publicUser.skills : ["React", "Node.js", "UI/UX", "Python"]),
+    badges: analytics && analytics.badges.length > 0 ? analytics.badges : (publicUser?.role === 'owner' ? ["Top Visionary", "Community Lead"] : ["Top Collaborator", "Early Adopter", "MVP Shipper"]),
     projects: joinedProblems.map(p => ({
       id: p.id,
       title: p.title,
