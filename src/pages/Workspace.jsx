@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Layout, CheckSquare, MessageSquare, Files, Settings, 
   AlertCircle, Users, Activity, Flag, ChevronRight, Plus, CheckCircle, XCircle,
-  Star, Award, Briefcase, Lock, Menu
+  Star, Award, Briefcase, Lock
 } from 'lucide-react';
 import { problems } from '../data/problems';
 import { userService } from '../data/userService';
@@ -69,7 +69,6 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('board');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isTabsDrawerOpen, setIsTabsDrawerOpen] = useState(false);
   
   // Post Another Idea Modal State
   const [showPostAnotherModal, setShowPostAnotherModal] = useState(false);
@@ -1151,149 +1150,52 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
             </div>
           ) : (
             <>
-              {isMobileView ? (
-                <>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '8px' }}>
+                <button 
+                  onClick={() => setActiveTab('board')}
+                  className={activeTab === 'board' ? 'btn-primary' : 'btn-outline'} 
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  <Layout size={16} /> Task Board
+                </button>
+                <button 
+                  onClick={() => setActiveTab('chat')}
+                  className={activeTab === 'chat' ? 'btn-primary' : 'btn-outline'} 
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  <MessageSquare size={16} /> Team Chat
+                </button>
+                <button 
+                  onClick={() => setActiveTab('contributions')}
+                  className={activeTab === 'contributions' ? 'btn-primary' : 'btn-outline'} 
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  <Activity size={16} /> Contributions
+                </button>
+                {isOwner && (
                   <button 
-                    onClick={() => setIsTabsDrawerOpen(true)}
-                    className="btn-outline"
-                    style={{ padding: '10px 16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '12px', width: '100%', justifyContent: 'center' }}
-                  >
-                    <Menu size={20} /> <span style={{ fontWeight: 600 }}>Workspace Menu</span>
-                  </button>
-                  <AnimatePresence>
-                    {isTabsDrawerOpen && (
-                      <>
-                        <motion.div 
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          onClick={() => setIsTabsDrawerOpen(false)}
-                          style={{
-                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                            background: 'rgba(0,0,0,0.5)', zIndex: 1040, backdropFilter: 'blur(4px)'
-                          }}
-                        />
-                        <motion.div 
-                          initial={{ x: '-100%' }}
-                          animate={{ x: 0 }}
-                          exit={{ x: '-100%' }}
-                          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                          style={{
-                            position: 'fixed', top: 0, left: 0, bottom: 0,
-                            width: '280px',
-                            background: 'var(--bg-main)', zIndex: 1050,
-                            borderRight: '1px solid var(--border)',
-                            boxShadow: '4px 0 24px rgba(0,0,0,0.3)',
-                            display: 'flex', flexDirection: 'column'
-                          }}
-                        >
-                          <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <Layout size={20} color="var(--primary)" /> Workspace
-                            </h2>
-                            <button onClick={() => setIsTabsDrawerOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                              <XCircle size={24} />
-                            </button>
-                          </div>
-                          <div style={{ padding: '24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <button 
-                              onClick={() => { setActiveTab('board'); setIsTabsDrawerOpen(false); }}
-                              className={activeTab === 'board' ? 'btn-primary' : 'btn-outline'} 
-                              style={{ padding: '12px 16px', fontSize: '1rem', width: '100%', justifyContent: 'flex-start' }}
-                            >
-                              <Layout size={18} /> Task Board
-                            </button>
-                            <button 
-                              onClick={() => { setActiveTab('chat'); setIsTabsDrawerOpen(false); }}
-                              className={activeTab === 'chat' ? 'btn-primary' : 'btn-outline'} 
-                              style={{ padding: '12px 16px', fontSize: '1rem', width: '100%', justifyContent: 'flex-start' }}
-                            >
-                              <MessageSquare size={18} /> Team Chat
-                            </button>
-                            <button 
-                              onClick={() => { setActiveTab('contributions'); setIsTabsDrawerOpen(false); }}
-                              className={activeTab === 'contributions' ? 'btn-primary' : 'btn-outline'} 
-                              style={{ padding: '12px 16px', fontSize: '1rem', width: '100%', justifyContent: 'flex-start' }}
-                            >
-                              <Activity size={18} /> Contributions
-                            </button>
-                            {isOwner && (
-                              <button 
-                                onClick={() => { setActiveTab('applicants'); setIsTabsDrawerOpen(false); }}
-                                className={activeTab === 'applicants' ? 'btn-primary' : 'btn-outline'} 
-                                style={{ padding: '12px 16px', fontSize: '1rem', width: '100%', justifyContent: 'flex-start' }}
-                              >
-                                <Users size={18} /> Applicants {localApplicants.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem', marginLeft: 'auto' }}>{localApplicants.length}</span>}
-                              </button>
-                            )}
-                            <button 
-                              onClick={() => { setActiveTab('docs'); setIsTabsDrawerOpen(false); }}
-                              className={activeTab === 'docs' ? 'btn-primary' : 'btn-outline'} 
-                              style={{ padding: '12px 16px', fontSize: '1rem', width: '100%', justifyContent: 'flex-start' }}
-                            >
-                              <Files size={18} /> Docs & Files
-                            </button>
-                            <button 
-                              onClick={() => { setActiveTab('graph'); setIsTabsDrawerOpen(false); }}
-                              className={activeTab === 'graph' ? 'btn-primary' : 'btn-outline'} 
-                              style={{ padding: '12px 16px', fontSize: '1rem', width: '100%', justifyContent: 'flex-start' }}
-                            >
-                              <Activity size={18} /> Progress Graph
-                            </button>
-                          </div>
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
-                </>
-              ) : (
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '8px' }}>
-                  <button 
-                    onClick={() => setActiveTab('board')}
-                    className={activeTab === 'board' ? 'btn-primary' : 'btn-outline'} 
+                    onClick={() => setActiveTab('applicants')}
+                    className={activeTab === 'applicants' ? 'btn-primary' : 'btn-outline'} 
                     style={{ padding: '8px 16px', fontSize: '0.9rem' }}
                   >
-                    <Layout size={16} /> Task Board
+                    <Users size={16} /> Applicants {localApplicants.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem', marginLeft: '4px' }}>{localApplicants.length}</span>}
                   </button>
-                  <button 
-                    onClick={() => setActiveTab('chat')}
-                    className={activeTab === 'chat' ? 'btn-primary' : 'btn-outline'} 
-                    style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-                  >
-                    <MessageSquare size={16} /> Team Chat
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('contributions')}
-                    className={activeTab === 'contributions' ? 'btn-primary' : 'btn-outline'} 
-                    style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-                  >
-                    <Activity size={16} /> Contributions
-                  </button>
-                  {isOwner && (
-                    <button 
-                      onClick={() => setActiveTab('applicants')}
-                      className={activeTab === 'applicants' ? 'btn-primary' : 'btn-outline'} 
-                      style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-                    >
-                      <Users size={16} /> Applicants {localApplicants.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem', marginLeft: '4px' }}>{localApplicants.length}</span>}
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => setActiveTab('docs')}
-                    className={activeTab === 'docs' ? 'btn-primary' : 'btn-outline'} 
-                    style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-                  >
-                    <Files size={16} /> Docs & Files
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('graph')}
-                    className={activeTab === 'graph' ? 'btn-primary' : 'btn-outline'} 
-                    style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-                  >
-                    <Activity size={16} /> Progress Graph
-                  </button>
-                </div>
-              )}
+                )}
+                <button 
+                  onClick={() => setActiveTab('docs')}
+                  className={activeTab === 'docs' ? 'btn-primary' : 'btn-outline'} 
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  <Files size={16} /> Docs & Files
+                </button>
+                <button 
+                  onClick={() => setActiveTab('graph')}
+                  className={activeTab === 'graph' ? 'btn-primary' : 'btn-outline'} 
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  <Activity size={16} /> Progress Graph
+                </button>
+              </div>
 
               {activeTab === 'board' ? (
             <div className={isMobileView ? "kanban-board" : ""} style={{ display: isMobileView ? 'flex' : 'grid', flexDirection: isMobileView ? 'column' : 'row', gridTemplateColumns: isMobileView ? 'none' : 'repeat(3, 1fr)', gap: '20px' }}>
