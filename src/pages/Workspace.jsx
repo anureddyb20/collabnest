@@ -1054,7 +1054,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                 }}>
                   {isDone && <CheckSquare size={12} color="white" />}
                 </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isCurrent ? 'white' : 'var(--text-dim)' }}>{m}</span>
+                <span style={{ display: 'block', fontSize: isMobileView ? '0.65rem' : '0.75rem', fontWeight: 600, color: isCurrent ? 'white' : 'var(--text-dim)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isMobileView && m === 'Prototype' ? 'Proto' : m}</span>
               </div>
             );
           })}
@@ -1150,25 +1150,25 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
             </div>
           ) : (
             <>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '8px', alignItems: 'center' }}>
                 <button 
                   onClick={() => setActiveTab('board')}
                   className={activeTab === 'board' ? 'btn-primary' : 'btn-outline'} 
-                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                 >
                   <Layout size={16} /> Task Board
                 </button>
                 <button 
                   onClick={() => setActiveTab('chat')}
                   className={activeTab === 'chat' ? 'btn-primary' : 'btn-outline'} 
-                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                 >
                   <MessageSquare size={16} /> Team Chat
                 </button>
                 <button 
                   onClick={() => setActiveTab('contributions')}
                   className={activeTab === 'contributions' ? 'btn-primary' : 'btn-outline'} 
-                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                 >
                   <Activity size={16} /> Contributions
                 </button>
@@ -1176,22 +1176,22 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                   <button 
                     onClick={() => setActiveTab('applicants')}
                     className={activeTab === 'applicants' ? 'btn-primary' : 'btn-outline'} 
-                    style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                   >
-                    <Users size={16} /> Applicants {localApplicants.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem', marginLeft: '4px' }}>{localApplicants.length}</span>}
+                    <Users size={16} /> Applicants {localApplicants.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem' }}>{localApplicants.length}</span>}
                   </button>
                 )}
                 <button 
                   onClick={() => setActiveTab('docs')}
                   className={activeTab === 'docs' ? 'btn-primary' : 'btn-outline'} 
-                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                 >
                   <Files size={16} /> Docs & Files
                 </button>
                 <button 
                   onClick={() => setActiveTab('graph')}
                   className={activeTab === 'graph' ? 'btn-primary' : 'btn-outline'} 
-                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', flexShrink: 0 }}
                 >
                   <Activity size={16} /> Progress Graph
                 </button>
@@ -1374,18 +1374,18 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                   })
                 )}
               </div>
-              <form onSubmit={handleSendMessage} style={{ padding: '20px', borderTop: '1px solid var(--border)', display: 'flex', gap: '10px' }}>
+              <form onSubmit={handleSendMessage} style={{ padding: isMobileView ? '12px' : '20px', borderTop: '1px solid var(--border)', display: 'flex', gap: '10px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
                 <input 
                   type="text" 
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Type a message..."
                   style={{ 
-                    flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    borderRadius: '12px', padding: '12px', color: 'var(--text-main)'
+                    flex: 1, width: '100%', minWidth: '0', background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    borderRadius: '12px', padding: '12px', color: 'var(--text-main)', fontSize: '16px'
                   }}
                 />
-                <button type="submit" className="btn-primary" style={{ padding: '0 24px' }}>Send</button>
+                <button type="submit" className="btn-primary" style={{ padding: isMobileView ? '12px 16px' : '0 24px', height: '100%', flexShrink: 0 }}>Send</button>
               </form>
             </div>
             ) : (

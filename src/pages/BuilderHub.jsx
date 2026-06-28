@@ -230,13 +230,17 @@ export default function BuilderHub({ user }) {
 
         {/* Logged-in user pill */}
         {currentUser && (
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 50, padding: '6px 16px 6px 6px', marginTop: 14 }}>
-            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, color: 'white', flexShrink: 0 }}>
-              {(currentUser.name || 'U')[0].toUpperCase()}
+          <div style={{ display: 'inline-flex', flexDirection: isMobileView ? 'column' : 'row', alignItems: isMobileView ? 'flex-start' : 'center', gap: isMobileView ? 4 : 10, background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)', borderRadius: isMobileView ? 16 : 50, padding: isMobileView ? '12px 16px' : '6px 16px 6px 6px', marginTop: 14, maxWidth: '100%', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', overflow: 'hidden' }}>
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, color: 'white', flexShrink: 0 }}>
+                {(currentUser.name || 'U')[0].toUpperCase()}
+              </div>
+              <div style={{ display: 'flex', flexDirection: isMobileView ? 'column' : 'row', alignItems: isMobileView ? 'flex-start' : 'center', gap: isMobileView ? 2 : 10, flex: 1, overflow: 'hidden' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentUser.name}</span>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentUser.email}</span>
+              </div>
             </div>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)' }}>{currentUser.name}</span>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{currentUser.email}</span>
-            <span style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 700, marginLeft: 4 }}>{(currentUser.joined?.length || 0) * 10 + (currentUser.reputation || 0)} XP</span>
+            <span style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 700, marginLeft: isMobileView ? 0 : 4, flexShrink: 0, alignSelf: isMobileView ? 'flex-end' : 'auto' }}>{(currentUser.joined?.length || 0) * 10 + (currentUser.reputation || 0)} XP</span>
           </div>
         )}
       </div>
