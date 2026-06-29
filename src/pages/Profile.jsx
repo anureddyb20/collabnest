@@ -80,7 +80,16 @@ const Profile = () => {
     reputation: realProfile ? realProfile.stats.dynamicXp : (analytics ? analytics.reputation.total_xp : ((currentUser?.joined?.length || 0) * 10 + (currentUser?.reputation || 30))),
     consistency: realProfile ? `${realProfile.stats.consistencyScore}%` : "98%",
     skills: realProfile ? realProfile.inferredSkills : (profile.skills.length > 0 ? profile.skills : ["React", "Node.js", "UI/UX", "Python"]),
-    badges: analytics && analytics.badges.length > 0 ? analytics.badges : (currentUser?.role === 'owner' ? ["Top Visionary", "Community Lead"] : ["Top Collaborator", "Early Adopter", "MVP Shipper"]),
+    badges: (() => {
+      const b = [];
+      const xp = realProfile ? realProfile.stats.dynamicXp : ((currentUser?.joined?.length || 0) * 10 + (currentUser?.reputation || 0));
+      if ((currentUser?.joined?.length || 0) > 0 || (realProfile?.stats?.projectsJoined || 0) > 0) b.push("First Builder");
+      if (xp > 25 || (realProfile?.stats?.tasksCompleted || 0) >= 5) b.push("Execution Beast");
+      if ((currentUser?.joined?.length || 0) >= 2 || (realProfile?.stats?.projectsJoined || 0) >= 2) b.push("Team Catalyst");
+      if (xp >= 50) b.push("MVP Shipper");
+      if (b.length === 0) b.push("New Builder");
+      return b;
+    })(),
     projects: joinedProblems.map(p => ({
       id: p.id,
       title: p.title,

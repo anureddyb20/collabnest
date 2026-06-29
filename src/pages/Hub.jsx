@@ -439,11 +439,16 @@ const Hub = ({ user: initialUser }) => {
                       <span>{p.title}</span>
                       {p.status === 'available_to_claim' && (
                         <span style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', fontWeight: 600, border: '1px solid rgba(139, 92, 246, 0.25)', whiteSpace: 'nowrap' }}>
-                          Unclaimed AI Project
+                          Community Starter Project
                         </span>
                       )}
                     </h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '24px', flex: 1, lineHeight: 1.6 }}>{p.desc}</p>
+                    <div style={{ flex: 1, marginBottom: '24px' }}>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.6, margin: 0 }}>{p.desc}</p>
+                      {p.status === 'available_to_claim' && (
+                        <p style={{ color: '#8b5cf6', fontSize: '12px', marginTop: '8px', fontWeight: 500, margin: '8px 0 0 0' }}>✨ Be the first builder to claim this project.</p>
+                      )}
+                    </div>
                     
                     <div style={{ marginBottom: '24px' }}>
                       <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '10px', fontWeight: 500 }}>Required Skills</div>

@@ -159,10 +159,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
   const stages = ['Idea', 'Validation', 'Prototype', 'MVP', 'Launch'];
 
   // 2. Team State
-  const [team, setTeam] = useState([
-    { name: "Anu", role: "Product Owner", activity: "High", contributions: 10 },
-    { name: "Alex", role: "UI Designer", activity: "High", contributions: 12 },
-  ]);
+  const [team, setTeam] = useState([]);
 
   // 3. Applicants State (load real applicants or mock one)
   const [localApplicants, setLocalApplicants] = useState([]);
@@ -204,10 +201,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
   const [inlineTaskText, setInlineTaskText] = useState('');
 
   // 5. Chat State
-  const [chatMessages, setChatMessages] = useState([
-    { sender: "Anu", text: "Hey team! Let's get started on the prototype.", time: "10:30 AM" },
-    { sender: "Alex", text: "Working on the design mockups now.", time: "10:32 AM" }
-  ]);
+  const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
 
   // 6. Recruit Candidates State
@@ -317,10 +311,6 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       }));
       setRejectedList(initialRejected);
 
-      const defaultLogs = [
-        { text: `${ownerName} created the project and posted requirements`, date: getDynamicEventDate(0) }
-      ];
-      
       const isUUID = String(latestProblem.id).length > 20;
       if (isUUID) {
         const liveTimeline = await analyticsService.getProjectTimeline(latestProblem.id);
@@ -330,11 +320,10 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
             date: new Date(log.created_at).toLocaleDateString() + ' ' + new Date(log.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
           })));
         } else {
-          setContributionLogs(latestProblem.contributionsLogs ? [...defaultLogs, ...latestProblem.contributionsLogs] : defaultLogs);
+          setContributionLogs(latestProblem.contributionsLogs || []);
         }
       } else {
-        const initialLogs = latestProblem.contributionsLogs ? [...defaultLogs, ...latestProblem.contributionsLogs] : defaultLogs;
-        setContributionLogs(initialLogs);
+        setContributionLogs(latestProblem.contributionsLogs || []);
       }
 
       // Dynamic stage index used natively through recalculation on render.
@@ -500,57 +489,16 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       const liveData = await analyticsService.getUserAnalytics(member.user_id);
       if (liveData) setMemberAnalytics(liveData);
     }
-    let profileData = {};
-    if (lowerName.includes('alex')) {
-      profileData = {
-        name: "Alex Rivera",
-        role: "UI Designer & Developer",
-        reputation: 1180,
-        consistency: "96%",
-        skills: ["Figma", "UI Design", "Visual Identity", "Prototyping", "TailwindCSS"],
-        badges: ["Pixel Perfect", "Creative Mind", "MVP Shipper"],
-        projects: [
-          { title: "AI Radiologist Assistant", role: "UI Designer", status: "In Progress" },
-          { title: "Eco-Tracker App", role: "UX Designer", status: "Completed" }
-        ],
-        reviews: [
-          { from: "Anu", rating: 5, comment: "Incredible design eye and extremely fast iteration times!" },
-          { from: "Sam", rating: 5, comment: "Brings designs to life flawlessly. A absolute joy to collaborate with." }
-        ]
-      };
-    } else if (lowerName.includes('anu')) {
-      profileData = {
-        name: member.name,
-        role: member.role || "Product Owner",
-        reputation: 1520,
-        consistency: "99%",
-        skills: ["React", "Product Management", "UI/UX", "System Architecture", "TypeScript"],
-        badges: ["Visionary", "Lead Organizer", "Top Collaborator"],
-        projects: [
-          { title: "Decentralized Carbon Marketplace", role: "Product Manager", status: "MVP Shipped" },
-          { title: "Smart Crop Optimizer", role: "Product Owner", status: "In Progress" }
-        ],
-        reviews: [
-          { from: "Alex", rating: 5, comment: "An outstanding product leader who keeps the team highly motivated!" },
-          { from: "Diana", rating: 5, comment: "Crystal clear vision, exceptional engineering standards." }
-        ]
-      };
-    } else {
-      profileData = {
-        name: member.name,
-        role: member.role || "Contributor",
-        reputation: 450,
-        consistency: "94%",
-        skills: ["React", "JavaScript", "HTML5", "CSS3", "Git"],
-        badges: ["Fast Learner", "Problem Solver"],
-        projects: [
-          { title: "Portfolio Tracker", role: "Developer", status: "In Progress" }
-        ],
-        reviews: [
-          { from: "Anu", rating: 5, comment: "Learns incredibly fast and takes initiative on tough tasks." }
-        ]
-      };
-    }
+    let profileData = {
+      name: member.name,
+      role: member.role || "Builder",
+      reputation: member.reputation || (liveData ? 50 : 0),
+      consistency: "100%",
+      skills: member.skills || ["Generalist"],
+      badges: liveData ? ["Active Builder"] : [],
+      projects: [],
+      reviews: []
+    };
     setSelectedMemberProfile(profileData);
   };
 
@@ -1240,7 +1188,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                   </h4>
                   {(tasks[status] || []).length === 0 && (
                     <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic', opacity: 0.6, background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px dashed var(--border)', marginBottom: '12px' }}>
-                      No tasks created yet.
+                      {status === 'done' ? 'Complete your first verified task.' : 'No tasks created yet.'}
                     </div>
                   )}
                   {(tasks[status] || []).map(task => {
@@ -1597,9 +1545,9 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                   {/* Accepted sub-list */}
                   <div style={{ marginBottom: '24px' }}>
                     <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '12px' }}>Accepted Members</div>
-                    {team.filter(m => m.name !== ownerName && !(m.name === 'Alex' && m.role === 'UI Designer')).length > 0 ? (
+                    {team.filter(m => m.name !== ownerName).length > 0 ? (
                       <div style={{ display: 'grid', gap: '10px' }}>
-                        {team.filter(m => m.name !== ownerName && !(m.name === 'Alex' && m.role === 'UI Designer')).map(m => (
+                        {team.filter(m => m.name !== ownerName).map(m => (
                           <div key={m.name} className="glass-card" style={{ padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                               <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{m.name}</div>
