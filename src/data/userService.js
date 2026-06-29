@@ -14,7 +14,7 @@ const areEmailsSimilar = (e1, e2) => {
 export const userService = {
   areEmailsSimilar,
 
-  // Synchronous session check (from local cache)
+  // Synchronous session check (from local cache managed by auth listener)
   getCurrentUser: () => {
     const stored = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
     return stored ? JSON.parse(stored) : null;
@@ -60,14 +60,14 @@ export const userService = {
         }
       }
 
-      // Set session locally
+      // Auth listener will handle setting SESSION_KEY locally, 
+      // but we return the sessionData directly for immediate UI updates.
       const sessionData = { 
         id: finalUser.id,
         email: finalUser.email, 
         name: finalUser.name || name, 
         role: finalUser.role 
       };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
       
       return sessionData;
     } catch (e) {
@@ -75,20 +75,21 @@ export const userService = {
       const email = userData.email.toLowerCase().trim();
       let name = userData.name ? userData.name.trim() : email.split('@')[0];
       const sessionData = { email: email, name: name, role: userData.role || 'builder' };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
       return sessionData;
     }
   },
 
   logout: async (localOnly = false) => {
-    localStorage.removeItem(SESSION_KEY);
-    sessionStorage.removeItem(SESSION_KEY);
+    // Auth listener will handle removing SESSION_KEY
     if (!localOnly) {
       try {
         await supabase.auth.signOut();
       } catch (e) {
         console.error("Logout error", e);
       }
+    } else {
+      localStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_KEY);
     }
   },
 
@@ -112,6 +113,8 @@ export const userService = {
         .select()
         .single();
       if (!error && data) {
+        // Trigger a fake event or just rely on the next refresh for global state
+        // but for immediate reflection, we can patch the cache lightly.
         const current = userService.getCurrentUser() || {};
         localStorage.setItem(SESSION_KEY, JSON.stringify({ ...current, ...data }));
       }
@@ -320,25 +323,6 @@ export const userService = {
       delete mapped.stageIndex;
     }
 
-    // Save local-only fields (tasks, docs, logs, progress)
-    const localKeys = ['tasks', 'docs', 'contributionsLogs', 'progress'];
-    let hasLocalUpdates = false;
-    const localUpdates = {};
-
-    localKeys.forEach(k => {
-      if (mapped[k] !== undefined) {
-        localUpdates[k] = mapped[k];
-        hasLocalUpdates = true;
-      }
-    });
-
-    if (hasLocalUpdates) {
-      const storageKey = `collabnest_local_project_${problemId}`;
-      const existingStr = localStorage.getItem(storageKey);
-      const existing = existingStr ? JSON.parse(existingStr) : {};
-      localStorage.setItem(storageKey, JSON.stringify({ ...existing, ...localUpdates }));
-    }
-    
     const columnsToUpdate = {};
     const validColumns = ['title', 'description', 'domain', 'skills', 'difficulty', 'status', 'expected_outcome', 'project_goals', 'team_total', 'is_ai_generated', 'owner_email', 'owner_id', 'author', 'stage_index'];
     
@@ -694,3 +678,25 @@ export const userService = {
     }
   }
 };
+
+// Global Auth State Listener to automatically manage the local SESSION_KEY cache
+supabase.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+    if (session && session.user) {
+      const email = session.user.email;
+      // Fetch user profile from DB to ensure we have name and role
+      const { data: userRecord } = await supabase.from('users').select('*').eq('email', email).single();
+      if (userRecord) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          id: userRecord.id,
+          email: userRecord.email,
+          name: userRecord.name,
+          role: userRecord.role
+        }));
+      }
+    }
+  } else if (event === 'SIGNED_OUT') {
+    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+  }
+});
