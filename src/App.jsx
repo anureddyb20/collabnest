@@ -74,69 +74,85 @@ function App() {
   }, [user, showNotification]);
 
   useEffect(() => {
-    if (!supabase) {
-      console.error("Supabase is not initialized. Please check your .env variables.");
-      const localUser = userService.getCurrentUser();
-      if (localUser) {
-        setUser(localUser);
-      } else {
-        setUser(null);
-      }
-      setIsLoading(false);
-      return;
-    }
-
-    // Helper to sync user
-    const syncUser = async (session) => {
-      try {
-        if (session?.user) {
-          const email = session.user.email;
-          if (!email || !email.toLowerCase().endsWith('@vvce.ac.in')) {
-            await supabase.auth.signOut();
-            userService.logout(true);
-            setUser(null);
-            setTimeout(() => {
-              showNotification("Only VVCE college accounts are allowed.", "error", 8000);
-            }, 500);
-            return;
-          }
-
-          let name = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
-          if (!name || name.toLowerCase() === 'user' || name === email) {
-            name = email.split('@')[0];
-          }
-          let localUser = await userService.registerOrLogin({ 
-            email: email,
-            name: name
-          });
+    try {
+      if (!supabase) {
+        console.error("Supabase is not initialized. Please check your .env variables.");
+        const localUser = userService.getCurrentUser();
+        if (localUser) {
           setUser(localUser);
         } else {
-          userService.logout(true); // pass true for localOnly to avoid infinite loop
           setUser(null);
         }
-      } catch (err) {
-        console.error("Sync user error:", err);
-        setUser(null);
-      } finally {
         setIsLoading(false);
+        return;
       }
-    };
 
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      syncUser(session);
-    }).catch((error) => {
-      console.error("Supabase session error:", error);
+      // Helper to sync user
+      const syncUser = async (session) => {
+        try {
+          if (session?.user) {
+            const email = session.user.email;
+            if (!email || !email.toLowerCase().endsWith('@vvce.ac.in')) {
+              await supabase.auth.signOut();
+              userService.logout(true);
+              setUser(null);
+              setTimeout(() => {
+                showNotification("Only VVCE college accounts are allowed.", "error", 8000);
+              }, 500);
+              return;
+            }
+
+            let name = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
+            if (!name || name.toLowerCase() === 'user' || name === email) {
+              name = email.split('@')[0];
+            }
+            let localUser = await userService.registerOrLogin({ 
+              email: email,
+              name: name
+            });
+            setUser(localUser);
+          } else {
+            userService.logout(true); // pass true for localOnly to avoid infinite loop
+            setUser(null);
+          }
+        } catch (err) {
+          console.error("Sync user error:", err);
+          setUser(null);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      // Check initial session
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        syncUser(session);
+      }).catch((error) => {
+        console.error("Supabase session error:", error);
+        setIsLoading(false);
+      });
+
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'INITIAL_SESSION') return; // Handled by getSession()
+        syncUser(session);
+      });
+
+      // Ultimate fallback: Drop loading screen after 4 seconds regardless of what happens
+      const fallbackTimeout = setTimeout(() => {
+        setIsLoading((prev) => {
+          if (prev) console.warn("Loading screen dropped by 4-second safety fallback.");
+          return false;
+        });
+      }, 4000);
+
+      return () => {
+        subscription?.unsubscribe();
+        clearTimeout(fallbackTimeout);
+      };
+    } catch (criticalError) {
+      console.error("Critical error in App.jsx useEffect:", criticalError);
       setIsLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'INITIAL_SESSION') return; // Handled by getSession()
-      syncUser(session);
-    });
-
-    return () => subscription?.unsubscribe();
+    }
   }, []);
 
   if (isLoading) {
