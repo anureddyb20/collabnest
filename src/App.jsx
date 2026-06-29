@@ -122,15 +122,7 @@ function App() {
       }
     };
 
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      syncUser(session);
-    }).catch((error) => {
-      console.error("Supabase session error:", error);
-      setIsLoading(false);
-    });
-
-    // Listen for auth changes
+    // Listen for auth changes (fires INITIAL_SESSION automatically on mount)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       syncUser(session);
     });
