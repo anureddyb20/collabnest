@@ -157,8 +157,6 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
 
   // 1. Milestones & Progress State
   const stages = ['Idea', 'Validation', 'Prototype', 'MVP', 'Launch'];
-  const [stageIndex, setStageIndex] = useState(2); // Prototype by default
-  const progress = (stageIndex + 1) * 20;
 
   // 2. Team State
   const [team, setTeam] = useState([
@@ -223,6 +221,30 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
   const [newDocType, setNewDocType] = useState('PDF');
   const [selectedFile, setSelectedFile] = useState(null);
   const [docToDelete, setDocToDelete] = useState(null);
+  const [linkedTaskId, setLinkedTaskId] = useState('');
+
+  // 1. Dynamic Milestones & Progress State
+  const verifiedCount = (tasks.done || []).filter(t => t.verified).length;
+  const totalTasks = (tasks.todo?.length || 0) + (tasks.doing?.length || 0) + (tasks.done?.length || 0);
+  const docsCount = docsList.length;
+  const teamCount = team.length;
+
+  let calculatedStageIndex = 0; // Idea
+  if (teamCount >= 2 || verifiedCount >= 2) calculatedStageIndex = 1; // Validation
+  if (calculatedStageIndex >= 1 && verifiedCount >= 5 && docsCount >= 3) calculatedStageIndex = 2; // Prototype
+  if (calculatedStageIndex >= 2 && totalTasks > 0 && (verifiedCount / totalTasks) >= 0.7 && docsCount >= 1) calculatedStageIndex = 3; // MVP
+  const hasDemo = docsList.some(d => d.name.toLowerCase().includes('demo') || d.name.toLowerCase().includes('deployment') || d.name.toLowerCase().includes('launch') || d.name.toLowerCase().includes('final'));
+  if (calculatedStageIndex >= 3 && hasDemo) calculatedStageIndex = 4; // Launch
+
+  const stageIndex = calculatedStageIndex;
+
+  let progress = 0;
+  if (stageIndex === 0) progress = 10 + (teamCount >= 2 ? 10 : teamCount * 5);
+  else if (stageIndex === 1) progress = 20 + Math.min(20, verifiedCount * 4) + Math.min(10, docsCount * 3);
+  else if (stageIndex === 2) progress = 50 + Math.min(20, (totalTasks > 0 ? (verifiedCount / totalTasks) : 0) * 20) + (docsCount > 0 ? 10 : 0);
+  else if (stageIndex === 3) progress = 80 + (hasDemo ? 10 : 0);
+  else if (stageIndex === 4) progress = 100;
+  progress = Math.min(100, Math.floor(progress));
 
   // Persistence & Reject Modal states
   const [rejectedList, setRejectedList] = useState([]);
@@ -315,12 +337,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
         setContributionLogs(initialLogs);
       }
 
-      // Load stage index
-      if (latestProblem.stageIndex !== undefined) {
-        setStageIndex(latestProblem.stageIndex);
-      } else {
-        setStageIndex(2); // Prototype by default
-      }
+      // Dynamic stage index used natively through recalculation on render.
 
       // Load tasks
       let currentTasks = { todo: [], doing: [], done: [] };
@@ -335,7 +352,8 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                 id: t.id,
                 text: t.title,
                 assignee: t.assigned_to_name || t.assigned_to || 'Builder',
-                date: new Date(t.created_at).toLocaleDateString()
+                date: new Date(t.created_at).toLocaleDateString(),
+                verified: t.verified || false
               });
             }
           });
@@ -355,7 +373,6 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       }
       setTasks(currentTasks);
       
-      // Load docs
       if (isUUID) {
         const sbDocs = await userService.getDocuments(latestProblem.id);
         if (sbDocs.length > 0) {
@@ -366,7 +383,8 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
             size: d.size + " Bytes",
             uploader: d.uploaded_by_name || 'Builder',
             date: new Date(d.created_at).toLocaleDateString(),
-            content: d.content
+            content: d.content,
+            linkedTaskId: d.linked_task_id || d.linkedTaskId
           })));
         } else if (latestProblem.docs) {
           setDocsList(latestProblem.docs);
@@ -675,7 +693,8 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       id: uiTaskId,
       text: inlineTaskText.trim(),
       assignee: assigneeName,
-      date: 'Just now'
+      date: 'Just now',
+      verified: false
     };
     
     const updatedTasks = {
@@ -1049,8 +1068,8 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
             return (
               <div 
                 key={m} 
-                onClick={() => setStageIndex(i)}
-                style={{ position: 'relative', zIndex: 1, textAlign: 'center', cursor: 'pointer' }}
+                title={i === 1 ? "Validation: Needs 2 members or 2 verified tasks" : i === 2 ? "Prototype: Needs 5 verified tasks & 3 docs" : i === 3 ? "MVP: Needs 70% verified & 1 doc" : i === 4 ? "Launch: Needs Demo/Launch doc" : "Idea"}
+                style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}
               >
                 <div style={{ 
                   width: '24px', height: '24px', borderRadius: '50%', 
@@ -1235,7 +1254,14 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                         draggable={isOwner}
                         onDragStart={isOwner ? (e) => handleDragStart(e, task, status) : undefined}
                       >
-                        <div style={{ marginBottom: '8px', wordBreak: 'break-word', fontWeight: 500 }}>{taskText}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div style={{ marginBottom: '8px', wordBreak: 'break-word', fontWeight: 500 }}>{taskText}</div>
+                          {status === 'done' && (
+                            <span className={`badge ${task.verified ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: '0.65rem', marginLeft: '8px', whiteSpace: 'nowrap' }}>
+                              {task.verified ? '✅ Verified' : '🟠 Awaiting Proof'}
+                            </span>
+                          )}
+                        </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: getAssigneeColor(taskAssigneeName), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 600 }} title={`Assigned to ${taskAssigneeName}`}>
@@ -1727,7 +1753,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                         style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px', color: 'white' }}
                       />
                     </div>
-                    <div style={{ marginBottom: '24px' }}>
+                    <div style={{ marginBottom: '16px' }}>
                       <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Document Type</label>
                       <select 
                         value={newDocType}
@@ -1735,6 +1761,21 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                         className="custom-select"
                       >
                         {['PDF', 'Figma', 'Word', 'Markdown', 'Image', 'File'].map(t => <option key={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ marginBottom: '24px' }}>
+                      <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Link to Completed Task (Proof)</label>
+                      <select 
+                        value={linkedTaskId}
+                        onChange={(e) => setLinkedTaskId(e.target.value)}
+                        className="custom-select"
+                      >
+                        <option value="">-- No linked task --</option>
+                        {(tasks.done || []).filter(t => !t.verified).map(t => (
+                          <option key={typeof t === 'string' ? t : t.id} value={typeof t === 'string' ? t : t.id}>
+                            {typeof t === 'string' ? t : t.text}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
@@ -1751,13 +1792,27 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                               size: selectedFile ? selectedFile.size + " Bytes" : "1.2 MB",
                               uploader: currentUser?.name || "You",
                               date: "Just now",
-                              content: contentDataUrl
+                              content: contentDataUrl,
+                              linkedTaskId: linkedTaskId
                             };
                             
                             const isUUID = String(selectedProblem.id).length > 20;
 
                             const updatedDocs = [...docsList, newDoc];
                             setDocsList(updatedDocs);
+
+                            let updatedTasksForDoc = tasks;
+                            if (linkedTaskId) {
+                               const updatedDone = (tasks.done || []).map(t => {
+                                  const id = typeof t === 'string' ? t : t.id;
+                                  if (id === linkedTaskId) {
+                                     return typeof t === 'string' ? { id: t, text: t, verified: true, assignee: 'Anu', date: 'Just now' } : { ...t, verified: true };
+                                  }
+                                  return t;
+                               });
+                               updatedTasksForDoc = { ...tasks, done: updatedDone };
+                               setTasks(updatedTasksForDoc);
+                            }
                             
                             if (isUUID) {
                               await userService.uploadDocument({
@@ -1766,14 +1821,18 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                                 type: newDoc.type,
                                 size: selectedFile ? selectedFile.size : 1200000,
                                 uploaded_by: currentUser?.id,
-                                content: contentDataUrl
+                                content: contentDataUrl,
+                                linked_task_id: linkedTaskId || null
                               });
+                              if (linkedTaskId) {
+                                 await userService.saveTask({ id: linkedTaskId, verified: true });
+                              }
                               if (currentUser) {
                                 await analyticsService.awardXP(currentUser.id, 15, 'contribution');
                                 await analyticsService.logActivity(selectedProblem.id, currentUser.id, 'doc_uploaded', `${currentUser.name || 'A builder'} uploaded document: ${newDoc.name}`);
                               }
                             } else {
-                              userService.updateProblem(selectedProblem.id, { docs: updatedDocs });
+                              userService.updateProblem(selectedProblem.id, { docs: updatedDocs, tasks: updatedTasksForDoc });
                             }
                             
                             setNewDocName('');
