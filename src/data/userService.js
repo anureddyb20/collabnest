@@ -681,7 +681,7 @@ export const userService = {
 
 // Global Auth State Listener to automatically manage the local SESSION_KEY cache
 supabase.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+  if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
     if (session && session.user) {
       const email = session.user.email;
       // Fetch user profile from DB to ensure we have name and role

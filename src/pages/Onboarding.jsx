@@ -169,41 +169,67 @@ const Onboarding = ({ setUser, user }) => {
   };
 
   const handleRoleSelect = async (selectedRole) => {
-    setRole(selectedRole);
-    // Immediately save role choice to session so navigating away works correctly
-    const session = userService.getCurrentUser() || {};
-    const finalUser = await userService.registerOrLogin({ email: session.email, name: session.name, role: selectedRole });
-    setUser(finalUser);
-    
-    if (selectedRole === 'owner') {
-      const allProblems = await userService.getAllProblems();
-      const myProblems = allProblems.filter(
-        p => p.author && userService.areEmailsSimilar(p.author, finalUser.email)
-      );
+    try {
+      setRole(selectedRole);
+      // Use user prop first, fallback to cache, or default to safe empty object
+      const session = user || userService.getCurrentUser() || {};
       
-      if (myProblems.length > 0) {
-        myProblems.sort((a, b) => Number(b.id) - Number(a.id));
-        navigate(`/workspace/${myProblems[0].id}`);
-      } else {
-        setStep(3);
+      // Safety check: if email is missing, do not attempt to register, just proceed
+      if (!session.email) {
+        setStep(selectedRole === 'owner' ? 3 : 2);
+        return;
       }
-    } else {
-      setStep(2);
+      
+      const finalUser = await userService.registerOrLogin({ email: session.email, name: session.name, role: selectedRole });
+      setUser(finalUser);
+      
+      if (selectedRole === 'owner') {
+        const allProblems = await userService.getAllProblems();
+        const myProblems = allProblems.filter(
+          p => p.author && userService.areEmailsSimilar(p.author, finalUser.email)
+        );
+        
+        if (myProblems.length > 0) {
+          myProblems.sort((a, b) => Number(b.id) - Number(a.id));
+          navigate(`/workspace/${myProblems[0].id}`);
+        } else {
+          setStep(3);
+        }
+      } else {
+        setStep(2);
+      }
+    } catch (err) {
+      console.error("Error in handleRoleSelect:", err);
+      // Proceed gracefully even if backend fails
+      setStep(selectedRole === 'owner' ? 3 : 2);
     }
   };
 
   const handleFinish = async () => {
     const finalSkills = selectedSkills.length > 0 ? selectedSkills : ['Developer'];
-    const finalUser = await userService.registerOrLogin({ 
-      ...accountData, 
-      role,
-      skills: finalSkills,
-      motivations: selectedMotivations,
-      expertise: profileData.expertise,
-      experience: profileData.experience,
-      commitment: profileData.commitment
-    });
-    setUser(finalUser);
+    const session = user || userService.getCurrentUser() || {};
+    
+    if (!session.email) {
+       navigate('/hub');
+       return;
+    }
+
+    try {
+      const finalUser = await userService.registerOrLogin({ 
+        ...accountData, 
+        email: session.email,
+        name: session.name,
+        role,
+        skills: finalSkills,
+        motivations: selectedMotivations,
+        expertise: profileData.expertise,
+        experience: profileData.experience,
+        commitment: profileData.commitment
+      });
+      setUser(finalUser);
+    } catch (err) {
+      console.error("Error in handleFinish:", err);
+    }
     navigate('/hub');
   };
 
