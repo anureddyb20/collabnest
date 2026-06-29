@@ -122,8 +122,17 @@ function App() {
       }
     };
 
-    // Listen for auth changes (fires INITIAL_SESSION automatically on mount)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      syncUser(session);
+    }).catch((error) => {
+      console.error("Supabase session error:", error);
+      setIsLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') return; // Handled by getSession()
       syncUser(session);
     });
 
