@@ -28,10 +28,39 @@ const WorkspaceDashboard = () => {
         );
       };
 
+      // Enrich with true dynamic progress calculation matching Workspace.jsx
+      const enrichedWorkspaces = await Promise.all(allWorkspaces.map(async (p) => {
+        const tasks = await userService.getTasks(p.id);
+        const docs = await userService.getDocuments(p.id);
+        
+        const teamCount = p.team?.current || (p.teamMembers?.length ? p.teamMembers.length + 1 : 1);
+        const totalTasks = tasks.length;
+        const verifiedCount = tasks.filter(t => t.verified).length;
+        const docsCount = docs.length;
+        const hasDemo = docs.some(d => d.type === 'video/demo');
+
+        let stageIndex = 0; // Idea
+        if (teamCount >= 2 || verifiedCount >= 2) stageIndex = 1; // Validation
+        if (stageIndex >= 1 && verifiedCount >= 5 && docsCount >= 3) stageIndex = 2; // Prototype
+        if (stageIndex >= 2 && verifiedCount >= 10 && hasDemo) stageIndex = 3; // MVP
+        if (stageIndex >= 3 && verifiedCount >= 20) stageIndex = 4; // Launch
+
+        let progress = 0;
+        if (stageIndex === 0) progress = 10 + (teamCount >= 2 ? 10 : teamCount * 5);
+        else if (stageIndex === 1) progress = 20 + Math.min(20, verifiedCount * 4) + Math.min(10, docsCount * 3);
+        else if (stageIndex === 2) progress = 50 + Math.min(20, (totalTasks > 0 ? (verifiedCount / totalTasks) : 0) * 20) + (docsCount > 0 ? 10 : 0);
+        else if (stageIndex === 3) progress = 80 + (hasDemo ? 10 : 0);
+        else if (stageIndex === 4) progress = 100;
+        
+        progress = Math.min(100, Math.floor(progress));
+
+        return { ...p, calculatedStageIndex: stageIndex, dynamicProgress: progress };
+      }));
+
       // We want to show ALL projects the user owns or has joined.
       // We will sort them: Owned first, then Joined.
-      const owned = allWorkspaces.filter(isOwner).sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime());
-      const joined = allWorkspaces.filter(p => !isOwner(p)).sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime());
+      const owned = enrichedWorkspaces.filter(isOwner).sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime());
+      const joined = enrichedWorkspaces.filter(p => !isOwner(p)).sort((a, b) => new Date(b.created_at || Date.now()).getTime() - new Date(a.created_at || Date.now()).getTime());
       
       setMyProjects([...owned, ...joined]);
       setIsLoading(false);
@@ -88,11 +117,11 @@ const WorkspaceDashboard = () => {
               (project.ownerId && String(project.ownerId) === String(currentUser.id))
             );
             
-            const wProgress = ((project.stageIndex !== undefined ? project.stageIndex : 2) + 1) * 20;
+            const wProgress = project.dynamicProgress !== undefined ? project.dynamicProgress : (((project.stageIndex !== undefined ? project.stageIndex : 0) + 1) * 20);
             const wTeamSize = project.team?.current || (project.teamMembers?.length ? project.teamMembers.length + 1 : 2);
             const wMaxTeamSize = project.team?.total || 5;
             const pendingCount = (project.applications || []).filter(a => a.status === 'Pending').length;
-            const currentStage = stages[project.stageIndex || 2];
+            const currentStage = stages[project.calculatedStageIndex !== undefined ? project.calculatedStageIndex : (project.stageIndex || 0)];
             
             return (
               <motion.div
