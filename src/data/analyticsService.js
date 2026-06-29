@@ -267,8 +267,20 @@ class AnalyticsService {
       const ctCount = completedTasks?.length || 0;
       const udCount = uploadedDocs?.length || 0;
 
-      const dynamicXp = (cpCount * 20) + (jpCount * 5) + (ctCount * 10) + (udCount * 5) + 30; // 30 is base XP
+      // Fetch true materialized XP from user_reputation table
+      let dynamicXp = 30; // base XP
+      const { data: repData } = await supabase
+        .from('user_reputation')
+        .select('total_xp')
+        .eq('user_id', userId)
+        .single();
       
+      if (repData && repData.total_xp !== undefined) {
+        dynamicXp = repData.total_xp;
+      } else {
+        // Fallback for brand new users before triggers run
+        dynamicXp = (cpCount * 20) + (jpCount * 5) + (ctCount * 10) + (udCount * 5) + 30;
+      }
       // Compute Unique Collaborators Worked With
       let uniqueCollaborators = 0;
       if (joinedProjects && joinedProjects.length > 0) {

@@ -18,10 +18,10 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [profile, setProfile] = useState({
-    skills: currentUser?.skills || [],
-    domains: currentUser?.domains || [],
-    experience: currentUser?.experience || 'Entry Level',
-    availability: currentUser?.commitment || '5-10 hrs/week'
+    skills: [],
+    domains: [],
+    experience: 'Entry Level',
+    availability: '5-10 hrs/week'
   });
   const [profileSaved, setProfileSaved] = useState(false);
 
@@ -37,11 +37,22 @@ const Profile = () => {
         if (legacyAnalytics) setAnalytics(legacyAnalytics);
         if (realData) setRealProfile(realData);
       }
+      if (currentUser?.id) {
+        const settings = await userService.getUserSettings(currentUser.id);
+        if (settings) {
+          setProfile({
+            skills: settings.skills || [],
+            domains: settings.domains || [],
+            experience: settings.experience || 'Entry Level',
+            availability: settings.availability || '5-10 hrs/week'
+          });
+        }
+      }
       
       setIsLoading(false);
     };
     fetchProfileData();
-  }, []);
+  }, [currentUser?.id]);
 
   const showToast = (message) => {
     setToast(message);
@@ -59,11 +70,11 @@ const Profile = () => {
   };
 
   const saveProfile = async () => {
-    if (currentUser) {
-      await userService.updateProfile(currentUser.email, {
+    if (currentUser?.id) {
+      await userService.updateUserSettings(currentUser.id, {
         skills: profile.skills,
         experience: profile.experience,
-        commitment: profile.availability,
+        availability: profile.availability,
         domains: profile.domains
       });
     }

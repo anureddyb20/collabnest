@@ -121,6 +121,31 @@ export const userService = {
     }
   },
 
+  // User Settings API
+  getUserSettings: async (userId) => {
+    if (!userId) return null;
+    try {
+      const { data, error } = await supabase.from('user_settings').select('*').eq('user_id', userId).single();
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is no rows returned
+      return data || { skills: [], experience: 'Entry Level', availability: '5-10 hrs/week', domains: [] };
+    } catch (e) {
+      console.error("Error fetching user settings:", e);
+      return { skills: [], experience: 'Entry Level', availability: '5-10 hrs/week', domains: [] };
+    }
+  },
+
+  updateUserSettings: async (userId, settingsData) => {
+    if (!userId) return false;
+    try {
+      const { error } = await supabase.from('user_settings')
+        .upsert({ user_id: userId, ...settingsData }, { onConflict: 'user_id' });
+      return !error;
+    } catch (e) {
+      console.error("Error updating user settings:", e);
+      return false;
+    }
+  },
+
   getAllProblems: async () => {
     try {
       const { data: projects, error } = await supabase
@@ -166,6 +191,7 @@ export const userService = {
           author: p.author || p.owner_email,
           ownerId: p.owner_id,
           ownerEmail: p.owner_email,
+          stageIndex: p.stage_index !== undefined && p.stage_index !== null ? p.stage_index : (localData.stageIndex || 0),
           ...localData
         };
       };
@@ -288,8 +314,14 @@ export const userService = {
     const mapped = { ...updatedFields };
     if (mapped.desc) { mapped.description = mapped.desc; delete mapped.desc; }
     
-    // Save local-only fields (tasks, docs, logs, stage)
-    const localKeys = ['tasks', 'docs', 'contributionsLogs', 'stageIndex'];
+    // Map stageIndex to stage_index for Supabase
+    if (mapped.stageIndex !== undefined) {
+      mapped.stage_index = mapped.stageIndex;
+      delete mapped.stageIndex;
+    }
+
+    // Save local-only fields (tasks, docs, logs, progress)
+    const localKeys = ['tasks', 'docs', 'contributionsLogs', 'progress'];
     let hasLocalUpdates = false;
     const localUpdates = {};
 
@@ -308,7 +340,7 @@ export const userService = {
     }
     
     const columnsToUpdate = {};
-    const validColumns = ['title', 'description', 'domain', 'skills', 'difficulty', 'status', 'expected_outcome', 'project_goals', 'team_total', 'is_ai_generated', 'owner_email', 'owner_id', 'author'];
+    const validColumns = ['title', 'description', 'domain', 'skills', 'difficulty', 'status', 'expected_outcome', 'project_goals', 'team_total', 'is_ai_generated', 'owner_email', 'owner_id', 'author', 'stage_index'];
     
     Object.keys(mapped).forEach(key => {
       if (validColumns.includes(key)) {
@@ -485,15 +517,97 @@ export const userService = {
     }
   },
 
-  // Stub unused or unimplemented advanced functions
-  saveProblem: () => {},
-  getSavedProblems: async () => [],
-  joinTeam: () => {},
-  submitProposal: () => {},
-  getSubmissions: async () => [],
-  addNotification: () => {},
-  getNotifications: () => [],
-  markNotificationsRead: () => {},
+  // Advanced Proposal & Submission APIs
+  saveProblem: async (projectId) => {
+    const session = userService.getCurrentUser();
+    if (!session || !session.id) return false;
+    try {
+      const { error } = await supabase.from('saved_projects').insert({
+        user_id: session.id,
+        project_id: projectId
+      });
+      return !error;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+  getSavedProblems: async () => {
+    const session = userService.getCurrentUser();
+    if (!session || !session.id) return [];
+    try {
+      const { data, error } = await supabase.from('saved_projects')
+        .select('*, projects(*)')
+        .eq('user_id', session.id);
+      if (error) throw error;
+      return data ? data.map(d => d.projects) : [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  },
+  joinTeam: async (projectId) => {
+    // Legacy direct join stub, mapped to apply
+    return userService.applyToJoin(projectId, { motivation: 'I would like to join this team.', portfolio: '' });
+  },
+  submitProposal: async (projectId, proposalData) => {
+    return userService.applyToJoin(projectId, proposalData);
+  },
+  getSubmissions: async (projectId) => {
+    try {
+      const { data, error } = await supabase.from('project_applications')
+        .select('*, users(*)')
+        .eq('project_id', projectId);
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  },
+  // Notifications System (Backend persistent)
+  addNotification: async (userId, notificationData) => {
+    try {
+      const { error } = await supabase.from('notifications').insert({
+        user_id: userId,
+        title: notificationData.title,
+        message: notificationData.message,
+        type: notificationData.type || 'info',
+        link: notificationData.link || null
+      });
+      return !error;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
+  getNotifications: async (userId) => {
+    if (!userId) return [];
+    try {
+      const { data, error } = await supabase.from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  },
+  markNotificationsRead: async (userId) => {
+    if (!userId) return false;
+    try {
+      const { error } = await supabase.from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', userId)
+        .eq('is_read', false);
+      return !error;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  },
 
   // Workspace Collaboration APIs
   getTasks: async (projectId) => {

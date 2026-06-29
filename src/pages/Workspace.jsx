@@ -311,7 +311,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       }));
       setRejectedList(initialRejected);
 
-      const isUUID = String(latestProblem.id).length > 20;
+      const isUUID = true;
       if (isUUID) {
         const liveTimeline = await analyticsService.getProjectTimeline(latestProblem.id);
         if (liveTimeline && liveTimeline.length > 0) {
@@ -450,27 +450,33 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     if (!id || !supabase) return;
     
     // Check if ID is a valid UUID (not a mock project ID like '1')
-    const isUUID = String(id).length > 20;
+    const isUUID = true;
     if (!isUUID) return; 
 
     const channel = supabase
       .channel(`workspace-${id}`)
       .on(
         'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'projects',
-          filter: `id=eq.${id}`
-        },
+        { event: '*', schema: 'public', table: 'workspace_tasks', filter: `project_id=eq.${id}` },
         (payload) => {
-          const newData = payload.new;
-          if (newData.tasks) setTasks(newData.tasks);
-          if (newData.chat) setChatMessages(newData.chat);
-          if (newData.docs) setDocsList(newData.docs);
-          
-          // Sync new team members or applicants if the backend stores them in JSON
-          if (newData.teamMembers) setTeam(newData.teamMembers);
+          // Trigger a silent refresh of the data
+          refreshData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'workspace_chat_messages', filter: `project_id=eq.${id}` },
+        (payload) => {
+          // Trigger a silent refresh of the data
+          refreshData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'workspace_documents', filter: `project_id=eq.${id}` },
+        (payload) => {
+          // Trigger a silent refresh of the data
+          refreshData();
         }
       )
       .subscribe();
@@ -655,7 +661,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     setTaskAssignee('');
     setActiveInputColumn(null);
 
-    const isUUID = String(selectedProblem.id).length > 20;
+    const isUUID = true;
     if (isUUID) {
       await userService.saveTask({
         project_id: selectedProblem.id,
@@ -692,7 +698,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     };
     setTasks(updatedTasks);
     
-    const isUUID = String(selectedProblem.id).length > 20;
+    const isUUID = true;
     if (isUUID && taskId && taskId.length > 20) {
       await userService.saveTask({
         id: taskId,
@@ -718,7 +724,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     };
     setTasks(updatedTasks);
 
-    const isUUID = String(selectedProblem.id).length > 20;
+    const isUUID = true;
     if (isUUID && taskId && taskId.length > 20) {
       await userService.deleteTask(taskId);
     } else {
@@ -848,7 +854,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
       const updatedDocs = docsList.filter(d => d.name !== docToDelete);
       setDocsList(updatedDocs);
       
-      const isUUID = String(selectedProblem.id).length > 20;
+      const isUUID = true;
       if (isUUID && docObj && docObj.id) {
         await userService.deleteDocument(docObj.id);
       } else {
@@ -864,7 +870,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
     
-    const isUUID = String(selectedProblem.id).length > 20;
+    const isUUID = true;
     const msgText = chatInput.trim();
     
     const newMessage = {
@@ -1744,7 +1750,7 @@ const WorkspaceContent = ({ id, selectedProblem, allWorkspaces }) => {
                               linkedTaskId: linkedTaskId
                             };
                             
-                            const isUUID = String(selectedProblem.id).length > 20;
+                            const isUUID = true;
 
                             const updatedDocs = [...docsList, newDoc];
                             setDocsList(updatedDocs);
