@@ -101,15 +101,30 @@ const Onboarding = ({ setUser, user }) => {
     return () => clearInterval(timer);
   }, [showOtp]);
 
+  const checkSupabaseStatus = async () => {
+    try {
+      // Fast timeout (2 seconds) to avoid long hangs
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`, { 
+        method: 'HEAD',
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  };
+
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
       setErrorMsg('');
       
-      // Quick test to see if Supabase is reachable before we let it redirect
-      try {
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`, { method: 'HEAD' });
-      } catch (fetchError) {
+      // Quick test with timeout to see if Supabase is reachable
+      const isOnline = await checkSupabaseStatus();
+      if (!isOnline) {
         console.warn("Supabase auth failed to fetch (offline or paused). Falling back to local session for Google login.");
         const finalUser = await userService.registerOrLogin({ 
           email: 'googleuser@example.com', 
@@ -150,32 +165,37 @@ const Onboarding = ({ setUser, user }) => {
       setLoading(true);
       setErrorMsg('');
       
-      let authResult;
-      try {
-        if (isLoginMode) {
-          authResult = await supabase.auth.signInWithPassword({
-            email: accountData.email,
-            password: accountData.password,
-          });
-        } else {
-          authResult = await supabase.auth.signUp({
-            email: accountData.email,
-            password: accountData.password,
-            options: {
-              data: {
-                full_name: accountData.name,
-                name: accountData.name
+      const isOnline = await checkSupabaseStatus();
+      let authResult = {};
+      
+      if (!isOnline) {
+         authResult = { error: new Error('Failed to fetch') };
+      } else {
+        try {
+          if (isLoginMode) {
+            authResult = await supabase.auth.signInWithPassword({
+              email: accountData.email,
+              password: accountData.password,
+            });
+          } else {
+            authResult = await supabase.auth.signUp({
+              email: accountData.email,
+              password: accountData.password,
+              options: {
+                data: {
+                  full_name: accountData.name,
+                  name: accountData.name
+                }
               }
-            }
-          });
+            });
+          }
+        } catch (fetchError) {
+          authResult = { error: fetchError };
         }
-      } catch (fetchError) {
-        // If it throws an actual error (like TypeError: Failed to fetch)
-        authResult = { error: fetchError };
       }
 
       if (authResult.error) {
-        if (authResult.error.message === 'Failed to fetch' || authResult.error.message.includes('fetch')) {
+        if (authResult.error.message === 'Failed to fetch' || authResult.error.message.includes('fetch') || authResult.error.name === 'AbortError') {
           console.warn("Supabase auth failed to fetch (offline or paused). Falling back to local session.");
         } else {
           throw authResult.error;
