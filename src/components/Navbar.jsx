@@ -138,8 +138,14 @@ const Navbar = ({ user }) => {
                   {/* Tail Shadow */}
                   <path d="M 60 41 L 83.5 48.5 L 82 52 L 55 45 Z" fill="var(--secondary)" />
 
-                  {/* Back Wing */}
-                  <path d="M 28 46 L 8 46 C 8 30 18 28 28 32 Z" fill="var(--secondary)" />
+                  {/* Back Wing (shifted left for gap) */}
+                  <path d="M 22 46 L 5 46 C 5 30 15 28 22 32 Z" fill="var(--secondary)" />
+                  
+                  {/* Tail (with stroke for gap from shadow) */}
+                  <path d="M 50 35 L 85 45 L 82 52 L 55 45 Z" fill="var(--primary)" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round" />
+                  
+                  {/* Body (drawn over tail) */}
+                  <path d="M 25 28 C 25 48 42 52 58 43 L 62 35 C 50 25 44 20 42 12 Z" fill="var(--primary)" />
                   
                   {/* Head */}
                   <circle cx="34" cy="20" r="12" fill="var(--primary)" />
@@ -147,11 +153,8 @@ const Navbar = ({ user }) => {
                   {/* Beak */}
                   <path d="M 24 18 L 12 21 L 24 24 Z" fill="var(--primary)" />
                   
-                  {/* Body */}
-                  <path d="M 25 28 C 25 48 42 52 58 43 L 62 35 C 50 25 44 20 42 12 Z" fill="var(--primary)" />
-                  
-                  {/* Main Wing */}
-                  <path d="M 36 24 C 50 24 58 35 58 40 C 48 42 36 36 36 24 Z" fill="var(--secondary)" />
+                  {/* Main Wing (with stroke for gap from body) */}
+                  <path d="M 36 24 C 50 24 58 35 58 40 C 48 42 36 36 36 24 Z" fill="var(--secondary)" stroke="#ffffff" strokeWidth="2.5" strokeLinejoin="round" />
                   
                   {/* Eye */}
                   <circle cx="30" cy="16" r="2.5" fill="#FFF" />
