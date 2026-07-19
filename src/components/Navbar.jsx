@@ -140,8 +140,8 @@ const Navbar = ({ user }) => {
               {/* Nest base (bowl shape) */}
               <path d="M4 14C4 18.5 7.5 22 12 22C16.5 22 20 18.5 20 14" stroke="url(#nest-grad)" strokeWidth="3" strokeLinecap="round" />
               <path d="M7 16C9 18 15 18 17 16" stroke="url(#nest-grad)" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
-              {/* Bird / Checkmark shape */}
-              <path d="M8 10L11 13L16 5" stroke="url(#bird-grad)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              {/* Realistic Bird shape taking flight */}
+              <path d="M13 2C13 2 11 4.5 8 6C5 7.5 2 8 2 8C2 8 4 8.5 5 8C6 7.5 8 6.5 10 9C12 11.5 14 14 18 15C18 15 17 12 16 9C15 6 14 3.5 13 2Z" fill="url(#bird-grad)" />
             </svg>
           <span style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
             <span style={{ color: 'var(--primary)' }}>Collab</span><span style={{ color: 'var(--text-main)' }}>Nest</span>
