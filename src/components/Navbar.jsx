@@ -131,19 +131,31 @@ const Navbar = ({ user }) => {
               <span style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--primary)' }}>Nest</span>
               
               {/* Cute Bluebird over the 'st' */}
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ position: 'absolute', right: '-24px', top: '-8px' }}>
-                {/* Bird Tail */}
-                <path d="M19 14L23 16L21 18Z" fill="var(--secondary)" />
-                {/* Back Wing */}
-                <path d="M9 13C8 10 11 11 12 12C11 14 10 15 9 13Z" fill="var(--primary)" />
-                {/* Bird Body & Head */}
-                <path d="M15 5C13 5 11 7 11 10C11 11 11.5 11.5 12 12C9 12.5 7 14 7 17C7 19 8 20 11 20C14 20 17 18 18 15C18.5 12 19 8 15 5Z" fill="var(--primary)" />
-                {/* Main Wing */}
-                <path d="M13 12C14 10 17 10.5 19 12C20 13 19 16 17 17C14 18 12 16 13 12Z" fill="var(--secondary)" />
-                {/* Beak */}
-                <path d="M11 8L7 7.5L9 10Z" fill="var(--primary)" />
-                {/* Eye */}
-                <circle cx="13" cy="7.5" r="1" fill="#FFF" />
+              <svg width="48" height="48" viewBox="0 0 100 100" fill="none" style={{ position: 'absolute', right: '-34px', top: '-18px' }}>
+                <g transform="translate(10, 20)">
+                  {/* Tail */}
+                  <path d="M 50 35 L 85 45 L 82 52 L 55 45 Z" fill="var(--primary)" />
+                  {/* Tail Shadow */}
+                  <path d="M 60 41 L 83.5 48.5 L 82 52 L 55 45 Z" fill="var(--secondary)" />
+
+                  {/* Back Wing */}
+                  <path d="M 28 46 L 8 46 C 8 30 18 28 28 32 Z" fill="var(--secondary)" />
+                  
+                  {/* Head */}
+                  <circle cx="34" cy="20" r="12" fill="var(--primary)" />
+                  
+                  {/* Beak */}
+                  <path d="M 24 18 L 12 21 L 24 24 Z" fill="var(--primary)" />
+                  
+                  {/* Body */}
+                  <path d="M 25 28 C 25 48 42 52 58 43 L 62 35 C 50 25 44 20 42 12 Z" fill="var(--primary)" />
+                  
+                  {/* Main Wing */}
+                  <path d="M 36 24 C 50 24 58 35 58 40 C 48 42 36 36 36 24 Z" fill="var(--secondary)" />
+                  
+                  {/* Eye */}
+                  <circle cx="30" cy="16" r="2.5" fill="#FFF" />
+                </g>
               </svg>
             </div>
             
