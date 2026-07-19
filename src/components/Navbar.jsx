@@ -127,25 +127,20 @@ const Navbar = ({ user }) => {
           )}
           <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'flex' }}>
-            <defs>
-              <linearGradient id="left-leg-grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#8b5cf6" />
-                <stop offset="100%" stopColor="#6366f1" />
-              </linearGradient>
-              <linearGradient id="diagonal-grad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#6366f1" />
-                <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.8" />
-              </linearGradient>
-              <linearGradient id="right-leg-grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#4f46e5" />
-                <stop offset="100%" stopColor="#3b82f6" />
-              </linearGradient>
-            </defs>
-            <circle cx="5" cy="5" r="2.5" fill="#8b5cf6" />
-            <rect x="3.5" y="10" width="3" height="11" rx="1.5" fill="url(#left-leg-grad)" />
-            <rect x="14.5" y="10" width="3" height="11" rx="1.5" fill="url(#right-leg-grad)" />
-            <line x1="5" y1="10" x2="16" y2="21" stroke="url(#diagonal-grad)" strokeWidth="3" strokeLinecap="round" />
-          </svg>
+              <defs>
+                <linearGradient id="logo-grad-1" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#8b5cf6" />
+                  <stop offset="100%" stopColor="#3b82f6" />
+                </linearGradient>
+                <linearGradient id="logo-grad-2" x1="1" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f43f5e" />
+                  <stop offset="100%" stopColor="#8b5cf6" />
+                </linearGradient>
+              </defs>
+              <circle cx="9" cy="12" r="5" stroke="url(#logo-grad-1)" strokeWidth="3" />
+              <circle cx="15" cy="12" r="5" stroke="url(#logo-grad-2)" strokeWidth="3" strokeOpacity="0.8" />
+              <path d="M12 9.5C13.5 11 13.5 13 12 14.5C10.5 13 10.5 11 12 9.5Z" fill="#3b82f6" fillOpacity="0.5" />
+            </svg>
           <span style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
             <span style={{ color: 'var(--primary)' }}>Collab</span><span style={{ color: 'var(--text-main)' }}>Nest</span>
           </span>
