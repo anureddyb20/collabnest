@@ -125,28 +125,40 @@ const Navbar = ({ user }) => {
               <ArrowLeft size={18} />
             </button>
           )}
-          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'flex' }}>
-              <defs>
-                <linearGradient id="bird-grad" x1="0" y1="1" x2="1" y2="0">
-                  <stop offset="0%" stopColor="var(--primary)" />
-                  <stop offset="100%" stopColor="var(--secondary)" />
-                </linearGradient>
-                <linearGradient id="nest-grad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="var(--accent)" />
-                  <stop offset="100%" stopColor="var(--primary)" />
-                </linearGradient>
-              </defs>
-              {/* Nest base (bowl shape) */}
-              <path d="M4 14C4 18.5 7.5 22 12 22C16.5 22 20 18.5 20 14" stroke="url(#nest-grad)" strokeWidth="3" strokeLinecap="round" />
-              <path d="M7 16C9 18 15 18 17 16" stroke="url(#nest-grad)" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
-              {/* Realistic Bird shape taking flight */}
-              <path d="M13 2C13 2 11 4.5 8 6C5 7.5 2 8 2 8C2 8 4 8.5 5 8C6 7.5 8 6.5 10 9C12 11.5 14 14 18 15C18 15 17 12 16 9C15 6 14 3.5 13 2Z" fill="url(#bird-grad)" />
+          <Link to="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', marginTop: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+              <span style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#0F172A' }}>Collab</span>
+              <span style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--primary)' }}>Nest</span>
+              
+              {/* Cute Bluebird over the 'st' */}
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" style={{ position: 'absolute', right: '-24px', top: '-8px' }}>
+                {/* Bird Tail */}
+                <path d="M19 14L23 16L21 18Z" fill="var(--secondary)" />
+                {/* Back Wing */}
+                <path d="M9 13C8 10 11 11 12 12C11 14 10 15 9 13Z" fill="var(--primary)" />
+                {/* Bird Body & Head */}
+                <path d="M15 5C13 5 11 7 11 10C11 11 11.5 11.5 12 12C9 12.5 7 14 7 17C7 19 8 20 11 20C14 20 17 18 18 15C18.5 12 19 8 15 5Z" fill="var(--primary)" />
+                {/* Main Wing */}
+                <path d="M13 12C14 10 17 10.5 19 12C20 13 19 16 17 17C14 18 12 16 13 12Z" fill="var(--secondary)" />
+                {/* Beak */}
+                <path d="M11 8L7 7.5L9 10Z" fill="var(--primary)" />
+                {/* Eye */}
+                <circle cx="13" cy="7.5" r="1" fill="#FFF" />
+              </svg>
+            </div>
+            
+            {/* Swoosh Underline */}
+            <svg width="105%" height="8" viewBox="0 0 100 8" preserveAspectRatio="none" style={{ marginTop: '-2px' }}>
+              <path d="M0 6Q50 0 100 6" stroke="var(--primary)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
             </svg>
-          <span style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
-            <span style={{ color: 'var(--primary)' }}>Collab</span><span style={{ color: 'var(--text-main)' }}>Nest</span>
-          </span>
-        </Link>
+            
+            {/* Tagline */}
+            <div style={{ width: '100%', textAlign: 'center', marginTop: '2px' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748B', letterSpacing: '0.02em' }}>
+                Collaborate. Build. Grow.
+              </span>
+            </div>
+          </Link>
         </div>
 
         {isMobileView ? (
