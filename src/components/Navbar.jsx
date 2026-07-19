@@ -129,19 +129,19 @@ const Navbar = ({ user }) => {
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'flex' }}>
               <defs>
                 <linearGradient id="bird-grad" x1="0" y1="1" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#8b5cf6" />
-                  <stop offset="100%" stopColor="#6366f1" />
+                  <stop offset="0%" stopColor="var(--primary)" />
+                  <stop offset="100%" stopColor="var(--secondary)" />
                 </linearGradient>
                 <linearGradient id="nest-grad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" />
-                  <stop offset="100%" stopColor="#4f46e5" />
+                  <stop offset="0%" stopColor="var(--accent)" />
+                  <stop offset="100%" stopColor="var(--primary)" />
                 </linearGradient>
               </defs>
-              {/* Nest base */}
-              <path d="M3 14C3 18.5 7 22 12 22C17 22 21 18.5 21 14" stroke="url(#nest-grad)" strokeWidth="3" strokeLinecap="round" />
-              <path d="M6 17C9 19 15 19 18 17" stroke="url(#nest-grad)" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
-              {/* Bird */}
-              <path d="M12 16L7 9L12 12L17 5L14 13L12 16Z" fill="url(#bird-grad)" />
+              {/* Nest base (bowl shape) */}
+              <path d="M4 14C4 18.5 7.5 22 12 22C16.5 22 20 18.5 20 14" stroke="url(#nest-grad)" strokeWidth="3" strokeLinecap="round" />
+              <path d="M7 16C9 18 15 18 17 16" stroke="url(#nest-grad)" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+              {/* Bird / Checkmark shape */}
+              <path d="M8 10L11 13L16 5" stroke="url(#bird-grad)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           <span style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
             <span style={{ color: 'var(--primary)' }}>Collab</span><span style={{ color: 'var(--text-main)' }}>Nest</span>
