@@ -106,11 +106,21 @@ function App() {
             if (!name || name.toLowerCase() === 'user' || name === email) {
               name = email.split('@')[0];
             }
-            let localUser = await userService.registerOrLogin({ 
+            
+            // Fast-path: Set user immediately from cache to remove loading screen instantly
+            const cachedUser = userService.getCurrentUser();
+            if (cachedUser && cachedUser.email === email) {
+              setUser(cachedUser);
+              setIsLoading(false);
+            }
+
+            // Background sync with database
+            userService.registerOrLogin({ 
               email: email,
               name: name
+            }).then(localUser => {
+              setUser(localUser);
             });
-            setUser(localUser);
           } else {
             userService.logout(true); // pass true for localOnly to avoid infinite loop
             setUser(null);
