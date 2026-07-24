@@ -91,11 +91,16 @@ const Navbar = ({ user }) => {
   };
 
   const handleLogout = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
+    try {
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      userService.logout();
+      window.location.href = '/';
     }
-    userService.logout();
-    window.location.href = '/';
   };
 
   const navLinks = [
