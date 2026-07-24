@@ -98,8 +98,19 @@ const Navbar = ({ user }) => {
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
+      // Force destroy local caches
       userService.logout(true);
-      window.location.href = '/';
+      
+      // Guarantee Supabase tokens are wiped from localStorage
+      for (let key in localStorage) {
+        if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+          localStorage.removeItem(key);
+        }
+      }
+      
+      // Navigate and reload
+      navigate('/');
+      window.location.reload();
     }
   };
 
