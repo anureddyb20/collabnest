@@ -98,7 +98,7 @@ const Navbar = ({ user }) => {
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
-      userService.logout();
+      userService.logout(true);
       window.location.href = '/';
     }
   };
