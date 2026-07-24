@@ -1,5 +1,5 @@
-<svg viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g transform="translate(0, 15)">
+<svg viewBox="5 -10 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(90, 0) scale(-1, 1)">
     <!-- Tail -->
     <path d="M 50 35 L 85 45 L 82 52 L 55 45 Z" fill="#6C63FF" />
     <!-- Tail Shadow -->
