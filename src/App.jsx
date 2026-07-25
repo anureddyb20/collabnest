@@ -205,7 +205,7 @@ function App() {
   return (
     <Router>
       <div className={`app-container ${isMobileView ? 'mobile-view' : 'desktop-view'}`}>
-        <Navbar user={user} />
+        <Navbar user={user} setUser={setUser} />
         <main>
           <ErrorBoundary>
             <Routes>

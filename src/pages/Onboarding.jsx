@@ -95,7 +95,6 @@ const Onboarding = ({ setUser, user }) => {
     if (showOtp) {
       timer = setInterval(() => {
         setOtpCountdown(prev => prev > 0 ? prev - 1 : 0);
-        setMockExpiry(prev => prev > 0 ? prev - 1 : 0);
       }, 1000);
     }
     return () => clearInterval(timer);

@@ -6,7 +6,7 @@ import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
 import { supabase } from '../supabase';
 
-const Navbar = ({ user }) => {
+const Navbar = ({ user, setUser }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentUser = user || userService.getCurrentUser();
@@ -108,9 +108,12 @@ const Navbar = ({ user }) => {
         }
       }
       
-      // Navigate and reload
+      if (setUser) {
+        setUser(null);
+      }
+      
+      // Navigate
       navigate('/');
-      window.location.reload();
     }
   };
 

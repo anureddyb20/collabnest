@@ -60,6 +60,13 @@ export const userService = {
         }
       }
 
+      if (userRecord && userData.role && userRecord.role !== userData.role) {
+        const { data: updatedUser } = await supabase.from('users').update({ role: userData.role }).eq('email', email).select().single();
+        if (updatedUser) {
+          finalUser = { ...finalUser, ...updatedUser };
+        }
+      }
+
       // Auth listener will handle setting SESSION_KEY locally, 
       // but we return the sessionData directly for immediate UI updates.
       const sessionData = { 

@@ -39,7 +39,7 @@ const Landing = ({ user }) => {
             
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button 
-                onClick={() => window.location.href = user ? '/hub' : '/onboarding'}
+                onClick={() => navigate(user ? '/hub' : '/onboarding')}
                 className="btn-primary" 
                 style={{ padding: '16px 32px', fontSize: '1.1rem', cursor: 'pointer', zIndex: 10, position: 'relative' }}
               >
@@ -49,9 +49,9 @@ const Landing = ({ user }) => {
               <button 
                 onClick={() => {
                   if (user) {
-                    window.location.href = '/hub';
+                    navigate('/hub');
                   } else {
-                    window.location.href = '/onboarding';
+                    navigate('/onboarding');
                   }
                 }}
                 className="btn-outline" 
