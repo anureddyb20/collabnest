@@ -6,6 +6,7 @@ import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
 import { useNotification } from '../context/NotificationContext';
 import ClaimProjectModal from '../components/ClaimProjectModal';
+import LoadingScreen from '../components/LoadingScreen';
 
 const DOMAINS = ['All', 'AI/ML', 'FinTech', 'HealthTech', 'Sustainability', 'Education'];
 const DIFFICULTIES = ['All', 'Intermediate', 'Advanced', 'Expert'];
@@ -212,7 +213,7 @@ export default function BuilderHub({ user }) {
       {/* DISCOVER VIEW */}
       <div>
         {isLoading ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading projects...</div>
+          <LoadingScreen message="Loading projects..." />
         ) : (
           <>
         {/* Filters */}

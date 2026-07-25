@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Layout, Users, Activity, MessageSquare, Clock, Plus, Briefcase, ChevronRight } from 'lucide-react';
 import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
+import LoadingScreen from '../components/LoadingScreen';
 
 const WorkspaceDashboard = () => {
   const navigate = useNavigate();
@@ -96,7 +97,7 @@ const WorkspaceDashboard = () => {
       </div>
 
       {isLoading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading workspaces...</div>
+        <LoadingScreen message="Loading workspaces..." />
       ) : myProjects.length === 0 ? (
         <div className="glass-card" style={{ padding: '40px', textAlign: 'center' }}>
           <Briefcase size={48} color="var(--primary)" style={{ opacity: 0.5, margin: '0 auto 16px' }} />

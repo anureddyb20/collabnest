@@ -6,6 +6,7 @@ import { Search, Filter, TrendingUp, Users, Clock, Target, Plus, ChevronRight, B
 import { problems } from '../data/problems';
 import { userService } from '../data/userService';
 import { useView } from '../context/ViewContext';
+import LoadingScreen from '../components/LoadingScreen';
 import { useNotification } from '../context/NotificationContext';
 import ClaimProjectModal from '../components/ClaimProjectModal';
 import ConfirmModal from '../components/ConfirmModal';
@@ -359,7 +360,7 @@ const Hub = ({ user: initialUser }) => {
             }
           >
             {isLoading ? (
-              <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading projects...</div>
+              <LoadingScreen message="Loading projects..." />
             ) : (
               <AnimatePresence mode="popLayout">
                 {displayProblems.length > 0 ? displayProblems.map((p, i) => (

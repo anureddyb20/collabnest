@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LoadingScreen from '../components/LoadingScreen';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Award, Shield, Share2, Download, Briefcase, Zap, ExternalLink, Activity, Calendar, Users, CheckCircle, FileText, Target } from 'lucide-react';
 import { userService } from '../data/userService';
@@ -247,7 +248,7 @@ Generated via CollabNest Hub on ${new Date().toLocaleDateString()}
       </div>
       
       {isLoading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading profile...</div>
+        <LoadingScreen message="Loading profile..." />
       ) : (
       <div style={{ display: 'grid', gridTemplateColumns: isMobileView ? '1fr' : '350px 1fr', gap: isMobileView ? '24px' : '40px' }}>
         {/* Profile Info Sidebar */}
