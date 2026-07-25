@@ -82,13 +82,13 @@ const Onboarding = ({ setUser, user }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for a logged-in user
-    const session = userService.getCurrentUser();
-    // Always transition to Role Selection (Step 1) after login instead of skipping it
+    // Check for a logged-in user via prop OR local cache
+    const session = user || userService.getCurrentUser();
+    // If already logged in, skip account creation (step 0) and go to role selection (step 1)
     if (session && !showOtp && step === 0) {
       setStep(1);
     }
-  }, [step, showOtp]);
+  }, [step, showOtp, user]);
 
   useEffect(() => {
     let timer;
