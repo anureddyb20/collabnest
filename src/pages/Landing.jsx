@@ -1,12 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Code, Lightbulb, Users, Shield, BarChart, Award } from 'lucide-react';
 import { useView } from '../context/ViewContext';
+import { supabase } from '../supabase';
 
 const Landing = ({ user }) => {
   const navigate = useNavigate();
   const { isMobileView } = useView();
+  const [stats, setStats] = useState({ problems: 0, builders: 0, mvps: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Count active problems
+        const { count: problemCount } = await supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true });
+
+        // Count builders (registered users)
+        const { count: builderCount } = await supabase
+          .from('users')
+          .select('*', { count: 'exact', head: true });
+
+        // Count MVPs (projects at stage 3+)
+        const { count: mvpCount } = await supabase
+          .from('projects')
+          .select('*', { count: 'exact', head: true })
+          .gte('stage_index', 3);
+
+        setStats({
+          problems: problemCount || 0,
+          builders: builderCount || 0,
+          mvps: mvpCount || 0
+        });
+      } catch (err) {
+        console.error('Failed to fetch landing stats:', err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const features = [
     { icon: Lightbulb, title: "Problem-First Approach", desc: "Start with meaningful problems, then build the team." },
@@ -70,15 +103,15 @@ const Landing = ({ user }) => {
             style={{ marginTop: isMobileView ? '40px' : '60px', display: 'flex', justifyContent: isMobileView ? 'space-around' : 'center', gap: isMobileView ? '10px' : '60px', flexWrap: isMobileView ? 'wrap' : 'nowrap' }}
           >
             <div style={{ textAlign: 'center', flex: isMobileView ? '1 1 30%' : 'initial' }}>
-              <div style={{ fontSize: isMobileView ? '1.5rem' : '2rem', fontWeight: 700 }}>250+</div>
+              <div style={{ fontSize: isMobileView ? '1.5rem' : '2rem', fontWeight: 700 }}>{stats.problems}+</div>
               <div style={{ color: 'var(--text-muted)', fontSize: isMobileView ? '0.75rem' : '0.9rem' }}>Active Problems</div>
             </div>
             <div style={{ textAlign: 'center', flex: isMobileView ? '1 1 30%' : 'initial' }}>
-              <div style={{ fontSize: isMobileView ? '1.5rem' : '2rem', fontWeight: 700 }}>1.2k</div>
+              <div style={{ fontSize: isMobileView ? '1.5rem' : '2rem', fontWeight: 700 }}>{stats.builders}</div>
               <div style={{ color: 'var(--text-muted)', fontSize: isMobileView ? '0.75rem' : '0.9rem' }}>Builders joined</div>
             </div>
             <div style={{ textAlign: 'center', flex: isMobileView ? '1 1 30%' : 'initial' }}>
-              <div style={{ fontSize: isMobileView ? '1.5rem' : '2rem', fontWeight: 700 }}>45</div>
+              <div style={{ fontSize: isMobileView ? '1.5rem' : '2rem', fontWeight: 700 }}>{stats.mvps}</div>
               <div style={{ color: 'var(--text-muted)', fontSize: isMobileView ? '0.75rem' : '0.9rem' }}>MVPs Shipped</div>
             </div>
           </motion.div>
