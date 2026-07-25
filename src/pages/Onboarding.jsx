@@ -17,7 +17,11 @@ const AVAILABLE_SKILLS = [
 ];
 
 const Onboarding = ({ setUser, user }) => {
-  const [step, setStep] = useState(0); // 0: Account, 1: Role, 2: Profile, 3: Idea
+  const [step, setStep] = useState(() => {
+    // Start at role selection (step 1) if already logged in, avoiding a flash of the login form
+    if (user || userService.getCurrentUser()) return 1;
+    return 0;
+  }); // 0: Account, 1: Role, 2: Profile, 3: Idea
   const [accountData, setAccountData] = useState({ name: '', email: '', password: '' });
   const [role, setRole] = useState(null);
   const [isLoginMode, setIsLoginMode] = useState(false);
