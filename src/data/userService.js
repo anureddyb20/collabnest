@@ -11,6 +11,13 @@ const areEmailsSimilar = (e1, e2) => {
   return c1 === c2 || c1.includes(c2) || c2.includes(c1);
 };
 
+const withTimeout = (promise, ms = 2000) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Database request timed out')), ms))
+  ]);
+};
+
 export const userService = {
   areEmailsSimilar,
 
@@ -25,27 +32,35 @@ export const userService = {
       const email = userData.email.toLowerCase().trim();
       let name = userData.name ? userData.name.trim() : email.split('@')[0];
 
-      // Upsert into Supabase users table
-      const { data, error } = await supabase
-        .from('users')
-        .upsert({
-          email: email,
-          name: name,
-          role: userData.role || 'builder',
-          reputation: 30
-        }, { onConflict: 'email', ignoreDuplicates: true })
-        .select()
-        .single();
-        
-      if (error && error.code !== '23505') {
-        console.error("Supabase user upsert error:", error);
+      // Get authenticated user ID if possible (with fast timeout)
+      let authUserId = null;
+      if (supabase) {
+        try {
+          const { data: { session } } = await withTimeout(supabase.auth.getSession(), 1500);
+          if (session?.user && session.user.email?.toLowerCase().trim() === email) {
+            authUserId = session.user.id;
+          } else {
+            const { data: { user: authUser } } = await withTimeout(supabase.auth.getUser(), 1500);
+            if (authUser && authUser.email?.toLowerCase().trim() === email) {
+              authUserId = authUser.id;
+            }
+          }
+        } catch (e) {
+          console.warn("Could not retrieve auth session:", e);
+        }
       }
 
-      // Fetch to ensure we get the ID if it was ignored
-      const { data: userRecord } = await supabase.from('users').select('*').eq('email', email).single();
-      let finalUser = userRecord || data || { email, name, role: userData.role || 'builder' };
-
-      // If the existing name in the DB is generic (email prefix or Guest Builder), and we have a better name now, update it
+      // First check if user exists by email (with fast timeout)
+      let userRecord = null;
+      try {
+        const { data } = await withTimeout(supabase.from('users').select('*').eq('email', email).maybeSingle(), 1500);
+        userRecord = data;
+      } catch (e) {
+        console.warn("Could not query users table:", e);
+      }
+      
+      let finalUser = userRecord || { email, name, role: userData.role || 'builder' };
+      
       const emailPrefix = email.split('@')[0];
       const isGenericName = (dbName) => {
         if (!dbName) return true;
@@ -53,35 +68,87 @@ export const userService = {
         return lowerName === emailPrefix.toLowerCase() || lowerName === 'guest builder' || lowerName === 'user';
       };
 
-      if (userRecord && isGenericName(userRecord.name) && name && !isGenericName(name)) {
-        const { data: updatedUser } = await supabase.from('users').update({ name: name }).eq('email', email).select().single();
-        if (updatedUser) {
-          finalUser = updatedUser;
+      if (userRecord) {
+        // User exists. Update if needed
+        const updateFields = {};
+        if (isGenericName(userRecord.name) && name && !isGenericName(name)) {
+          updateFields.name = name;
+        }
+        if (userData.role && userRecord.role !== userData.role) {
+          updateFields.role = userData.role;
+        }
+        if (authUserId && userRecord.id !== authUserId) {
+          updateFields.id = authUserId;
+        }
+        
+        if (Object.keys(updateFields).length > 0) {
+          try {
+            const { data: updatedUser, error: updateErr } = await withTimeout(
+              supabase.from('users').update(updateFields).eq('email', email).select().single(),
+              1500
+            );
+            if (!updateErr && updatedUser) {
+              finalUser = updatedUser;
+            } else if (updateFields.id) {
+              // Retry without updating the primary key if it failed due to foreign key constraints
+              delete updateFields.id;
+              if (Object.keys(updateFields).length > 0) {
+                const { data: retryUser } = await withTimeout(
+                  supabase.from('users').update(updateFields).eq('email', email).select().single(),
+                  1500
+                );
+                finalUser = retryUser || userRecord;
+              }
+            }
+          } catch (e) {
+            console.error("Failed to update user profile fields:", e);
+          }
+        }
+      } else {
+        // User does not exist, insert them!
+        const insertData = {
+          email: email,
+          name: name,
+          role: userData.role || 'builder',
+          reputation: 30
+        };
+        if (authUserId) {
+          insertData.id = authUserId;
+        }
+        
+        try {
+          const { data: insertedUser, error: insertErr } = await withTimeout(
+            supabase.from('users').insert(insertData).select().single(),
+            2000
+          );
+          if (!insertErr && insertedUser) {
+            finalUser = insertedUser;
+          } else {
+            console.error("Failed to insert user profile:", insertErr);
+          }
+        } catch (e) {
+          console.error("Failed to insert user profile:", e);
         }
       }
 
-      if (userRecord && userData.role && userRecord.role !== userData.role) {
-        const { data: updatedUser } = await supabase.from('users').update({ role: userData.role }).eq('email', email).select().single();
-        if (updatedUser) {
-          finalUser = { ...finalUser, ...updatedUser };
-        }
-      }
-
-      // Auth listener will handle setting SESSION_KEY locally, 
-      // but we return the sessionData directly for immediate UI updates.
+      // If they are local fallback, set local session cache explicitly
       const sessionData = { 
-        id: finalUser.id,
+        id: finalUser.id || authUserId || 'local-id-' + Date.now(),
         email: finalUser.email, 
         name: finalUser.name || name, 
         role: finalUser.role 
       };
       
+      // Explicitly set the session key so that page reloads/refreshes don't lose the user
+      localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+      
       return sessionData;
     } catch (e) {
-      console.error(e);
+      console.error("Critical error in registerOrLogin:", e);
       const email = userData.email.toLowerCase().trim();
       let name = userData.name ? userData.name.trim() : email.split('@')[0];
       const sessionData = { email: email, name: name, role: userData.role || 'builder' };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
       return sessionData;
     }
   },
