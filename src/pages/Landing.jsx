@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Code, Lightbulb, Users, Shield, BarChart, Award } from 'lucide-react';
 import { useView } from '../context/ViewContext';
 import { supabase } from '../supabase';
+import { problems } from '../data/problems';
 
 const Landing = ({ user }) => {
   const navigate = useNavigate();
@@ -30,12 +31,14 @@ const Landing = ({ user }) => {
           .gte('stage_index', 3);
 
         setStats({
-          problems: problemCount || 0,
+          problems: problemCount || problems.length, // Fallback to local AI statements
           builders: builderCount || 0,
           mvps: mvpCount || 0
         });
       } catch (err) {
         console.error('Failed to fetch landing stats:', err);
+        // Ensure it doesn't show 0 if DB is paused
+        setStats(prev => ({ ...prev, problems: problems.length }));
       }
     };
     fetchStats();
