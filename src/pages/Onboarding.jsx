@@ -220,6 +220,7 @@ const Onboarding = ({ setUser, user }) => {
 
   const handleRoleSelect = async (selectedRole) => {
     try {
+      setLoading(true);
       setRole(selectedRole);
       // Use user prop first, fallback to cache, or default to safe empty object
       const session = user || userService.getCurrentUser() || {};
@@ -227,6 +228,7 @@ const Onboarding = ({ setUser, user }) => {
       // Safety check: if email is missing, do not attempt to register, just proceed
       if (!session.email) {
         setStep(selectedRole === 'owner' ? 3 : 2);
+        setLoading(false);
         return;
       }
       
@@ -252,6 +254,8 @@ const Onboarding = ({ setUser, user }) => {
       console.error("Error in handleRoleSelect:", err);
       // Proceed gracefully even if backend fails
       setStep(selectedRole === 'owner' ? 3 : 2);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -424,13 +428,13 @@ const Onboarding = ({ setUser, user }) => {
               <div 
                 className={`glass-card ${role === 'owner' ? 'active-role' : ''}`}
                 style={{ 
-                  padding: '40px', cursor: 'pointer', border: role === 'owner' ? '2px solid var(--primary)' : '1px solid var(--border)',
-                  position: 'relative', transition: 'all 0.3s ease'
+                  padding: '40px', cursor: loading ? 'not-allowed' : 'pointer', border: role === 'owner' ? '2px solid var(--primary)' : '1px solid var(--border)',
+                  position: 'relative', transition: 'all 0.3s ease', opacity: loading ? 0.7 : 1
                 }}
-                onClick={() => handleRoleSelect('owner')}
+                onClick={() => !loading && handleRoleSelect('owner')}
               >
                 <div style={{ color: 'var(--secondary)', marginBottom: '20px' }}>
-                  <Lightbulb size={48} />
+                  {loading && role === 'owner' ? <Loader2 className="animate-spin" size={48} /> : <Lightbulb size={48} />}
                 </div>
                 <h3>I have an idea</h3>
                 <p style={{ color: 'var(--text-muted)', marginTop: '12px', fontSize: '0.9rem' }}>
@@ -441,13 +445,13 @@ const Onboarding = ({ setUser, user }) => {
               <div 
                 className={`glass-card ${role === 'builder' ? 'active-role' : ''}`}
                 style={{ 
-                  padding: '40px', cursor: 'pointer', border: role === 'builder' ? '2px solid var(--primary)' : '1px solid var(--border)',
-                  transition: 'all 0.3s ease'
+                  padding: '40px', cursor: loading ? 'not-allowed' : 'pointer', border: role === 'builder' ? '2px solid var(--primary)' : '1px solid var(--border)',
+                  transition: 'all 0.3s ease', opacity: loading ? 0.7 : 1
                 }}
-                onClick={() => handleRoleSelect('builder')}
+                onClick={() => !loading && handleRoleSelect('builder')}
               >
                 <div style={{ color: 'var(--accent)', marginBottom: '20px' }}>
-                  <Code size={48} />
+                  {loading && role === 'builder' ? <Loader2 className="animate-spin" size={48} /> : <Code size={48} />}
                 </div>
                 <h3>I want to build</h3>
                 <p style={{ color: 'var(--text-muted)', marginTop: '12px', fontSize: '0.9rem' }}>

@@ -93,7 +93,9 @@ const Navbar = ({ user, setUser }) => {
   const handleLogout = async () => {
     try {
       if (supabase) {
-        await supabase.auth.signOut();
+        // Wrap signOut in a short timeout so it doesn't hang if backend is paused/offline
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000));
+        await Promise.race([supabase.auth.signOut(), timeoutPromise]).catch(() => {});
       }
     } catch (err) {
       console.error("Logout error:", err);
@@ -102,11 +104,11 @@ const Navbar = ({ user, setUser }) => {
       userService.logout(true);
       
       // Guarantee Supabase tokens are wiped from localStorage
-      for (let key in localStorage) {
+      Object.keys(localStorage).forEach(key => {
         if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
           localStorage.removeItem(key);
         }
-      }
+      });
       
       if (setUser) {
         setUser(null);
