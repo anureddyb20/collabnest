@@ -1,8 +1,9 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 
 const LoadingScreen = ({ message = 'Loading...' }) => {
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
@@ -57,7 +58,8 @@ const LoadingScreen = ({ message = 'Loading...' }) => {
           {message}
         </motion.div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
 
