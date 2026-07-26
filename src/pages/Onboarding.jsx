@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Lightbulb, Code, ChevronRight, CheckCircle2, Loader2, AlertCircle, X } from 'lucide-react';
+import { Lightbulb, Code, ChevronRight, CheckCircle2, Loader2, AlertCircle, X, Eye, EyeOff } from 'lucide-react';
 import { userService } from '../data/userService';
 import { supabase } from '../supabase';
 
@@ -32,6 +32,7 @@ const Onboarding = ({ setUser, user }) => {
   const [otpValues, setOtpValues] = useState(['', '', '', '', '', '']);
   const [otpCountdown, setOtpCountdown] = useState(0);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   
   const [profileData, setProfileData] = useState({
@@ -350,14 +351,27 @@ const Onboarding = ({ setUser, user }) => {
 
               <div style={{ marginBottom: '24px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Password</label>
-                <input 
-                  type="password" 
-                  required
-                  value={accountData.password}
-                  onChange={(e) => setAccountData({...accountData, password: e.target.value})}
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', color: 'white', fontSize: '1rem' }}
-                  placeholder="••••••••"
-                />
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    required
+                    value={accountData.password}
+                    onChange={(e) => setAccountData({...accountData, password: e.target.value})}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', paddingRight: '48px', color: 'white', fontSize: '1rem' }}
+                    placeholder="••••••••"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ 
+                      position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', 
+                      background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <button 
