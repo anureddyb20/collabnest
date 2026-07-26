@@ -9,46 +9,10 @@ import { problems } from '../data/problems';
 const Landing = ({ user }) => {
   const navigate = useNavigate();
   const { isMobileView } = useView();
-  const [stats, setStats] = useState({ problems: 0, builders: 0, mvps: 0 });
+  const [stats, setStats] = useState({ problems: 46, builders: 15, mvps: 0 });
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const withTimeout = (promise, ms = 1500) => {
-          return Promise.race([
-            promise,
-            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
-          ]);
-        };
-
-        // Count active problems
-        const { count: problemCount } = await withTimeout(supabase
-          .from('projects')
-          .select('*', { count: 'exact', head: true }));
-
-        // Count builders (registered users)
-        const { count: builderCount } = await withTimeout(supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true }));
-
-        // Count MVPs (projects at stage 3+)
-        const { count: mvpCount } = await withTimeout(supabase
-          .from('projects')
-          .select('*', { count: 'exact', head: true })
-          .gte('stage_index', 3));
-
-        setStats({
-          problems: problemCount || problems.length, // Fallback to local AI statements
-          builders: builderCount || 0,
-          mvps: mvpCount || 0
-        });
-      } catch (err) {
-        console.warn('Backend paused or unresponsive. Using fallback stats.');
-        // Ensure it doesn't show 0 if DB is paused/hanging
-        setStats(prev => ({ ...prev, problems: problems.length }));
-      }
-    };
-    fetchStats();
+    // Stats are now static to ensure they show the same number every time.
   }, []);
 
   const features = [
