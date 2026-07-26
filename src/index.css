@@ -438,9 +438,11 @@ h1, h2, h3, h4 {
   }
 
   .landing-stats-mobile {
-    flex-direction: column !important;
-    gap: 30px !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
     align-items: center !important;
+    flex-wrap: nowrap !important;
   }
 
   /* Remove hover effects on mobile */
