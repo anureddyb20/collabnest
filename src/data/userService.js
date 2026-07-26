@@ -106,18 +106,25 @@ export const userService = {
         }
         
         try {
-          const { data: insertedUser, error: insertErr } = await withTimeout(
-            supabase.from('users').insert(insertData).select().single(),
+          // Use upsert with ignoreDuplicates to safely handle TOCTOU race conditions 
+          // without triggering a 23505 Unique Violation error in the Postgres logs.
+          const { data: insertedUser, error: upsertErr } = await withTimeout(
+            supabase.from('users')
+              .upsert(insertData, { onConflict: 'email', ignoreDuplicates: true })
+              .select()
+              .maybeSingle(),
             2000
           );
-          if (!insertErr && insertedUser) {
+          
+          if (insertedUser) {
             finalUser = insertedUser;
-          } else if (insertErr && (insertErr.code === '23505' || insertErr.message?.includes('duplicate'))) {
-            // Race condition: another concurrent request inserted this user.
+          } else if (!upsertErr) {
+            // No error, but no user returned means the conflict was safely ignored.
+            // Fetch the existing user instead.
             const { data: existingUser } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
             if (existingUser) finalUser = existingUser;
-          } else if (insertErr) {
-            console.error("Failed to insert user profile:", insertErr);
+          } else {
+            console.error("Failed to upsert user profile:", upsertErr);
           }
         } catch (e) {
           // Suppress transient timeout logs
