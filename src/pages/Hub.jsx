@@ -20,6 +20,7 @@ const Hub = ({ user: initialUser }) => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeSidebar, setActiveSidebar] = useState('Problems');
   const [displayProblems, setDisplayProblems] = useState([]);
+  const [allProblemsRaw, setAllProblemsRaw] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState(userService.getCurrentUser() || { joined: [], saved: [], submissions: [], reputation: 0 });
   const [showPostModal, setShowPostModal] = useState(false);
@@ -68,10 +69,19 @@ const Hub = ({ user: initialUser }) => {
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchFromDB = async () => {
       setIsLoading(true);
-      let list = [];
       const all = await userService.getAllProblems();
+      setAllProblemsRaw(all);
+      setIsLoading(false);
+    };
+    fetchFromDB();
+  }, [refreshKey, initialUser, userData?.id]);
+
+  useEffect(() => {
+    const applyFilters = async () => {
+      let list = [];
+      const all = allProblemsRaw;
 
       if (activeSidebar === 'Problems') {
         list = all.filter(p => p.visibility !== 'private' || isProblemMine(p, userData) || isOwnerFn(p, userData));
@@ -101,11 +111,10 @@ const Hub = ({ user: initialUser }) => {
       }
 
       setDisplayProblems([...list]);
-      setIsLoading(false);
     };
 
-    fetchData();
-  }, [activeSidebar, activeFilter, refreshKey, initialUser, userData]);
+    applyFilters();
+  }, [activeSidebar, activeFilter, allProblemsRaw, userData]);
 
   const handleClaim = async (id) => {
     const session = userService.getCurrentUser();
