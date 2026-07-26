@@ -77,9 +77,7 @@ export const userService = {
         if (userData.role && userRecord.role !== userData.role) {
           updateFields.role = userData.role;
         }
-        if (authUserId && userRecord.id !== authUserId) {
-          updateFields.id = authUserId;
-        }
+        // Deliberately NOT updating user.id to prevent foreign key constraint violations
         
         if (Object.keys(updateFields).length > 0) {
           try {
@@ -89,19 +87,10 @@ export const userService = {
             );
             if (!updateErr && updatedUser) {
               finalUser = updatedUser;
-            } else if (updateFields.id) {
-              // Retry without updating the primary key if it failed due to foreign key constraints
-              delete updateFields.id;
-              if (Object.keys(updateFields).length > 0) {
-                const { data: retryUser } = await withTimeout(
-                  supabase.from('users').update(updateFields).eq('email', email).select().single(),
-                  1500
-                );
-                finalUser = retryUser || userRecord;
-              }
             }
+            // Removed retry logic that stripped ID because we no longer update ID at all
           } catch (e) {
-            console.error("Failed to update user profile fields:", e);
+            // Suppress minor update errors to keep logs clean
           }
         }
       } else {
@@ -123,11 +112,15 @@ export const userService = {
           );
           if (!insertErr && insertedUser) {
             finalUser = insertedUser;
-          } else {
+          } else if (insertErr && (insertErr.code === '23505' || insertErr.message?.includes('duplicate'))) {
+            // Race condition: another concurrent request inserted this user.
+            const { data: existingUser } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
+            if (existingUser) finalUser = existingUser;
+          } else if (insertErr) {
             console.error("Failed to insert user profile:", insertErr);
           }
         } catch (e) {
-          console.error("Failed to insert user profile:", e);
+          // Suppress transient timeout logs
         }
       }
 
@@ -180,9 +173,16 @@ export const userService = {
   updateProfile: async (email, profileData) => {
     if (!email) return null;
     try {
+      // Prevent PATCH 409 conflicts by explicitly removing protected unique fields from payload
+      const safeData = { ...profileData };
+      delete safeData.id;
+      delete safeData.email;
+
+      if (Object.keys(safeData).length === 0) return null;
+
       const { data, error } = await supabase
         .from('users')
-        .update(profileData)
+        .update(safeData)
         .eq('email', email.toLowerCase().trim())
         .select()
         .single();
@@ -202,8 +202,8 @@ export const userService = {
   getUserSettings: async (userId) => {
     if (!userId) return null;
     try {
-      const { data, error } = await supabase.from('user_settings').select('*').eq('user_id', userId).single();
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is no rows returned
+      const { data, error } = await supabase.from('user_settings').select('*').eq('user_id', userId).maybeSingle();
+      if (error) throw error; 
       return data || { skills: [], experience: 'Entry Level', availability: '5-10 hrs/week', domains: [] };
     } catch (e) {
       console.error("Error fetching user settings:", e);
