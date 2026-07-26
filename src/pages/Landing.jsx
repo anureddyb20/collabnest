@@ -14,21 +14,28 @@ const Landing = ({ user }) => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        const withTimeout = (promise, ms = 1500) => {
+          return Promise.race([
+            promise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+          ]);
+        };
+
         // Count active problems
-        const { count: problemCount } = await supabase
+        const { count: problemCount } = await withTimeout(supabase
           .from('projects')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true }));
 
         // Count builders (registered users)
-        const { count: builderCount } = await supabase
+        const { count: builderCount } = await withTimeout(supabase
           .from('users')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true }));
 
         // Count MVPs (projects at stage 3+)
-        const { count: mvpCount } = await supabase
+        const { count: mvpCount } = await withTimeout(supabase
           .from('projects')
           .select('*', { count: 'exact', head: true })
-          .gte('stage_index', 3);
+          .gte('stage_index', 3));
 
         setStats({
           problems: problemCount || problems.length, // Fallback to local AI statements
@@ -36,8 +43,8 @@ const Landing = ({ user }) => {
           mvps: mvpCount || 0
         });
       } catch (err) {
-        console.error('Failed to fetch landing stats:', err);
-        // Ensure it doesn't show 0 if DB is paused
+        console.warn('Backend paused or unresponsive. Using fallback stats.');
+        // Ensure it doesn't show 0 if DB is paused/hanging
         setStats(prev => ({ ...prev, problems: problems.length }));
       }
     };
