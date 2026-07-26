@@ -70,9 +70,24 @@ const Hub = ({ user: initialUser }) => {
 
   useEffect(() => {
     const fetchFromDB = async () => {
-      setIsLoading(true);
+      const cached = localStorage.getItem('collabnest_hub_cache');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.length > 0) {
+            setAllProblemsRaw(parsed);
+            setIsLoading(false);
+          }
+        } catch (e) {}
+      } else {
+        setIsLoading(true);
+      }
+      
       const all = await userService.getAllProblems();
       setAllProblemsRaw(all);
+      try {
+        localStorage.setItem('collabnest_hub_cache', JSON.stringify(all));
+      } catch (e) {}
       setIsLoading(false);
     };
     fetchFromDB();
