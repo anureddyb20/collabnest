@@ -20,8 +20,17 @@ const Hub = ({ user: initialUser }) => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeSidebar, setActiveSidebar] = useState('Problems');
   const [displayProblems, setDisplayProblems] = useState([]);
-  const [allProblemsRaw, setAllProblemsRaw] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [allProblemsRaw, setAllProblemsRaw] = useState(() => {
+    const cached = localStorage.getItem('collabnest_hub_cache');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return problems;
+  });
+  const [isLoading, setIsLoading] = useState(false);
   const [userData, setUserData] = useState(userService.getCurrentUser() || { joined: [], saved: [], submissions: [], reputation: 0 });
   const [showPostModal, setShowPostModal] = useState(false);
   const [newProblem, setNewProblem] = useState({ 
@@ -70,25 +79,11 @@ const Hub = ({ user: initialUser }) => {
 
   useEffect(() => {
     const fetchFromDB = async () => {
-      const cached = localStorage.getItem('collabnest_hub_cache');
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-          if (parsed && parsed.length > 0) {
-            setAllProblemsRaw(parsed);
-            setIsLoading(false);
-          }
-        } catch (e) {}
-      } else {
-        setIsLoading(true);
-      }
-      
       const all = await userService.getAllProblems();
       setAllProblemsRaw(all);
       try {
         localStorage.setItem('collabnest_hub_cache', JSON.stringify(all));
       } catch (e) {}
-      setIsLoading(false);
     };
     fetchFromDB();
   }, [refreshKey, initialUser, userData?.id]);
