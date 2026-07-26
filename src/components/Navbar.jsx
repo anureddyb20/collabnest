@@ -15,6 +15,33 @@ const Navbar = ({ user, setUser }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [showNavHint, setShowNavHint] = useState(false);
+
+  React.useEffect(() => {
+    if (isMobileView && currentUser) {
+      const hintSeen = localStorage.getItem('navigation_hint_seen');
+      if (!hintSeen) {
+        // Slight delay so it doesn't pop up instantly on page load
+        const timerId = setTimeout(() => {
+          setShowNavHint(true);
+          const hideTimer = setTimeout(() => {
+            setShowNavHint(false);
+            localStorage.setItem('navigation_hint_seen', 'true');
+          }, 5000);
+          return () => clearTimeout(hideTimer);
+        }, 1000);
+        return () => clearTimeout(timerId);
+      }
+    }
+  }, [isMobileView, currentUser]);
+
+  const handleMenuClick = () => {
+    setIsMenuOpen(!isMenuOpen);
+    if (showNavHint) {
+      setShowNavHint(false);
+      localStorage.setItem('navigation_hint_seen', 'true');
+    }
+  };
 
   React.useEffect(() => {
     if (!currentUser?.id || !supabase) return;
@@ -148,11 +175,11 @@ const Navbar = ({ user, setUser }) => {
           )}
           <Link to="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', marginTop: '4px' }}>
             <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-              <span style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#0F172A' }}>Collab</span>
-              <span style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--primary)' }}>Nest</span>
+              <span style={{ fontSize: isMobileView ? '1.6rem' : '2rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#0F172A' }}>Collab</span>
+              <span style={{ fontSize: isMobileView ? '1.6rem' : '2rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--primary)' }}>Nest</span>
               
               {/* Cute Bluebird over the 'st' */}
-              <svg width="48" height="48" viewBox="0 0 100 100" fill="none" style={{ position: 'absolute', right: '-34px', top: '-18px' }}>
+              <svg width={isMobileView ? "38" : "48"} height={isMobileView ? "38" : "48"} viewBox="0 0 100 100" fill="none" style={{ position: 'absolute', right: isMobileView ? '-26px' : '-34px', top: isMobileView ? '-14px' : '-18px' }}>
                 <g transform="translate(10, 20)">
                   {/* Tail */}
                   <path d="M 50 35 L 85 45 L 82 52 L 55 45 Z" fill="var(--primary)" />
@@ -190,7 +217,7 @@ const Navbar = ({ user, setUser }) => {
             
             {/* Tagline */}
             <div style={{ width: '100%', textAlign: 'center', marginTop: '2px' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748B', letterSpacing: '0.02em' }}>
+              <span style={{ fontSize: isMobileView ? '0.6rem' : '0.7rem', fontWeight: 600, color: '#64748B', letterSpacing: '0.02em' }}>
                 Collaborate. Build. Grow.
               </span>
             </div>
@@ -211,13 +238,52 @@ const Navbar = ({ user, setUser }) => {
                 </button>
               </div>
             )}
-            <button 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="btn-ghost"
-              style={{ padding: '8px' }}
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={handleMenuClick}
+                className="btn-ghost"
+                style={{ padding: '8px' }}
+              >
+                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+              <AnimatePresence>
+                {showNavHint && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                    style={{ 
+                      position: 'absolute', 
+                      top: 'calc(100% + 10px)', 
+                      right: '0', 
+                      background: '#1E293B', 
+                      color: 'white', 
+                      padding: '12px 16px', 
+                      borderRadius: '12px', 
+                      boxShadow: 'var(--shadow-premium)',
+                      fontSize: '0.85rem', 
+                      fontWeight: 600, 
+                      whiteSpace: 'nowrap',
+                      zIndex: 100,
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    {/* Tooltip Arrow */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '-5px',
+                      right: '18px',
+                      width: '12px',
+                      height: '12px',
+                      background: '#1E293B',
+                      transform: 'rotate(45deg)',
+                      borderRadius: '2px'
+                    }} />
+                    👆 Tap here to explore workspace
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         ) : (
           <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
