@@ -401,14 +401,12 @@ h1, h2, h3, h4 {
   
   /* Compact cards */
   .glass-card {
-    padding: 16px !important;
     border-radius: 16px !important;
     border-bottom-width: 3px !important;
     border-right-width: 3px !important;
   }
   
   .glass-panel {
-    padding: 16px !important;
     border-radius: 16px !important;
   }
 

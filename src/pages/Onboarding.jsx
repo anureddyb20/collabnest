@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lightbulb, Code, ChevronRight, CheckCircle2, Loader2, AlertCircle, X, Eye, EyeOff } from 'lucide-react';
 import { userService } from '../data/userService';
 import { supabase } from '../supabase';
+import { useView } from '../context/ViewContext';
 
 const AVAILABLE_SKILLS = [
   "JavaScript", "TypeScript", "Python", "Java", "C++", "C#", "Ruby", "Go", "Rust", "Swift", "Kotlin", "PHP",
@@ -22,6 +23,7 @@ const Onboarding = ({ setUser, user }) => {
     if (user || userService.getCurrentUser()) return 1;
     return 0;
   }); // 0: Account, 1: Role, 2: Profile, 3: Idea
+  const { isMobileView } = useView();
   const [accountData, setAccountData] = useState({ name: '', email: '', password: '' });
   const [role, setRole] = useState(null);
   const [isLoginMode, setIsLoginMode] = useState(false);
@@ -298,7 +300,7 @@ const Onboarding = ({ setUser, user }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className="glass-panel"
-            style={{ padding: '48px', maxWidth: '500px', width: '100%' }}
+            style={{ padding: isMobileView ? '24px' : '48px', maxWidth: '500px', width: '100%' }}
           >
             <button 
               onClick={() => navigate('/')}
@@ -433,16 +435,16 @@ const Onboarding = ({ setUser, user }) => {
             exit={{ opacity: 0, scale: 1.1 }}
             transition={{ duration: 0.3 }}
             className="glass-panel"
-            style={{ padding: '48px', maxWidth: '800px', width: '100%', textAlign: 'center' }}
+            style={{ padding: isMobileView ? '24px' : '48px', maxWidth: '800px', width: '100%', textAlign: 'center' }}
           >
-            <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Welcome, {(userService.getCurrentUser()?.name || 'Builder').split(' ')[0]}!</h2>
+            <h2 style={{ fontSize: isMobileView ? '1.5rem' : '2rem', marginBottom: '1rem' }}>Welcome, {(userService.getCurrentUser()?.name || 'Builder').split(' ')[0]}!</h2>
             <p style={{ color: 'var(--text-muted)', marginBottom: '3rem' }}>Choose your path to get started.</p>
             
             <div className="onboarding-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', maxWidth: '900px', margin: '0 auto' }}>
               <div 
                 className={`glass-card ${role === 'owner' ? 'active-role' : ''}`}
                 style={{ 
-                  padding: '40px', cursor: loading ? 'not-allowed' : 'pointer', border: role === 'owner' ? '2px solid var(--primary)' : '1px solid var(--border)',
+                  padding: isMobileView ? '24px' : '40px', cursor: loading ? 'not-allowed' : 'pointer', border: role === 'owner' ? '2px solid var(--primary)' : '1px solid var(--border)',
                   position: 'relative', transition: 'all 0.3s ease', opacity: loading ? 0.7 : 1
                 }}
                 onClick={() => !loading && handleRoleSelect('owner')}
@@ -459,7 +461,7 @@ const Onboarding = ({ setUser, user }) => {
               <div 
                 className={`glass-card ${role === 'builder' ? 'active-role' : ''}`}
                 style={{ 
-                  padding: '40px', cursor: loading ? 'not-allowed' : 'pointer', border: role === 'builder' ? '2px solid var(--primary)' : '1px solid var(--border)',
+                  padding: isMobileView ? '24px' : '40px', cursor: loading ? 'not-allowed' : 'pointer', border: role === 'builder' ? '2px solid var(--primary)' : '1px solid var(--border)',
                   transition: 'all 0.3s ease', opacity: loading ? 0.7 : 1
                 }}
                 onClick={() => !loading && handleRoleSelect('builder')}
@@ -482,7 +484,7 @@ const Onboarding = ({ setUser, user }) => {
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.3 }}
             className="glass-panel"
-            style={{ padding: '48px', maxWidth: '700px', width: '100%' }}
+            style={{ padding: isMobileView ? '24px' : '48px', maxWidth: '700px', width: '100%' }}
           >
             <div style={{ marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1.8rem', marginBottom: '8px' }}>Professional Profiling</h2>
@@ -701,7 +703,7 @@ const Onboarding = ({ setUser, user }) => {
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.3 }}
             className="glass-panel"
-            style={{ padding: '48px', maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
+            style={{ padding: isMobileView ? '24px' : '48px', maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
           >
             <div style={{ marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '1.8rem', marginBottom: '8px' }}>Post Your Idea</h2>
