@@ -6,7 +6,7 @@
 
 ![Release](https://img.shields.io/badge/Release-v1.0.0-yellow?style=flat)
 ![Status](https://img.shields.io/badge/Status-Live-success?style=flat)
-![UI](https://img.shields.io/badge/UI-Modern_Glass-blue?style=flat)
+![UI](https://img.shields.io/badge/UI-Cream_%26_Sage-success?style=flat)
 
 </div>
 
@@ -26,14 +26,17 @@ Our mission is to turn the complex process of finding the right team into an int
 Find the perfect team or the perfect project based on skills and interests:
 - **Smart Search:** Filter projects by tech stack and requirements.
 - **Skill Matching:** Connect with individuals who complement your abilities.
+- **Builder Hub:** Explore skill profiles, get personalized recommendations, and showcase your portfolio in the dedicated builder module.
 
 ### 2. 🤝 Seamless Collaboration
 Integrated tools designed to make teamwork effortless:
-- **Real-Time Messaging:** Communicate instantly with team members.
+- **Real-Time Messaging:** Communicate instantly with team members using dynamic account chat integration.
 - **Task Management:** Keep track of goals and progress in one place.
+- **Workspace Management:** Advanced role-based permissions and real-time multi-tab applicant synchronization.
 
 ### 3. 🎨 Modern & Intuitive UI
 Built with a focus on user experience and aesthetics:
+- **Elegant Theme:** A refined organic Cream and Sage palette with elegant gradients and solid shadows.
 - **Dynamic Animations:** Smooth transitions powered by Framer Motion.
 - **Responsive Design:** Looks great on desktop and mobile devices.
 
