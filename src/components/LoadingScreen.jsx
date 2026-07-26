@@ -4,11 +4,13 @@ import { motion } from 'framer-motion';
 const LoadingScreen = ({ message = 'Loading...' }) => {
   return (
     <div style={{
+      position: 'fixed',
+      top: 0, left: 0, right: 0, bottom: 0,
+      zIndex: 9999,
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      minHeight: 'calc(100vh - 80px)',
       background: 'var(--bg-main)',
     }}>
       <div className="animate-float" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
