@@ -112,15 +112,22 @@ function App() {
             if (cachedUser && cachedUser.email === email) {
               setUser(cachedUser);
               setIsLoading(false);
-            }
-
-            // Background sync with database
-            userService.registerOrLogin({ 
-              email: email,
-              name: name
-            }).then(localUser => {
+              
+              // Background sync with database
+              userService.registerOrLogin({ 
+                email: email,
+                name: name
+              }).then(localUser => {
+                setUser(localUser);
+              });
+            } else {
+              // Wait for db sync before showing app to avoid flash of login screen
+              const localUser = await userService.registerOrLogin({ 
+                email: email,
+                name: name
+              });
               setUser(localUser);
-            });
+            }
           } else {
             userService.logout(true); // pass true for localOnly to avoid infinite loop
             setUser(null);
