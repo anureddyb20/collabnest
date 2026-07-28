@@ -30,7 +30,7 @@ export const userService = {
   registerOrLogin: async (userData) => {
     try {
       const email = userData.email.toLowerCase().trim();
-      let name = userData.name ? userData.name.trim() : email.split('@')[0];
+      let inputName = userData.name ? userData.name.trim() : null;
 
       // Get authenticated user ID if possible (with fast timeout)
       let authUserId = null;
@@ -59,7 +59,10 @@ export const userService = {
         console.warn("Could not query users table:", e);
       }
       
-      let finalUser = userRecord || { email, name, role: userData.role || 'builder' };
+      let finalUser = userRecord || { email, role: userData.role || 'builder' };
+      if (!userRecord) {
+        finalUser.name = inputName || email.split('@')[0];
+      }
       
       const emailPrefix = email.split('@')[0];
       const isGenericName = (dbName) => {
@@ -71,8 +74,8 @@ export const userService = {
       if (userRecord) {
         // User exists. Update if needed
         const updateFields = {};
-        if (isGenericName(userRecord.name) && name && !isGenericName(name)) {
-          updateFields.name = name;
+        if (isGenericName(userRecord.name) && inputName && !isGenericName(inputName)) {
+          updateFields.name = inputName;
         }
         if (userData.role && userRecord.role !== userData.role) {
           updateFields.role = userData.role;
@@ -97,7 +100,7 @@ export const userService = {
         // User does not exist, insert them!
         const insertData = {
           email: email,
-          name: name,
+          name: inputName || email.split('@')[0],
           role: userData.role || 'builder',
           reputation: 30
         };
@@ -135,7 +138,7 @@ export const userService = {
       const sessionData = { 
         id: finalUser.id || authUserId || 'local-id-' + Date.now(),
         email: finalUser.email, 
-        name: finalUser.name || name, 
+        name: finalUser.name || inputName || email.split('@')[0], 
         role: finalUser.role 
       };
       
@@ -146,8 +149,8 @@ export const userService = {
     } catch (e) {
       console.error("Critical error in registerOrLogin:", e);
       const email = userData.email.toLowerCase().trim();
-      let name = userData.name ? userData.name.trim() : email.split('@')[0];
-      const sessionData = { email: email, name: name, role: userData.role || 'builder' };
+      let inputName = userData.name ? userData.name.trim() : email.split('@')[0];
+      const sessionData = { email: email, name: inputName, role: userData.role || 'builder' };
       localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
       return sessionData;
     }

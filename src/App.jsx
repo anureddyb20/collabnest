@@ -103,8 +103,8 @@ function App() {
             }
 
             let name = session.user.user_metadata?.full_name || session.user.user_metadata?.name;
-            if (!name || name.toLowerCase() === 'user' || name === email) {
-              name = email.split('@')[0];
+            if (name && (name.toLowerCase() === 'user' || name === email)) {
+              name = undefined;
             }
             
             // Fast-path: Set user immediately from cache to remove loading screen instantly

@@ -210,7 +210,7 @@ const Onboarding = ({ setUser, user }) => {
       
       const finalUser = await userService.registerOrLogin({ 
         email: accountData.email, 
-        name: accountData.name || accountData.email.split('@')[0],
+        name: isLoginMode ? undefined : accountData.name,
       });
       setUser(finalUser);
       setStep(1);

@@ -25,6 +25,8 @@ const Profile = () => {
     availability: '5-10 hrs/week'
   });
   const [profileSaved, setProfileSaved] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -82,6 +84,19 @@ const Profile = () => {
     setProfileSaved(true);
     showToast("Builder preferences saved successfully!");
     setTimeout(() => setProfileSaved(false), 2000);
+  };
+
+  const saveName = async () => {
+    if (editedName.trim() && currentUser?.email) {
+      const updatedUser = await userService.updateProfile(currentUser.email, { name: editedName.trim() });
+      if (updatedUser) {
+        showToast("Name updated successfully!");
+        window.location.reload(); // Reload to reflect changes across the app
+      } else {
+        showToast("Failed to update name.");
+      }
+    }
+    setIsEditingName(false);
   };
 
   const userName = currentUser?.name && currentUser.name.toLowerCase() !== 'guest builder' ? currentUser.name : (currentUser?.email ? currentUser.email.split('@')[0] : "Guest Builder");
@@ -302,7 +317,28 @@ Generated via CollabNest Hub on ${new Date().toLocaleDateString()}
             }}>
               {initials}
             </div>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '4px' }}>{user.name}</h2>
+            
+            {isEditingName ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
+                <input 
+                  type="text" 
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '8px', padding: '6px 12px', color: 'var(--text-main)', fontSize: '1rem', width: '150px' }}
+                  autoFocus
+                />
+                <button onClick={saveName} className="btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Save</button>
+                <button onClick={() => setIsEditingName(false)} className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Cancel</button>
+              </div>
+            ) : (
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                {user.name}
+                <button onClick={() => { setEditedName(user.name); setIsEditingName(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }} title="Edit Name">
+                  ✏️
+                </button>
+              </h2>
+            )}
+            
             <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>{user.role}</p>
             
             <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '24px' }}>
