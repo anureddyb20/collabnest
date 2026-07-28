@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Lightbulb, Code, ChevronRight, CheckCircle2, Loader2, AlertCircle, X, Eye, EyeOff } from 'lucide-react';
+import { Lightbulb, Code, ChevronRight, CheckCircle2, Loader2, AlertCircle, X, Eye, EyeOff, Edit2, Check } from 'lucide-react';
 import { userService } from '../data/userService';
 import { supabase } from '../supabase';
 import { useView } from '../context/ViewContext';
@@ -35,6 +35,8 @@ const Onboarding = ({ setUser, user }) => {
   const [otpCountdown, setOtpCountdown] = useState(0);
   const [isVerifying, setIsVerifying] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isEditingWelcomeName, setIsEditingWelcomeName] = useState(false);
+  const [editedWelcomeName, setEditedWelcomeName] = useState('');
 
   
   const [profileData, setProfileData] = useState({
@@ -437,7 +439,34 @@ const Onboarding = ({ setUser, user }) => {
             className="glass-panel"
             style={{ padding: isMobileView ? '24px' : '48px', maxWidth: '800px', width: '100%', textAlign: 'center' }}
           >
-            <h2 style={{ fontSize: isMobileView ? '1.5rem' : '2rem', marginBottom: '1rem' }}>Welcome, {(userService.getCurrentUser()?.name || 'Builder').split(' ')[0]}!</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '1rem' }}>
+              {isEditingWelcomeName ? (
+                 <>
+                   <input 
+                     type="text" 
+                     value={editedWelcomeName} 
+                     onChange={e => setEditedWelcomeName(e.target.value)} 
+                     style={{ fontSize: isMobileView ? '1.2rem' : '1.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', borderRadius: '8px', padding: '4px 12px', color: 'var(--text-main)', width: '200px', textAlign: 'center' }}
+                     autoFocus
+                   />
+                   <button onClick={async () => {
+                     const currentUser = userService.getCurrentUser();
+                     if (editedWelcomeName.trim() && currentUser?.email) {
+                       await userService.updateProfile(currentUser.email, { name: editedWelcomeName.trim() });
+                       setUser({...currentUser, name: editedWelcomeName.trim()});
+                     }
+                     setIsEditingWelcomeName(false);
+                   }} className="btn-primary" style={{ padding: '8px', borderRadius: '8px' }}><Check size={20} /></button>
+                 </>
+              ) : (
+                 <>
+                   <h2 style={{ fontSize: isMobileView ? '1.5rem' : '2rem', margin: 0 }}>Welcome, {(userService.getCurrentUser()?.name || 'Builder').split(' ')[0]}!</h2>
+                   <button onClick={() => { setEditedWelcomeName(userService.getCurrentUser()?.name || ''); setIsEditingWelcomeName(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }} title="Edit Name">
+                     <Edit2 size={20} />
+                   </button>
+                 </>
+              )}
+            </div>
             <p style={{ color: 'var(--text-muted)', marginBottom: '3rem' }}>Choose your path to get started.</p>
             
             <div className="onboarding-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', maxWidth: '900px', margin: '0 auto' }}>
